@@ -1,0 +1,49 @@
+@import "tailwindcss";
+@import "@xyflow/react/dist/style.css";
+
+@theme {
+  --font-sans: "Pretendard Variable", Pretendard, -apple-system, BlinkMacSystemFont, system-ui, Roboto,
+    "Helvetica Neue", "Segoe UI", "Apple SD Gothic Neo", "Noto Sans KR", "Malgun Gothic", sans-serif;
+  --color-canvas: #fffaf0;
+  --color-ink: #0a0a0a;
+  --color-muted: #6a6a6a;
+  --color-hairline: #e5e5e5;
+}
+
+html,
+body,
+#root {
+  height: 100%;
+  margin: 0;
+}
+
+body {
+  background: var(--color-canvas);
+  color: var(--color-ink);
+  font-family: var(--font-sans);
+}
+
+/* C1 위키 에디터 */
+.tiptap {
+  min-height: 200px;
+  outline: none;
+  line-height: 1.6;
+  word-break: keep-all;
+}
+.tiptap h2 {
+  font-size: 1.5rem;
+  font-weight: 700;
+}
+.tiptap ul {
+  list-style: disc;
+  padding-left: 1.5rem;
+}
+.tiptap blockquote {
+  border-left: 3px solid var(--color-hairline);
+  padding-left: 1rem;
+}
+.mention {
+  background: #f5f0e0;
+  border-radius: 6px;
+  padding: 0 4px;
+}
