@@ -220,6 +220,7 @@ Pretendard는 **다이나믹 서브셋**(페이지에 쓰인 글자 조각만 �
 ### 위키
 - **`wiki-tree`**: 분류 트리. 분류 색 점 + 이름 + 문서 수, 들여쓰기 16px, 선택 항목은 `{colors.surface-card}` 배경
 - **`wiki-doc`**: 문서 화면. 상단 제목(`{typography.title-lg}`) + 별칭 배지 → 속성 표(2열 키-값, hairline 구분선) + 대표 이미지(우측, 모바일은 상단) → 본문(`{typography.body-md}`) → 역링크 / 보드 연동 정보(등장 사건, 상태 이력)
+  - 본문 제목: H1 `{typography.display}`(30px/700) · H2 `{typography.title-lg}`(24px/700) · H3 18px/600. Tailwind preflight가 제목 서식을 초기화하므로 에디터 CSS에 명시
 - **`wiki-link`**: 본문 내 문서 링크 칩. 분류 색 점 + 문서명, `{colors.surface-card}` 배경, `{rounded.xs}`. 삭제된 문서는 점선 테두리 + `{colors.muted}` 텍스트
 - **`wiki-table`**: 분류별 속성 비교 표. 헤더 `{colors.surface-soft}`, 행 구분 hairline, 첫 열(제목) 고정
 

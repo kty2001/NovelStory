@@ -23,14 +23,19 @@
 - 보류: 2단계 인증 방식, 관계도 보기, 이미지 R2 저장, 보드 공동 편집
 
 ## 기술 스파이크 (구현 전 소규모 프로토타입)
-- [ ] C1 한글 IME: Tiptap 위키 본문·`@` 멘션 한글 입력 (Chrome / Safari / 안드로이드 삼성 키보드). ProseMirror 한글 조합 이슈 보고 있음
-- [ ] C2 보드 단축키 × IME: 한글 조합 중 Backspace·Delete가 노드 삭제로 처리되지 않는지 (`isComposing` 검사, `nodrag`·`nokey` 클래스)
-- [ ] C3 React Flow 성능: 노드 500~1,000개 줌·드래그, `onlyRenderVisibleElements` 효과, 중급 안드로이드 기기
-- [ ] C4 시간축: `ViewportPortal` 무한 축, 줌별 눈금 밀도, 눈금 라벨, 구간 접기, x ↔ 눈금 변환
-- [ ] C5 터치: 핀치 줌, 두 손가락 팬, 길게 눌러 메뉴, Pointer Events 드래그 배치 (iPad / 안드로이드)
-- [ ] C6 캔버스 인라인 편집: 포스트잇 더블클릭 편집 중 팬·선택 충돌 여부
-- [ ] C7 프레임: 요소 넣기·빼기, 프레임 이동 시 자식 이동, 중첩 여부
-- [ ] C8 IndexedDB 용량: 이미지 포함 사용량, 업로드 시 리사이즈·WebP 압축 필요 여부
+검증 방법·합격 기준·결과 기록: [spikes.md](./design/spikes.md). 위험도순 정렬.
+
+- [x] 스파이크 앱 준비: `spikes/` 폴더 (`spike` 브랜치), 자동 검증 1차 완료 (2026-09-25)
+- [ ] 스파이크 앱 배포: 별도 Worker `whitenoard-spike` (원격 실기기 확인용)
+- [ ] 원격 테스트 준비: Samsung Developer 계정(Remote Test Lab), Android Studio 에뮬레이터, iOS 체험 서비스(BrowserStack / LambdaTest)
+- [ ] C1 한글 IME: 자동·PC 실제 IME 통과 → **남은 확인(보류)**: 삼성 키보드, iOS
+- [x] C2 보드 단축키 × IME: 채택 (자동·PC 실제 IME 통과)
+- [ ] C3 React Flow 성능: PC 충족, 4x 스로틀링은 화면 밖 렌더 생략 on일 때만 500개 충족 → **남은 확인**: Galaxy A 실측
+- [ ] C5 터치: 자동(CDP 터치) 통과 → **남은 확인**: 실제 태블릿
+- [x] C4 시간축: 채택 (`ViewportPortal` 유지)
+- [x] C6 캔버스 인라인 편집: 채택 (`nodrag nowheel nopan`)
+- [x] C7 프레임: 채택 (중첩 금지, 삭제 시 자식 유지)
+- [x] C8 IndexedDB 용량: 대안 적용 (업로드 시 1600px WebP 리사이즈를 Web Worker에서 처리)
 
 ## 설계 산출물 (구현 직전)
 - [ ] 데이터 모델 확정본 ([features_spec.md](./design/features_spec.md) 4장 기준)
