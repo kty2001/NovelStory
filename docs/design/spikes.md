@@ -19,7 +19,7 @@
 
 ## 2. 공통 방식
 
-- **스파이크 앱**: 저장소 `spikes/` 폴더에 MVP와 같은 스택(Vite + React + TypeScript + Tailwind + React Flow + Tiptap)의 1회용 앱 1개
+- **스파이크 앱**: `spike` 브랜치의 `spikes/` 폴더에 MVP와 같은 스택(Vite + React + TypeScript + Tailwind + React Flow + Tiptap)의 1회용 앱 1개
   - 항목별 페이지 `/c1` ~ `/c8`
   - MVP 코드에 합치지 않음. 검증 후 참고용으로만 보관
 - **3단계 검증**
@@ -247,7 +247,9 @@
 ## 5. 사용자 수동 확인 체크리스트
 
 ### 실행
+스파이크 코드는 `spike` 브랜치에만 있음 (main에는 문서만 반영).
 ```bash
+git switch spike
 cd spikes
 npm install
 npm run dev        # http://localhost:5173
@@ -276,6 +278,7 @@ npm run dev        # http://localhost:5173
 
 ### 자동 검증 재실행
 ```bash
+git switch spike
 cd spikes
 npx playwright install chromium webkit   # 최초 1회
 npm test                                  # Vitest

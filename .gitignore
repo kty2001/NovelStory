@@ -1,0 +1,33 @@
+# 의존성·빌드 결과
+node_modules/
+dist/
+*.tsbuildinfo
+.vite/
+
+# 테스트 결과 (Vitest·Playwright)
+coverage/
+test-results/
+playwright-report/
+blob-report/
+playwright/.cache/
+
+# Cloudflare Wrangler: 로컬 상태·로컬 비밀값
+.wrangler/
+.dev.vars
+.dev.vars.*
+
+# 환경 변수 (예시 파일은 커밋)
+.env
+.env.*
+!.env.example
+
+# 로그
+*.log
+npm-debug.log*
+
+# OS·편집기
+.DS_Store
+Thumbs.db
+.idea/
+.vscode/*
+!.vscode/extensions.json
