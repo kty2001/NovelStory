@@ -17,6 +17,7 @@ React + TypeScript + Vite + Tailwind CSS v4 + React Flow, Cloudflare Workers(Sta
 - [기능 명세](docs/design/features_spec.md)
 - [기술 스택](docs/design/tech-stack.md)
 - [UI 가이드](docs/design/UIGuide.md)
+- [기술 스파이크 검증 방법](docs/design/spikes.md)
 - [레퍼런스](docs/references.md)
 - [할 일](docs/TODO.md)
 - [진행 상태](docs/STATUS.md)

@@ -77,14 +77,25 @@
 | ProseMirror — 안드로이드 한글 입력 | https://discuss.prosemirror.net/t/issue-with-applying-text-marks-bold-italic-etc-and-first-korean-character-input-not-working-correctly-on-android-smartphones/6702 | 삼성 기기에서 첫 한글 입력·서식 적용 문제 (기술 스파이크 C1) |
 | ProseMirror — Chrome 한글 IME | https://github.com/ProseMirror/prosemirror/issues/1484 | Chrome 업데이트 후 한글 입력 문제 사례 |
 
-## 6. 폰트
+## 6. 테스트 환경 (스파이크)
+
+| 이름 | URL | 참고 포인트 |
+|---|---|---|
+| CDP `Input.imeSetComposition` | https://chromedevtools.github.io/devtools-protocol/tot/Input/ | Chromium IME 조합 재현 (Playwright `keyboard`에는 IME API 없음) |
+| Playwright CDPSession | https://playwright.dev/docs/api/class-cdpsession | Playwright에서 CDP 명령 직접 호출 |
+| Samsung Remote Test Lab | https://developer.samsung.com/remote-test-lab | 실제 갤럭시 원격 조작, 하루 20크레딧(1크레딧 = 15분) 무료 |
+| Android Studio 에뮬레이터 | https://developer.android.com/studio/run/emulator | Android Chrome + Gboard, 멀티터치 근사 |
+| BrowserStack | https://www.browserstack.com/open-source | 실제 iOS 기기 원격 조작, 오픈소스 프로그램·무료 체험 |
+| LambdaTest (TestMu AI) | https://www.lambdatest.com/pricing | 실제 iOS 기기 원격 조작, 무료 플랜 분량 한정 |
+
+## 7. 폰트
 
 | 이름 | URL | 참고 포인트 |
 |---|---|---|
 | Pretendard | https://github.com/orioncactus/pretendard | OFL, v1.3.9, 가변 폰트 + 다이나믹 서브셋 CDN, 권장 fallback 스택 |
 | Noto Serif KR | https://fonts.google.com/noto/specimen/Noto+Serif+KR | OFL 명조, 소설 본문 미리보기용 |
 
-## 7. 차용할 아이디어 요약
+## 8. 차용할 아이디어 요약
 
 | 아이디어 | 출처 | 적용 기능 |
 |---|---|---|
