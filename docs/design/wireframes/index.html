@@ -1,0 +1,64 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8" />
+<title>와이어프레임 · 목차</title>
+<link rel="stylesheet" href="wireframe.css" />
+</head>
+<body>
+
+<header class="page-head" style="width:1040px">
+  <h1>WhiteNoard 와이어프레임 (데스크톱)</h1>
+  <p>1440 × 900 기준 · 로파이 회색조 · 파란 번호 = 주석 (UI 아님). 설명·유스케이스 대조표는 <code>docs/design/wireframe.md</code></p>
+  <nav class="page-nav">
+    <a href="index.html" class="on">목차</a>
+    <a href="library.html">서재</a>
+    <a href="board.html">보드</a>
+    <a href="wiki.html">위키</a>
+  </nav>
+</header>
+
+<main class="idx">
+  <div class="card">
+    <h2><a href="library.html" style="text-decoration:none">서재 (F0)</a></h2>
+    <p class="muted" style="margin:0">소설 목록 · 생성 · 복제 · 삭제 · JSON 백업</p>
+    <table>
+      <tr><td>L-1</td><td><a href="library.html#l-1">소설 목록</a></td><td>카드 그리드 · 정렬 · 카드 메뉴</td></tr>
+      <tr><td>L-2</td><td><a href="library.html#l-2">빈 상태 (첫 실행)</a></td><td>새 소설 · 가져오기 · 저장 불가 경고 · 온보딩 자리</td></tr>
+      <tr><td>L-3</td><td><a href="library.html#l-3">새 소설 / 정보 수정</a></td><td>제목 · 장르 · 소개 · 표지 변환 진행</td></tr>
+      <tr><td>L-4</td><td><a href="library.html#l-4">삭제 확인 + 되돌리기</a></td><td>확인 대화상자 · 되돌리기 알림</td></tr>
+      <tr><td>L-5</td><td><a href="library.html#l-5">가져오기 오류 / 공간 부족</a></td><td>버전 불일치 · 사용량 · 내보내기 권장</td></tr>
+    </table>
+  </div>
+
+  <div class="card">
+    <h2><a href="board.html" style="text-decoration:none">보드 (F1)</a></h2>
+    <p class="muted" style="margin:0">화이트보드 타임라인 · 작업공간 상단 바</p>
+    <table>
+      <tr><td>B-1</td><td><a href="board.html#b-1">기본 보드</a></td><td>도구 모음 · 시간축 · 미정 영역 · 사건/상태 블록 · 포스트잇 · 프레임 · 연결선 · 미니맵 · 백업 알림</td></tr>
+      <tr><td>B-2</td><td><a href="board.html#b-2">블록 선택 · 블록 메뉴 · 위키 패널</a></td><td>리사이즈 핸들 · 라인 지정 · 우측 패널 · 문서 끌어 배치 · 박스 선택</td></tr>
+      <tr><td>B-3</td><td><a href="board.html#b-3">캐릭터 상태 블록 입력</a></td><td>캐릭터 선택 · 등장/변화/퇴장 · 속성 변경 · 퇴장 이후 경고</td></tr>
+      <tr><td>B-4</td><td><a href="board.html#b-4">캐릭터별 정렬 (레인)</a></td><td>레인 머리 · 등장~퇴장 띠 · 레인 순서 끌기</td></tr>
+      <tr><td>B-5</td><td><a href="board.html#b-5">필터 메뉴</a></td><td>라인 · 캐릭터 · 태그 · 분류 표시/숨김</td></tr>
+      <tr><td>B-6</td><td><a href="board.html#b-6">스토리 라인 편집</a></td><td>추가 · 이름 · 순서 · 삭제 확인</td></tr>
+      <tr><td>B-7</td><td><a href="board.html#b-7">눈금 편집 · 구간 접기 · 보드 설정 · 저장 실패</a></td><td>라벨 입력 · 눈금 메뉴 · 구간 선택 · ⋯ 메뉴</td></tr>
+      <tr><td>B-8</td><td><a href="board.html#b-8">빠른 이동 (Ctrl+K)</a></td><td>문서 · 시간축 시점 검색</td></tr>
+    </table>
+  </div>
+
+  <div class="card">
+    <h2><a href="wiki.html" style="text-decoration:none">위키 (F4)</a></h2>
+    <p class="muted" style="margin:0">분류 트리 + 문서 · 표 · 검색</p>
+    <table>
+      <tr><td>W-1</td><td><a href="wiki.html#w-1">캐릭터 문서</a></td><td>트리 · 속성 표 · 대표 이미지 · 본문 링크 · 보드 연동 · 역링크</td></tr>
+      <tr><td>W-2</td><td><a href="wiki.html#w-2">사건 문서 + @ 멘션</a></td><td>라인 선택 · 관련 캐릭터 · 멘션 후보</td></tr>
+      <tr><td>W-3</td><td><a href="wiki.html#w-3">표 보기</a></td><td>속성 열 비교 · 라인 열 · 셀 편집</td></tr>
+      <tr><td>W-4</td><td><a href="wiki.html#w-4">검색 결과</a></td><td>분류별 결과 · 일치 문맥</td></tr>
+      <tr><td>W-5</td><td><a href="wiki.html#w-5">분류 설정 · 템플릿 · 트리 편집</a></td><td>분류 끌기 · 분류 메뉴 · 템플릿 키</td></tr>
+      <tr><td>W-6</td><td><a href="wiki.html#w-6">문서 삭제 경고</a></td><td>연결 블록 수 · 깨진 링크 안내</td></tr>
+    </table>
+  </div>
+</main>
+
+</body>
+</html>

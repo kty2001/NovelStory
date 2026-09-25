@@ -1,0 +1,287 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8" />
+<title>와이어프레임 · 서재</title>
+<link rel="stylesheet" href="wireframe.css" />
+</head>
+<body>
+
+<header class="page-head">
+  <h1>WhiteNoard 와이어프레임 — 서재 (F0)</h1>
+  <p>데스크톱 1440 × 900 · 로파이 회색조 · 파란 번호 = 주석 (UI 아님). 색·폰트는 <code>ui_guide.md</code></p>
+  <nav class="page-nav">
+    <a href="index.html">목차</a>
+    <a href="library.html" class="on">서재</a>
+    <a href="board.html">보드</a>
+    <a href="wiki.html">위키</a>
+  </nav>
+</header>
+
+<!-- ================= L-1 ================= -->
+<section class="fw" id="l-1">
+  <h2>L-1 소설 목록</h2>
+  <p class="desc">기본 서재 화면. 카드 메뉴를 펼친 상태 (UC-02 · 03 · 04 · 05)</p>
+  <div class="frame" style="height:1200px">
+    <div class="libhead"><div class="in">
+      <span class="logo">WhiteNoard</span>
+      <span class="spacer"></span>
+      <span class="btn">⤓ 가져오기</span>
+      <span class="btn primary">+ 새 소설</span>
+    </div></div>
+
+    <div class="libmain">
+      <div class="row">
+        <span style="font-size:24px;font-weight:700">서재</span>
+        <span class="muted">소설 7</span>
+        <span class="spacer"></span>
+        <div class="tabs"><span class="tab on">최근 수정순</span><span class="tab">제목순</span></div>
+      </div>
+
+      <div class="grid4">
+        <div class="ncard">
+          <div class="ph cover"><span>표지 3:4</span></div>
+          <div class="info"><div class="t">검은 왕관의 기사</div>
+            <div class="row"><span class="chip">판타지</span><span class="cap">3분 전</span></div></div>
+          <span class="ibtn more">⋯</span>
+        </div>
+        <div class="ncard">
+          <div class="ph cover"><span>표지 3:4</span></div>
+          <div class="info"><div class="t">회귀한 검성의 두 번째 삶</div>
+            <div class="row"><span class="chip">무협</span><span class="cap">어제</span></div></div>
+          <span class="ibtn more" style="background:var(--g3)">⋯</span>
+          <div class="menu float" style="right:8px;top:calc(100% - 28px);width:200px">
+            <div class="mi">✎ 정보 수정</div>
+            <div class="mi">⧉ 복제</div>
+            <div class="mi">⤒ JSON 내보내기</div>
+            <hr />
+            <div class="mi">🗑 삭제</div>
+          </div>
+        </div>
+        <div class="ncard">
+          <div class="ph cover"><span>표지 3:4</span></div>
+          <div class="info"><div class="t">달빛 서점의 비밀</div>
+            <div class="row"><span class="chip">미스터리</span><span class="cap">3일 전</span></div></div>
+          <span class="ibtn more">⋯</span>
+        </div>
+        <div class="ncard">
+          <div class="cover" style="display:flex;align-items:center;justify-content:center;background:var(--g2);padding:24px;text-align:center;font-size:20px;font-weight:700;color:var(--body)">별을 삼킨 소녀</div>
+          <div class="info"><div class="t">별을 삼킨 소녀</div>
+            <div class="row"><span class="chip">로맨스 판타지</span><span class="cap">1주 전</span></div></div>
+          <span class="ibtn more">⋯</span>
+        </div>
+        <div class="ncard">
+          <div class="ph cover"><span>표지 3:4</span></div>
+          <div class="info"><div class="t">재벌집 셋째의 사정</div>
+            <div class="row"><span class="chip">현대 판타지</span><span class="cap">2주 전</span></div></div>
+          <span class="ibtn more">⋯</span>
+        </div>
+        <div class="ncard">
+          <div class="ph cover"><span>표지 3:4</span></div>
+          <div class="info"><div class="t">검은 왕관의 기사 (사본)</div>
+            <div class="row"><span class="chip">판타지</span><span class="cap">2주 전</span></div></div>
+          <span class="ibtn more">⋯</span>
+        </div>
+        <div class="ncard">
+          <div class="ph cover"><span>표지 3:4</span></div>
+          <div class="info"><div class="t">북부 대공의 계약 결혼</div>
+            <div class="row"><span class="chip">로맨스</span><span class="cap">1달 전</span></div></div>
+          <span class="ibtn more">⋯</span>
+        </div>
+      </div>
+    </div>
+
+    <span class="m abs" style="left:1378px;top:21px">1</span>
+    <span class="m abs" style="left:1146px;top:21px">2</span>
+    <span class="m abs" style="left:1156px;top:103px">3</span>
+    <span class="m abs" style="left:70px;top:150px">4</span>
+    <span class="m abs" style="left:640px;top:600px">5</span>
+    <span class="m abs" style="left:1036px;top:150px">7</span>
+    <span class="m abs" style="left:396px;top:668px">6</span>
+  </div>
+  <div class="notes"><ol>
+    <li><span class="m">1</span><span><b>새 소설</b> → L-3 대화상자. 생성 시 보드 1개 · 기본 분류 6개 · 기본 템플릿 · 기본 라인 3개 생성 후 보드로 이동 (UC-01)</span></li>
+    <li><span class="m">2</span><span><b>가져오기</b> → 파일 선택 → 항상 새 소설로 추가 (ID 재발급). 실패 시 L-5 (UC-05)</span></li>
+    <li><span class="m">3</span><span>정렬 탭: 최근 수정순(기본) / 제목순. 선택은 저장돼 다음에도 유지 (<code>AppMeta</code>, UC-02)</span></li>
+    <li><span class="m">4</span><span><code>novel-card</code> 4열 그리드 (표지 3:4 · 제목 · 장르 배지 · 최근 수정일). 카드 클릭 → 마지막으로 보던 탭(보드/위키)과 보드 위치로 복귀 (UC-02)</span></li>
+    <li><span class="m">5</span><span>카드 <b>⋯ 메뉴</b>: 정보 수정(L-3) · 복제 · JSON 내보내기 · 삭제(L-4) (UC-03 · 04). 내보내기 파일명 <code>소설제목_YYYYMMDD.whitenoard.json</code></span></li>
+    <li><span class="m">6</span><span>복제 결과: 소설 전체(보드·위키·이미지) 새 ID, 제목 뒤 "(사본)" (UC-03)</span></li>
+    <li><span class="m">7</span><span>표지 없는 소설 → 제목 텍스트 기본 표지</span></li>
+  </ol></div>
+</section>
+
+<!-- ================= L-2 ================= -->
+<section class="fw" id="l-2">
+  <h2>L-2 빈 상태 (첫 실행)</h2>
+  <p class="desc">로컬 데이터가 없을 때. 온보딩·샘플 소설은 "빈 상태·온보딩" 설계에서 확정 (UC-01)</p>
+  <div class="frame">
+    <div class="libhead"><div class="in">
+      <span class="logo">WhiteNoard</span>
+      <span class="spacer"></span>
+      <span class="btn">⤓ 가져오기</span>
+      <span class="btn primary">+ 새 소설</span>
+    </div></div>
+
+    <div class="banner" style="top:64px">
+      <b>⚠ 이 브라우저에서는 저장할 수 없습니다</b>
+      <span class="muted">시크릿 모드 등에서는 창을 닫으면 사라집니다. 작업 후 내보내기로 보관하세요.</span>
+      <span class="spacer"></span>
+      <span class="btn text sm">×</span>
+    </div>
+
+    <div style="position:absolute;left:470px;top:230px;width:500px;text-align:center">
+      <div class="ph" style="width:280px;height:180px;margin:0 auto;border-radius:16px"><span>일러스트 자리</span></div>
+      <div style="font-size:24px;font-weight:700;margin-top:24px">아직 소설이 없어요</div>
+      <p class="muted" style="margin:8px 0 24px">첫 소설을 만들고 시간축 위에 사건을 올려 보세요.<br />모든 내용은 이 브라우저에 자동 저장됩니다.</p>
+      <div class="row" style="justify-content:center">
+        <span class="btn primary">+ 새 소설</span>
+        <span class="btn">⤓ JSON 가져오기</span>
+      </div>
+      <div style="margin-top:28px;border:1.5px dashed var(--g5);border-radius:12px;padding:14px;color:var(--muted);font-size:13px">
+        샘플 소설 열어 보기 (자리표시 — 제공 여부는 온보딩 설계에서 결정)
+      </div>
+    </div>
+
+    <span class="m abs" style="left:10px;top:74px">1</span>
+    <span class="m abs" style="left:980px;top:520px">2</span>
+    <span class="m abs" style="left:980px;top:600px">3</span>
+  </div>
+  <div class="notes"><ol>
+    <li><span class="m">1</span><span><b>예외 상태</b>: IndexedDB 사용 불가 시에만 표시되는 경고 배너. 평소 빈 상태엔 없음 (UC-01)</span></li>
+    <li><span class="m">2</span><span>새 소설 · 가져오기는 헤더 버튼과 같은 동작. 첫 실행 시 <code>navigator.storage.persist()</code> 1회 요청 — 전용 UI 없음 (브라우저에 따라 권한 창), 거부돼도 막지 않음</span></li>
+    <li><span class="m">3</span><span>샘플 소설·온보딩 안내 자리. 확정 후 이 프레임 갱신</span></li>
+  </ol></div>
+</section>
+
+<!-- ================= L-3 ================= -->
+<section class="fw" id="l-3">
+  <h2>L-3 새 소설 / 정보 수정 대화상자</h2>
+  <p class="desc">같은 대화상자를 생성·수정에 공용 (UC-01 · 03)</p>
+  <div class="frame">
+    <div class="libhead"><div class="in">
+      <span class="logo">WhiteNoard</span><span class="spacer"></span>
+      <span class="btn">⤓ 가져오기</span><span class="btn primary">+ 새 소설</span>
+    </div></div>
+    <div class="libmain">
+      <div class="row"><span style="font-size:24px;font-weight:700">서재</span><span class="muted">소설 7</span></div>
+      <div class="grid4">
+        <div class="ncard"><div class="ph cover"></div><div class="info"><div class="t">검은 왕관의 기사</div></div></div>
+        <div class="ncard"><div class="ph cover"></div><div class="info"><div class="t">회귀한 검성의 두 번째 삶</div></div></div>
+        <div class="ncard"><div class="ph cover"></div><div class="info"><div class="t">달빛 서점의 비밀</div></div></div>
+        <div class="ncard"><div class="ph cover"></div><div class="info"><div class="t">별을 삼킨 소녀</div></div></div>
+      </div>
+    </div>
+    <div class="dim"></div>
+
+    <div class="dialog" style="left:420px;top:170px;width:600px">
+      <div class="row"><h3 style="margin:0">새 소설</h3><span class="spacer"></span><span class="ibtn">×</span></div>
+      <div class="row" style="align-items:flex-start;gap:24px;margin-top:16px">
+        <div style="width:168px;flex:none">
+          <div class="ph" style="width:168px;height:224px;border-radius:12px"><span>표지 이미지<br />(선택)</span></div>
+          <div class="cap" style="margin-top:8px">변환 중… 64%</div>
+          <div class="bar"><i style="width:64%"></i></div>
+        </div>
+        <div style="flex:1">
+          <div class="field"><div class="label">제목 *</div><div class="input focus filled">검은 왕관의 기사<span class="caret"></span></div></div>
+          <div class="field"><div class="label">장르</div><div class="input">예: 판타지, 무협, 로맨스</div></div>
+          <div class="field"><div class="label">소개 (시놉시스)</div><div class="input textarea" style="min-height:110px">작품 소개를 적어 두면 서재에서 구분하기 쉬워요</div></div>
+        </div>
+      </div>
+      <div class="foot"><span class="btn">취소</span><span class="btn primary">만들기</span></div>
+    </div>
+
+    <span class="m abs" style="left:430px;top:240px">1</span>
+    <span class="m abs" style="left:990px;top:250px">2</span>
+    <span class="m abs" style="left:990px;top:612px">3</span>
+  </div>
+  <div class="notes"><ol>
+    <li><span class="m">1</span><span>표지 업로드 → 긴 변 1600px WebP 변환(Web Worker) 진행 표시. 실패 시 오류 문구, 나머지 저장은 계속 (C8 · UC-31 규칙 공용)</span></li>
+    <li><span class="m">2</span><span>제목만 필수, 비어 있으면 만들기 비활성. 장르·소개 선택</span></li>
+    <li><span class="m">3</span><span>생성 모드: "만들기" → 보드로 이동 (시간축 0 눈금이 화면 중앙 근처). 수정 모드: 제목 "소설 정보", 버튼 "저장"</span></li>
+  </ol></div>
+</section>
+
+<!-- ================= L-4 ================= -->
+<section class="fw" id="l-4">
+  <h2>L-4 삭제 확인 + 되돌리기 알림</h2>
+  <p class="desc">① 확인 대화상자 → ② 확인 후 하단 알림 (두 단계를 한 프레임에 표시, UC-03)</p>
+  <div class="frame">
+    <div class="libhead"><div class="in">
+      <span class="logo">WhiteNoard</span><span class="spacer"></span>
+      <span class="btn">⤓ 가져오기</span><span class="btn primary">+ 새 소설</span>
+    </div></div>
+    <div class="libmain">
+      <div class="row"><span style="font-size:24px;font-weight:700">서재</span><span class="muted">소설 7</span></div>
+      <div class="grid4">
+        <div class="ncard"><div class="ph cover"></div><div class="info"><div class="t">검은 왕관의 기사</div></div></div>
+        <div class="ncard"><div class="ph cover"></div><div class="info"><div class="t">회귀한 검성의 두 번째 삶</div></div></div>
+        <div class="ncard"><div class="ph cover"></div><div class="info"><div class="t">달빛 서점의 비밀</div></div></div>
+        <div class="ncard"><div class="ph cover"></div><div class="info"><div class="t">별을 삼킨 소녀</div></div></div>
+      </div>
+    </div>
+    <div class="dim"></div>
+
+    <div class="dialog" style="left:500px;top:260px;width:440px">
+      <h3>'회귀한 검성의 두 번째 삶'을 삭제할까요?</h3>
+      <p>보드 · 위키 · 이미지가 모두 삭제됩니다.</p>
+      <p class="cap">삭제 전에 JSON으로 내보내 두면 나중에 되살릴 수 있어요.</p>
+      <div class="foot"><span class="btn text">내보내기</span><span class="spacer"></span><span class="btn">취소</span><span class="btn primary">삭제</span></div>
+    </div>
+
+    <div class="toast" style="left:520px;bottom:40px;width:400px">
+      <span>'회귀한 검성의 두 번째 삶' 삭제됨</span><span class="spacer"></span><span class="act">되돌리기</span>
+    </div>
+
+    <span class="m abs" style="left:490px;top:250px">1</span>
+    <span class="m abs" style="left:508px;top:830px">2</span>
+  </div>
+  <div class="notes"><ol>
+    <li><span class="m">1</span><span>확인 대화상자에 소설 제목 표시. 보조 버튼으로 바로 내보내기 (UC-03 · 04)</span></li>
+    <li><span class="m">2</span><span>삭제 직후 몇 초간 되돌리기 알림. 휴지통은 MVP 제외</span></li>
+  </ol></div>
+</section>
+
+<!-- ================= L-5 ================= -->
+<section class="fw" id="l-5">
+  <h2>L-5 가져오기 오류 / 저장 공간 부족</h2>
+  <p class="desc">두 오류 대화상자를 나란히 표시 (실제로는 하나씩, UC-05 · 42)</p>
+  <div class="frame">
+    <div class="libhead"><div class="in">
+      <span class="logo">WhiteNoard</span><span class="spacer"></span>
+      <span class="btn">⤓ 가져오기</span><span class="btn primary">+ 새 소설</span>
+    </div></div>
+    <div class="dim"></div>
+
+    <div class="dialog" style="left:110px;top:200px;width:520px">
+      <h3>가져올 수 없는 파일입니다</h3>
+      <p>이 파일은 더 새로운 버전의 WhiteNoard에서 만들어졌습니다.</p>
+      <div class="alert" style="margin:12px 0"><div>파일 버전 <b class="num">schemaVersion 3</b> · 현재 앱 <b class="num">2</b><br />페이지를 새로고침해 최신 버전으로 업데이트한 뒤 다시 가져오세요.</div></div>
+      <p class="cap">다른 예: "WhiteNoard 백업 파일이 아닙니다" (<code>format</code> 불일치)</p>
+      <div class="foot"><span class="btn">닫기</span><span class="btn primary">새로고침</span></div>
+    </div>
+
+    <div class="dialog" style="left:720px;top:160px;width:600px">
+      <h3>저장 공간이 부족합니다</h3>
+      <p>마지막 변경을 저장하지 못했습니다. 공간을 비운 뒤 다시 시도하세요.</p>
+      <div class="row" style="margin-top:12px"><span class="cap">이 사이트 사용량</span><span class="spacer"></span><span class="cap num">1.8 GB / 2.0 GB</span></div>
+      <div class="bar" style="margin:6px 0 16px"><i style="width:90%"></i></div>
+      <div class="label">이미지가 많은 소설</div>
+      <div class="list">
+        <div class="li"><span>검은 왕관의 기사</span><span class="spacer"></span><span class="cap num">이미지 214 · 620 MB</span><span class="btn sm">내보내기</span></div>
+        <div class="li"><span>별을 삼킨 소녀</span><span class="spacer"></span><span class="cap num">이미지 96 · 310 MB</span><span class="btn sm">내보내기</span></div>
+      </div>
+      <p class="cap" style="margin-top:12px">내보낸 뒤 서재에서 소설을 삭제하면 공간이 확보됩니다.</p>
+      <div class="foot"><span class="btn">닫기</span><span class="btn primary">다시 시도</span></div>
+    </div>
+
+    <span class="m abs" style="left:100px;top:190px">1</span>
+    <span class="m abs" style="left:710px;top:150px">2</span>
+  </div>
+  <div class="notes"><ol>
+    <li><span class="m">1</span><span>가져오기 실패: 형식이 아니거나 더 새로운 <code>schemaVersion</code> → 가져오지 않고 이유 표시. 이전 버전은 자동 변환 후 가져옴 (UC-05)</span></li>
+    <li><span class="m">2</span><span>저장 실패·공간 부족: <code>navigator.storage.estimate()</code> 사용량 + 내보내기 권장 + 이미지 많은 소설 안내. 작업공간에서도 같은 대화상자 (상단 바 저장 상태 "저장 실패" 클릭, B-7) (UC-42)</span></li>
+  </ol></div>
+</section>
+
+</body>
+</html>

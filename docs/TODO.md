@@ -82,7 +82,9 @@ flowchart TB
 - [x] 유스케이스 ([usecase.md](./design/usecase.md))
 - [x] 데이터 모델 확정본 ([data_model.md](./design/data_model.md)) — 9장 "기본값으로 정한 사항" 검토 필요
 - [x] ERD 다이어그램 ([erd.md](./design/erd.md))
-- [ ] 와이어프레임 (서재 / 보드 / 위키, 데스크톱·태블릿·모바일)
+- 와이어프레임 (서재 / 보드 / 위키) ([wireframe.md](./design/wireframe.md))
+  - [x] 데스크톱 (2026-09-25) — 6장 "기본값으로 정한 사항" 검토 필요
+  - [ ] 태블릿 · 모바일
 - [x] 단축키 목록 ([shortcuts.md](./design/shortcuts.md)) — 6장 "기본값으로 정한 사항" 검토 필요
 - [ ] 빈 상태·온보딩 (첫 소설 생성 흐름, 샘플 소설 제공 여부)
 

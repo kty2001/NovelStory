@@ -1,0 +1,803 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8" />
+<title>와이어프레임 · 보드</title>
+<link rel="stylesheet" href="wireframe.css" />
+</head>
+<body>
+
+<header class="page-head">
+  <h1>WhiteNoard 와이어프레임 — 보드 (F1)</h1>
+  <p>데스크톱 1440 × 900 · 로파이 회색조 · 파란 번호 = 주석 (UI 아님). 블록 색은 회색 명암으로만 구분, 실제 색은 <code>ui_guide.md</code></p>
+  <nav class="page-nav">
+    <a href="index.html">목차</a>
+    <a href="library.html">서재</a>
+    <a href="board.html" class="on">보드</a>
+    <a href="wiki.html">위키</a>
+  </nav>
+</header>
+
+<!-- ================= B-1 ================= -->
+<section class="fw" id="b-1">
+  <h2>B-1 기본 보드</h2>
+  <p class="desc">소설 작업공간의 첫 화면. 보드 요소 종류를 한 화면에 모두 표시 (UC-10 · 11 · 14 · 15 · 16 · 17 · 18 · 19 · 21 · 41)</p>
+  <div class="frame">
+    <div class="topbar">
+      <span class="btn text">← 서재</span>
+      <span class="ntitle">검은 왕관의 기사</span>
+      <div class="tabs"><span class="tab on">보드</span><span class="tab">위키</span></div>
+      <span class="spacer"></span>
+      <span class="save">✓ 저장됨</span>
+      <div class="search"><span>빠른 이동 — 문서 · 시점</span><span class="kbd">Ctrl K</span></div>
+      <span class="ibtn">?</span>
+      <span class="ibtn">⋯</span>
+    </div>
+
+    <div class="banner" style="top:56px">
+      <b>마지막 백업: 9일 전</b>
+      <span class="muted">이 소설은 이 브라우저에만 저장됩니다. JSON으로 내보내 두세요.</span>
+      <span class="spacer"></span>
+      <span class="btn sm primary">지금 내보내기</span>
+      <span class="btn sm text">나중에</span>
+    </div>
+
+    <div class="canvas" style="top:100px">
+      <!-- 도구 모음 -->
+      <div class="toolbar float">
+        <span class="tool on">↖<small>V</small></span>
+        <span class="tool">✋<small>H</small></span>
+        <span class="sep"></span>
+        <span class="tool">▭<small>E</small></span>
+        <span class="tool">◐<small>C</small></span>
+        <span class="tool">▢<small>S</small></span>
+        <span class="tool">T<small>T</small></span>
+        <span class="tool">⬚<small>F</small></span>
+        <span class="tool">↗<small>L</small></span>
+        <span class="sep"></span>
+        <span class="tbtn">☰ 캐릭터별 정렬</span>
+        <span class="tbtn">스냅 <span class="toggle on"></span></span>
+        <span class="tbtn">필터 ▾</span>
+      </div>
+      <div class="toast" style="left:470px;top:80px;padding:6px 10px;font-size:12px;z-index:16">사건 (E) — 끌어 놓거나 선택 후 클릭</div>
+
+      <!-- 프레임 -->
+      <div class="bframe" style="left:280px;top:120px;width:490px;height:660px"><span class="ft">1부 — 몰락</span></div>
+
+      <!-- 미정 영역 -->
+      <div class="undated" style="left:24px;top:150px;width:220px;height:560px"><span class="zl">시점 미정</span></div>
+      <div class="ev" style="left:44px;top:250px;width:180px">정체불명의 편지</div>
+      <div class="st" style="left:44px;top:540px">▲ <b>가면 기사</b> 등장</div>
+
+      <!-- 시간축 -->
+      <div class="axis" style="left:262px;top:440px;width:1178px"></div>
+      <div class="tick" style="left:300px;top:435px"></div><div class="tl named" style="left:300px;top:452px">1년차 봄</div>
+      <div class="tick" style="left:390px;top:435px"></div><div class="tl named" style="left:390px;top:452px">1년차 여름</div>
+      <div class="tick" style="left:480px;top:435px"></div><div class="tl" style="left:480px;top:452px">2</div>
+      <div class="tick" style="left:570px;top:435px"></div><div class="tl" style="left:570px;top:452px">3</div>
+      <div class="tick" style="left:660px;top:435px"></div><div class="tl named" style="left:660px;top:452px">2년차 봄</div>
+      <div class="tick" style="left:750px;top:435px"></div><div class="tl" style="left:750px;top:452px">5</div>
+      <div class="fold" style="left:790px;top:428px;width:80px">≈ 6~40</div>
+      <div class="tick" style="left:910px;top:435px"></div><div class="tl named" style="left:910px;top:452px">30년 후</div>
+      <div class="tick" style="left:1000px;top:435px"></div><div class="tl" style="left:1000px;top:452px">42</div>
+      <div class="tick" style="left:1090px;top:435px"></div><div class="tl" style="left:1090px;top:452px">43</div>
+      <div class="tick" style="left:1180px;top:435px"></div><div class="tl" style="left:1180px;top:452px">44</div>
+      <div class="tick" style="left:1270px;top:435px"></div><div class="tl" style="left:1270px;top:452px">45</div>
+      <div class="tick" style="left:1360px;top:435px"></div><div class="tl" style="left:1360px;top:452px">46</div>
+
+      <!-- 사건 블록 (축 위) -->
+      <div class="ev core ln-main" style="left:330px;top:340px;width:120px">왕도 습격<span class="meta"><span class="lb">메인</span></span></div>
+      <div class="leader" style="left:390px;top:396px;height:44px"></div>
+      <div class="ev ln-sub" style="left:480px;top:250px;width:180px">기사단 원정<span class="meta"><span class="lb">서브</span></span></div>
+      <div class="leader" style="left:480px;top:306px;height:134px"></div>
+      <div class="leader" style="left:660px;top:306px;height:134px"></div>
+      <div class="ev ln-side" style="left:510px;top:340px;width:120px">예언서 발견<span class="meta"><span class="lb">사이드</span></span></div>
+      <div class="leader" style="left:570px;top:396px;height:44px"></div>
+      <div class="ev core ln-main" style="left:940px;top:300px;width:120px">반란<span class="meta"><span class="lb">메인</span><span class="cap">#정치</span></span></div>
+      <div class="leader" style="left:1000px;top:356px;height:84px"></div>
+      <div class="ev" style="left:1120px;top:360px;width:120px">수확 축제</div>
+      <div class="leader" style="left:1180px;top:416px;height:24px"></div>
+
+      <!-- 도구 모음에서 끌어 놓는 중 -->
+      <div class="ev ghost" style="left:1300px;top:170px;width:120px">새 사건</div>
+      <div class="leader" style="left:1360px;top:226px;height:214px;border-left:1.5px solid #333"></div>
+      <div class="cap" style="position:absolute;left:1366px;top:400px;color:var(--ink);font-weight:700">46 스냅</div>
+
+      <!-- 캐릭터 상태 블록 (축 아래) -->
+      <div class="leader" style="left:300px;top:442px;height:58px"></div>
+      <div class="st" style="left:300px;top:500px">▲ <b>카엘</b> 등장</div>
+      <div class="leader" style="left:480px;top:442px;height:118px"></div>
+      <div class="st" style="left:480px;top:560px">▲ <b>리아</b> 등장</div>
+      <div class="leader" style="left:1000px;top:442px;height:58px"></div>
+      <div class="st" style="left:1000px;top:500px">◆ <b>카엘</b> 소속: 기사단 → 반란군</div>
+      <div class="leader" style="left:1270px;top:442px;height:118px"></div>
+      <div class="st exit" style="left:1270px;top:560px">▼ <b>리아</b> 퇴장</div>
+
+      <!-- 자유 요소 -->
+      <div class="sticky" style="left:605px;top:600px">여기서 복선 하나 더?<br />— 예언서 필사본</div>
+      <div class="btext" style="left:880px;top:640px">※ 반란 동기 보강 필요</div>
+
+      <!-- 연결선 -->
+      <svg class="edges" width="1440" height="800">
+        <defs><marker id="ah1" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="8" markerHeight="8" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z" fill="#444" /></marker></defs>
+        <path d="M630,368 C760,368 810,328 936,328" fill="none" stroke="#444" stroke-width="2" stroke-dasharray="6 4" marker-end="url(#ah1)" />
+        <path d="M390,340 C390,290 430,278 476,278" fill="none" stroke="#444" stroke-width="2" marker-end="url(#ah1)" />
+      </svg>
+      <div class="elabel" style="left:745px;top:336px">복선→회수</div>
+      <div class="elabel" style="left:318px;top:282px">원인→결과</div>
+
+      <!-- 줌 · 미니맵 -->
+      <div class="zoom float"><span class="z">−</span><span class="z num">100%</span><span class="z">+</span><span class="z">⤢</span></div>
+      <div class="minimap float">
+        <i style="left:12px;top:40px;width:30px;height:60px;background:var(--g2)"></i>
+        <i style="left:50px;top:30px;width:12px;height:6px"></i><i style="left:66px;top:18px;width:18px;height:6px"></i>
+        <i style="left:130px;top:24px;width:12px;height:6px"></i><i style="left:150px;top:36px;width:12px;height:6px"></i>
+        <i style="left:44px;top:62px;width:150px;height:2px;background:#333"></i>
+        <i style="left:52px;top:76px;width:14px;height:5px"></i><i style="left:150px;top:76px;width:14px;height:5px"></i>
+        <span class="vp" style="left:40px;top:10px;width:120px;height:100px"></span>
+      </div>
+    </div>
+
+    <span class="m abs" style="left:232px;top:4px">1</span>
+    <span class="m abs" style="left:1222px;top:67px">2</span>
+    <span class="m abs" style="left:356px;top:130px">3</span>
+    <span class="m abs" style="left:12px;top:240px">4</span>
+    <span class="m abs" style="left:262px;top:506px">5</span>
+    <span class="m abs" style="left:800px;top:494px">6</span>
+    <span class="m abs" style="left:636px;top:432px">7</span>
+    <span class="m abs" style="left:668px;top:340px">8</span>
+    <span class="m abs" style="left:1244px;top:598px">9</span>
+    <span class="m abs" style="left:772px;top:700px">10</span>
+    <span class="m abs" style="left:400px;top:190px">11</span>
+    <span class="m abs" style="left:822px;top:434px">12</span>
+    <span class="m abs" style="left:1270px;top:262px">13</span>
+    <span class="m abs" style="left:1196px;top:726px">14</span>
+  </div>
+  <div class="notes"><ol>
+    <li><span class="m">1</span><span><b>작업공간 상단 바</b> (보드·위키 공통): ← 서재 · 소설 제목 · 탭 보드/위키(<code>Alt+1</code>/<code>Alt+2</code>) · 저장 상태(저장 중/저장됨/저장 실패, UC-40·42) · 빠른 이동 <code>Ctrl+K</code>(B-8) · <code>?</code> 단축키 도움말 · ⋯ 메뉴(B-7)</span></li>
+    <li><span class="m">2</span><span><b>백업 알림 배너</b>: 마지막 내보내기 후 변경 있고 7일 경과 시. "지금 내보내기" → UC-04, "나중에" → 3일 숨김 (UC-41)</span></li>
+    <li><span class="m">3</span><span><code>board-toolbar</code>: 선택 V · 손 H │ 사건 E · 캐릭터 상태 C(다시 누르면 등장→변화→퇴장) · 포스트잇 S · 텍스트 T · 프레임 F · 연결선 L │ 캐릭터별 정렬(B-4) · 스냅 · 필터(B-5). 툴팁에 키 표시, 배치 도구는 1회 배치 후 V로 복귀</span></li>
+    <li><span class="m">4</span><span><code>undated-zone</code>: 시간축 왼쪽 "시점 미정" 영역. 여기 블록은 작중 시점 없음, 축 위로 끌면 시점 부여 (UC-16)</span></li>
+    <li><span class="m">5</span><span><code>time-axis</code>: 라벨 눈금은 라벨 텍스트(굵게), 없으면 숫자. 눈금 클릭 → 라벨 편집 (B-7, UC-14)</span></li>
+    <li><span class="m">6</span><span>접힌 구간 칩 <code>≈ 6~40</code>: 클릭 시 펼침. 구간 안 블록은 숨기지 않고 압축 표시 (UC-15)</span></li>
+    <li><span class="m">7</span><span><code>event-block</code> 라인 표시: 메인 2px 실선 · 서브 1.5px 실선 · 사이드 1.5px 점선 · 미지정 테두리 없음 + 제목 아래 라인 배지. 진한 회색 = 핵심 사건, 연한 회색 = 일반 사건 (UC-10 · 23)</span></li>
+    <li><span class="m">8</span><span>기간 사건: 가로 폭 = 기간, 양 끝 지시선이 시작·끝 눈금을 가리킴. 선택 시 양 끝 핸들 (B-2, UC-11)</span></li>
+    <li><span class="m">9</span><span><code>state-block</code>: ▲ 등장 · ◆ 변화(속성 변경 요약) · ▼ 퇴장(진한 채움). 좌측에 캐릭터 이름, 위로 축까지 지시선 (UC-12)</span></li>
+    <li><span class="m">10</span><span>포스트잇(<code>sticky-note</code>) · 자유 텍스트(<code>board-text</code>). 더블클릭 / <code>F2</code> 인라인 편집, <code>Esc</code> 종료 (UC-17)</span></li>
+    <li><span class="m">11</span><span><code>frame</code>: 좌상단 바깥 제목. 이동 시 소속 요소 함께 이동, 삭제 시 요소 유지, 중첩 불가 (UC-18)</span></li>
+    <li><span class="m">12</span><span><code>board-edge</code>: 화살표 + 가운데 라벨, 실선/점선. 선 더블클릭 → 라벨·종류 편집 (UC-19)</span></li>
+    <li><span class="m">13</span><span>도구 모음에서 끌어 놓는 중: 반투명 블록 + 스냅될 눈금까지 세로 가이드 + 눈금 번호. <code>Alt</code> 누르면 스냅 해제 (UC-10)</span></li>
+    <li><span class="m">14</span><span>줌 컨트롤(−, %, +, 화면 맞춤) + 미니맵(현재 뷰 사각형 드래그). 줌 0.5 미만이면 블록은 제목만 간략 표시 (UC-21)</span></li>
+  </ol></div>
+</section>
+
+<!-- ================= B-2 ================= -->
+<section class="fw" id="b-2">
+  <h2>B-2 블록 선택 · 블록 메뉴 · 위키 패널</h2>
+  <p class="desc">사건 블록 선택 → 블록 메뉴에서 라인 지정, 상세 → 우측 위키 패널 (UC-11 · 20 · 22 · 23)</p>
+  <div class="frame">
+    <div class="topbar">
+      <span class="btn text">← 서재</span>
+      <span class="ntitle">검은 왕관의 기사</span>
+      <div class="tabs"><span class="tab on">보드</span><span class="tab">위키</span></div>
+      <span class="spacer"></span>
+      <span class="save">저장 중…</span>
+      <div class="search"><span>빠른 이동 — 문서 · 시점</span><span class="kbd">Ctrl K</span></div>
+      <span class="ibtn">?</span>
+      <span class="ibtn">⋯</span>
+    </div>
+
+    <div class="canvas">
+      <div class="toolbar float" style="left:520px">
+        <span class="tool on">↖<small>V</small></span><span class="tool">✋<small>H</small></span><span class="sep"></span>
+        <span class="tool">▭<small>E</small></span><span class="tool">◐<small>C</small></span><span class="tool">▢<small>S</small></span><span class="tool">T<small>T</small></span><span class="tool">⬚<small>F</small></span><span class="tool">↗<small>L</small></span><span class="sep"></span>
+        <span class="tbtn">☰ 캐릭터별 정렬</span><span class="tbtn">스냅 <span class="toggle on"></span></span><span class="tbtn">필터 ▾</span>
+      </div>
+
+      <div class="bframe" style="left:280px;top:120px;width:490px;height:660px"><span class="ft">1부 — 몰락</span></div>
+      <div class="undated" style="left:24px;top:150px;width:220px;height:560px"><span class="zl">시점 미정</span></div>
+      <div class="ev" style="left:44px;top:250px;width:180px">정체불명의 편지</div>
+
+      <div class="axis" style="left:262px;top:440px;width:800px"></div>
+      <div class="tick" style="left:300px;top:435px"></div><div class="tl named" style="left:300px;top:452px">1년차 봄</div>
+      <div class="tick" style="left:390px;top:435px"></div><div class="tl named" style="left:390px;top:452px">1년차 여름</div>
+      <div class="tick" style="left:480px;top:435px"></div><div class="tl" style="left:480px;top:452px">2</div>
+      <div class="tick" style="left:570px;top:435px"></div><div class="tl" style="left:570px;top:452px">3</div>
+      <div class="tick" style="left:660px;top:435px"></div><div class="tl named" style="left:660px;top:452px">2년차 봄</div>
+      <div class="tick" style="left:750px;top:435px"></div><div class="tl" style="left:750px;top:452px">5</div>
+      <div class="fold" style="left:790px;top:428px;width:80px">≈ 6~40</div>
+      <div class="tick" style="left:910px;top:435px"></div><div class="tl named" style="left:910px;top:452px">30년 후</div>
+      <div class="tick" style="left:1000px;top:435px"></div><div class="tl" style="left:1000px;top:452px">42</div>
+
+      <div class="ev core ln-main" style="left:330px;top:340px;width:120px">왕도 습격<span class="meta"><span class="lb">메인</span></span></div>
+      <div class="leader" style="left:390px;top:396px;height:44px"></div>
+      <div class="ev ln-sub sel" style="left:480px;top:250px;width:180px">기사단 원정<span class="meta"><span class="lb">서브</span></span><span class="handle l"></span><span class="handle r"></span></div>
+      <div class="leader" style="left:480px;top:306px;height:134px"></div>
+      <div class="leader" style="left:660px;top:306px;height:134px"></div>
+      <div class="ev ln-side" style="left:510px;top:340px;width:120px">예언서 발견<span class="meta"><span class="lb">사이드</span></span></div>
+      <div class="leader" style="left:570px;top:396px;height:44px"></div>
+      <div class="ev core ln-main" style="left:940px;top:300px;width:120px">반란<span class="meta"><span class="lb">메인</span></span></div>
+      <div class="leader" style="left:1000px;top:356px;height:84px"></div>
+
+      <!-- 블록 메뉴 -->
+      <div class="float row" style="position:absolute;z-index:30;left:420px;top:184px;padding:4px;gap:2px">
+        <span class="tbtn"><span class="dot" style="background:#999"></span> 색 ▾</span>
+        <span class="tbtn"># 태그</span>
+        <span class="tbtn on">라인: 서브 ▾</span>
+        <span class="sep"></span>
+        <span class="tbtn">ⓘ 상세</span>
+        <span class="tbtn">⧉</span>
+        <span class="tbtn">🗑</span>
+      </div>
+      <div class="menu float" style="left:556px;top:232px;width:200px">
+        <div class="mh">라인 (사건당 1개)</div>
+        <div class="mi"><span style="width:24px;height:14px;border:2px solid #111;border-radius:4px"></span>메인</div>
+        <div class="mi on"><span style="width:24px;height:14px;border:1.5px solid #6a6a6a;border-radius:4px"></span>서브<span class="r">✓</span></div>
+        <div class="mi"><span style="width:24px;height:14px;border:1.5px dashed #6a6a6a;border-radius:4px"></span>사이드</div>
+        <div class="mi"><span style="width:24px;height:14px;border-radius:4px;background:var(--g3)"></span>미지정</div>
+        <hr />
+        <div class="mi">라인 편집…</div>
+      </div>
+
+      <!-- 드래그 박스 선택 -->
+      <div class="selbox" style="left:286px;top:488px;width:330px;height:120px"></div>
+      <div class="leader" style="left:300px;top:442px;height:58px"></div>
+      <div class="st sel" style="left:300px;top:500px">▲ <b>카엘</b> 등장</div>
+      <div class="leader" style="left:480px;top:442px;height:118px"></div>
+      <div class="st sel" style="left:480px;top:560px">▲ <b>리아</b> 등장</div>
+
+      <!-- 위키 문서 → 보드 드래그 -->
+      <div class="st new" style="left:780px;top:620px;box-shadow:0 6px 16px rgba(0,0,0,.25);opacity:.8">▲ <b>벨라</b> 등장</div>
+      <svg class="edges" width="1440" height="844">
+        <defs><marker id="ah2" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="8" markerHeight="8" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z" fill="#333" /></marker></defs>
+        <path d="M1050,700 C980,700 930,660 890,642" fill="none" stroke="#333" stroke-width="1.5" stroke-dasharray="3 4" marker-end="url(#ah2)" />
+      </svg>
+    </div>
+
+    <!-- 우측 위키 패널 -->
+    <div class="panel">
+      <div class="row"><span class="chip"><span class="dot"></span>사건</span><span class="spacer"></span><span class="btn text sm">↗ 위키에서 열기</span><span class="ibtn">×</span></div>
+      <div style="font-size:22px;font-weight:700;margin:10px 0 14px">기사단 원정</div>
+      <div class="field"><div class="label">라인</div><div class="input sm filled" style="width:160px;justify-content:space-between">서브 <span>▾</span></div></div>
+      <div class="field"><div class="label">작중 시점 (보드)</div><div class="num">2 ~ 2년차 봄 <span class="cap">· 기간 3칸</span></div></div>
+      <div class="field"><div class="label">태그</div><div class="row"><span class="chip">원정</span><span class="chip">전투</span><span class="chip add">+ 태그</span></div></div>
+      <div class="field"><div class="label">관련 캐릭터 (자동)</div><div class="row"><span class="wl"><span class="dot"></span>카엘</span><span class="wl"><span class="dot"></span>리아</span></div></div>
+      <div class="props" style="margin-bottom:14px">
+        <div class="pr"><span class="k">장소</span><span class="v"><span class="wl"><span class="dot"></span>북부 설원</span></span></div>
+        <div class="pr"><span class="k">결과</span><span class="v">기사단 괴멸</span></div>
+      </div>
+      <div class="prose" style="font-size:14px">기사단은 북부 설원으로 원정을 떠나지만 보급이 끊겨 절반을 잃는다. <span class="wl"><span class="dot"></span>카엘</span>은 이때 처음 예언서의 존재를 듣는다.</div>
+      <hr style="margin:16px 0" />
+      <div class="label">관련 문서 — 보드로 끌어 배치</div>
+      <div class="list">
+        <div class="li" style="background:var(--g3);padding:0 8px;border-radius:6px"><span>⋮⋮</span><span class="dot"></span><span>벨라</span><span class="cap">캐릭터</span></div>
+        <div class="li" style="padding:0 8px"><span>⋮⋮</span><span class="dot"></span><span>북부 설원</span><span class="cap">장소</span></div>
+      </div>
+    </div>
+
+    <span class="m abs" style="left:452px;top:318px">1</span>
+    <span class="m abs" style="left:394px;top:246px">2</span>
+    <span class="m abs" style="left:760px;top:290px">3</span>
+    <span class="m abs" style="left:1054px;top:66px">4</span>
+    <span class="m abs" style="left:1206px;top:144px">5</span>
+    <span class="m abs" style="left:750px;top:676px">6</span>
+    <span class="m abs" style="left:260px;top:540px">7</span>
+  </div>
+  <div class="notes"><ol>
+    <li><span class="m">1</span><span>선택된 사건 블록: 바깥 강조 테두리(실제 <code>brand-teal</code>, 라인 테두리 바깥) + 양 끝 리사이즈 핸들. 끌기 = 시점 이동, 핸들 = 기간 조절, 방향키 ←→ = 1 눈금 (UC-11)</span></li>
+    <li><span class="m">2</span><span><b>블록 메뉴</b> (선택 시 블록 위에 뜨는 바): 색 · 태그 · 라인 · 상세 · 복제 · 삭제. 다중 선택이면 공통 항목(라인·색·삭제)만 (UC-10 · 20)</span></li>
+    <li><span class="m">3</span><span>라인 하위 메뉴: 메인/서브/사이드/추가 라인/미지정, 테두리 견본 표시. 여러 블록 선택 시 한꺼번에 지정. "라인 편집…" → B-6 (UC-23)</span></li>
+    <li><span class="m">4</span><span><b>우측 위키 패널</b>(약 400px): 상세 버튼 또는 <code>Enter</code>로 열림 (더블클릭은 제목 인라인 편집). 캔버스는 패널만큼 좁아짐. "위키에서 열기" → 위키 탭 W-2 (UC-22)</span></li>
+    <li><span class="m">5</span><span>패널에서 라인·태그·제목 수정 → 블록에 즉시 반영. 저장 상태 "저장 중…" (UC-22 · 40)</span></li>
+    <li><span class="m">6</span><span>패널의 문서를 보드로 끌기: 캐릭터 → 그 캐릭터 "등장" 상태 블록 생성, 사건 → 사건 블록 생성(이미 있으면 그 블록으로 이동) (UC-22)</span></li>
+    <li><span class="m">7</span><span>빈 곳 드래그 = 박스 선택(별도 동작 예시). <code>Shift</code>/<code>Ctrl</code>+클릭으로 추가·해제, <code>Ctrl+C/V/D</code>, <code>Delete</code>(확인 없음, <code>Ctrl+Z</code>) (UC-20)</span></li>
+  </ol></div>
+</section>
+
+<!-- ================= B-3 ================= -->
+<section class="fw" id="b-3">
+  <h2>B-3 캐릭터 상태 블록 입력</h2>
+  <p class="desc">상태 도구로 축 아래에 놓은 직후 → ① 캐릭터 선택 → ② 유형별 입력 팝오버 (UC-12)</p>
+  <div class="frame">
+    <div class="topbar">
+      <span class="btn text">← 서재</span>
+      <span class="ntitle">검은 왕관의 기사</span>
+      <div class="tabs"><span class="tab on">보드</span><span class="tab">위키</span></div>
+      <span class="spacer"></span>
+      <span class="save">✓ 저장됨</span>
+      <div class="search"><span>빠른 이동 — 문서 · 시점</span><span class="kbd">Ctrl K</span></div>
+      <span class="ibtn">?</span>
+      <span class="ibtn">⋯</span>
+    </div>
+
+    <div class="canvas">
+      <div class="toolbar float">
+        <span class="tool">↖<small>V</small></span><span class="tool">✋<small>H</small></span><span class="sep"></span>
+        <span class="tool">▭<small>E</small></span><span class="tool on">◆<small>C</small></span><span class="tool">▢<small>S</small></span><span class="tool">T<small>T</small></span><span class="tool">⬚<small>F</small></span><span class="tool">↗<small>L</small></span><span class="sep"></span>
+        <span class="tbtn">☰ 캐릭터별 정렬</span><span class="tbtn">스냅 <span class="toggle on"></span></span><span class="tbtn">필터 ▾</span>
+      </div>
+
+      <div class="undated" style="left:24px;top:150px;width:220px;height:560px"><span class="zl">시점 미정</span></div>
+      <div class="axis" style="left:262px;top:440px;width:1178px"></div>
+      <div class="tick" style="left:300px;top:435px"></div><div class="tl named" style="left:300px;top:452px">1년차 봄</div>
+      <div class="tick" style="left:390px;top:435px"></div><div class="tl named" style="left:390px;top:452px">1년차 여름</div>
+      <div class="tick" style="left:480px;top:435px"></div><div class="tl" style="left:480px;top:452px">2</div>
+      <div class="tick" style="left:570px;top:435px"></div><div class="tl" style="left:570px;top:452px">3</div>
+      <div class="tick" style="left:660px;top:435px"></div><div class="tl named" style="left:660px;top:452px">2년차 봄</div>
+      <div class="tick" style="left:1090px;top:435px"></div><div class="tl" style="left:1090px;top:452px">43</div>
+      <div class="tick" style="left:1180px;top:435px"></div><div class="tl" style="left:1180px;top:452px">44</div>
+      <div class="tick" style="left:1270px;top:435px"></div><div class="tl" style="left:1270px;top:452px">45</div>
+      <div class="tick" style="left:1360px;top:435px"></div><div class="tl" style="left:1360px;top:452px">46</div>
+
+      <div class="ev core ln-main" style="left:330px;top:340px;width:120px">왕도 습격<span class="meta"><span class="lb">메인</span></span></div>
+      <div class="leader" style="left:390px;top:396px;height:44px"></div>
+      <div class="ev ln-sub" style="left:480px;top:250px;width:180px">기사단 원정<span class="meta"><span class="lb">서브</span></span></div>
+      <div class="leader" style="left:480px;top:306px;height:134px"></div>
+      <div class="leader" style="left:660px;top:306px;height:134px"></div>
+      <div class="ev ln-side" style="left:510px;top:340px;width:120px">예언서 발견<span class="meta"><span class="lb">사이드</span></span></div>
+      <div class="leader" style="left:570px;top:396px;height:44px"></div>
+
+      <div class="leader" style="left:300px;top:442px;height:58px"></div>
+      <div class="st" style="left:300px;top:500px">▲ <b>카엘</b> 등장</div>
+
+      <!-- 방금 놓은 상태 블록 + 관련 사건 옅은 연결 -->
+      <svg class="edges" width="1440" height="844">
+        <path d="M600,524 C650,500 640,420 600,396" fill="none" stroke="#999" stroke-width="1.5" stroke-dasharray="2 4" />
+      </svg>
+      <div class="leader" style="left:570px;top:442px;height:66px"></div>
+      <div class="st new sel" style="left:570px;top:508px">◆ <b>카엘</b> 변화</div>
+
+      <!-- 퇴장 이후 경고 예시 -->
+      <div class="leader" style="left:1090px;top:442px;height:58px"></div>
+      <div class="st exit" style="left:1090px;top:500px">▼ <b>리아</b> 퇴장</div>
+      <div class="leader" style="left:1270px;top:442px;height:118px"></div>
+      <div class="st" style="left:1270px;top:560px">▲ <b>리아</b> 등장 ⚠</div>
+      <div class="toast" style="left:1150px;top:608px;width:270px;font-size:12px;padding:8px 12px">⚠ 리아는 43에서 퇴장했습니다. 재등장으로 기록돼요.</div>
+
+      <!-- ① 캐릭터 선택 -->
+      <div class="popover float" style="left:1130px;top:100px;width:290px">
+        <div class="cap b" style="margin-bottom:8px">① 캐릭터 선택 (놓은 직후)</div>
+        <div class="input sm focus filled">카<span class="caret"></span></div>
+        <div class="menu" style="position:static;padding:6px 0 0;min-width:0">
+          <div class="mi on"><span class="dot"></span>카엘<span class="r">별칭: 붉은 기사</span></div>
+          <div class="mi"><span class="dot"></span>카시안</div>
+          <hr />
+          <div class="mi">+ 새 캐릭터 '카' 만들기</div>
+        </div>
+      </div>
+
+      <!-- ② 입력 팝오버 -->
+      <div class="popover float" style="left:700px;top:240px;width:380px">
+        <div class="row"><b>캐릭터 상태</b><span class="cap">② 입력</span><span class="spacer"></span><span class="ibtn" style="width:28px;height:28px">×</span></div>
+        <div class="seg" style="margin:10px 0 14px"><span>▲ 등장</span><span class="on">◆ 변화</span><span>▼ 퇴장</span></div>
+        <div class="row field"><span class="wl"><span class="dot"></span>카엘</span><span class="btn text sm">변경</span><span class="spacer"></span><span class="cap num">시점 3</span></div>
+        <div class="label">속성 변경 (키: 이전값 → 새값)</div>
+        <div class="row" style="margin-bottom:6px"><div class="input sm filled" style="width:104px">소속 ▾</div><div class="input sm" style="width:88px;font-style:italic">기사단</div>→<div class="input sm filled focus" style="flex:1">반란군<span class="caret"></span></div></div>
+        <div class="row" style="margin-bottom:4px"><div class="input sm filled" style="width:104px">관계·리아 ▾</div><div class="input sm" style="width:88px;font-style:italic">동료</div>→<div class="input sm filled" style="flex:1">적대</div></div>
+        <span class="btn text sm">+ 속성 변경 추가</span>
+        <div class="field" style="margin-top:8px"><div class="label">메모</div><div class="input textarea filled" style="min-height:56px">리아를 구하려다 기사단과 결별</div></div>
+        <div class="field"><div class="label">관련 사건</div><div class="row"><span class="chip">▭ 예언서 발견 · 3</span><span class="btn text sm">변경</span></div></div>
+        <div class="row"><span class="btn text sm">↗ 캐릭터 문서 열기</span><span class="spacer"></span><span class="btn sm primary">완료</span></div>
+      </div>
+    </div>
+
+    <span class="m abs" style="left:540px;top:570px">1</span>
+    <span class="m abs" style="left:1102px;top:162px">2</span>
+    <span class="m abs" style="left:1090px;top:342px">3</span>
+    <span class="m abs" style="left:1090px;top:440px">4</span>
+    <span class="m abs" style="left:1090px;top:620px">5</span>
+    <span class="m abs" style="left:1242px;top:602px">6</span>
+  </div>
+  <div class="notes"><ol>
+    <li><span class="m">1</span><span>상태 도구(<code>C</code>, 누를 때마다 유형 순환)로 축 아래에 놓은 새 블록 (점선 = 입력 중). 관련 사건을 지정하면 두 블록 사이 옅은 점선 연결</span></li>
+    <li><span class="m">2</span><span>① 캐릭터 선택: 기존 캐릭터 문서 제목·별칭 부분 일치 검색, 없으면 새 캐릭터 문서 생성 (캐릭터 분류 템플릿 적용)</span></li>
+    <li><span class="m">3</span><span>② 유형 탭: <b>등장</b> = 초기 속성값(템플릿 키 목록 제공) · <b>변화</b> = 속성 변경 여러 줄 · <b>퇴장</b> = 사유 메모(예: <code>상태: 생존 → 사망</code>)</span></li>
+    <li><span class="m">4</span><span>속성 변경 행: 키 선택(캐릭터 문서 속성 키 + 직접 입력), 이전값은 직전 시점까지 누적값으로 자동 채움(기울임, 수정 가능), 새값 입력</span></li>
+    <li><span class="m">5</span><span>메모 · 관련 사건(선택) · 캐릭터 문서 열기(→ 위키 패널). 입력은 자동 저장, "완료"는 닫기만</span></li>
+    <li><span class="m">6</span><span>같은 캐릭터의 퇴장 이후 블록 → 막지 않고 ⚠ 표시 + 안내만 (부활·재등장 허용)</span></li>
+  </ol></div>
+</section>
+
+<!-- ================= B-4 ================= -->
+<section class="fw" id="b-4">
+  <h2>B-4 캐릭터별 정렬 (레인)</h2>
+  <p class="desc">"캐릭터별 정렬" 켜짐: 상태 블록이 캐릭터마다 가로 줄로 정렬 (UC-13)</p>
+  <div class="frame">
+    <div class="topbar">
+      <span class="btn text">← 서재</span>
+      <span class="ntitle">검은 왕관의 기사</span>
+      <div class="tabs"><span class="tab on">보드</span><span class="tab">위키</span></div>
+      <span class="spacer"></span>
+      <span class="save">✓ 저장됨</span>
+      <div class="search"><span>빠른 이동 — 문서 · 시점</span><span class="kbd">Ctrl K</span></div>
+      <span class="ibtn">?</span>
+      <span class="ibtn">⋯</span>
+    </div>
+
+    <div class="canvas">
+      <div class="toolbar float">
+        <span class="tool on">↖<small>V</small></span><span class="tool">✋<small>H</small></span><span class="sep"></span>
+        <span class="tool">▭<small>E</small></span><span class="tool">◐<small>C</small></span><span class="tool">▢<small>S</small></span><span class="tool">T<small>T</small></span><span class="tool">⬚<small>F</small></span><span class="tool">↗<small>L</small></span><span class="sep"></span>
+        <span class="tbtn on">☰ 캐릭터별 정렬</span><span class="tbtn">스냅 <span class="toggle on"></span></span><span class="tbtn">필터 ▾</span>
+      </div>
+
+      <!-- 레인 배경 -->
+      <div class="lane" style="top:340px;height:72px"></div>
+      <div class="lane alt" style="top:412px;height:72px"></div>
+      <div class="lane" style="top:484px;height:72px"></div>
+      <div class="lane alt" style="top:556px;height:72px"></div>
+
+      <div class="undated" style="left:185px;top:110px;width:210px;height:540px;background:rgba(0,0,0,.025)"><span class="zl">시점 미정</span></div>
+      <div class="ev" style="left:200px;top:150px;width:180px">정체불명의 편지</div>
+
+      <div class="axis" style="left:410px;top:300px;width:1030px"></div>
+      <div class="tick" style="left:440px;top:295px"></div><div class="tl named" style="left:440px;top:312px">1년차 봄</div>
+      <div class="tick" style="left:530px;top:295px"></div><div class="tl named" style="left:530px;top:312px">1년차 여름</div>
+      <div class="tick" style="left:620px;top:295px"></div><div class="tl" style="left:620px;top:312px">2</div>
+      <div class="tick" style="left:710px;top:295px"></div><div class="tl" style="left:710px;top:312px">3</div>
+      <div class="tick" style="left:800px;top:295px"></div><div class="tl named" style="left:800px;top:312px">2년차 봄</div>
+      <div class="tick" style="left:890px;top:295px"></div><div class="tl" style="left:890px;top:312px">5</div>
+      <div class="fold" style="left:930px;top:288px;width:80px">≈ 6~40</div>
+      <div class="tick" style="left:1050px;top:295px"></div><div class="tl named" style="left:1050px;top:312px">30년 후</div>
+      <div class="tick" style="left:1140px;top:295px"></div><div class="tl" style="left:1140px;top:312px">42</div>
+      <div class="tick" style="left:1230px;top:295px"></div><div class="tl" style="left:1230px;top:312px">43</div>
+      <div class="tick" style="left:1320px;top:295px"></div><div class="tl" style="left:1320px;top:312px">44</div>
+      <div class="tick" style="left:1410px;top:295px"></div><div class="tl" style="left:1410px;top:312px">45</div>
+
+      <div class="ev core ln-main" style="left:470px;top:224px;width:120px">왕도 습격<span class="meta"><span class="lb">메인</span></span></div>
+      <div class="leader" style="left:530px;top:280px;height:20px"></div>
+      <div class="ev ln-sub" style="left:620px;top:150px;width:180px">기사단 원정<span class="meta"><span class="lb">서브</span></span></div>
+      <div class="leader" style="left:620px;top:206px;height:94px"></div>
+      <div class="leader" style="left:800px;top:206px;height:94px"></div>
+      <div class="ev ln-side" style="left:650px;top:224px;width:120px">예언서 발견<span class="meta"><span class="lb">사이드</span></span></div>
+      <div class="leader" style="left:710px;top:280px;height:20px"></div>
+      <div class="ev core ln-main" style="left:1080px;top:224px;width:120px">반란<span class="meta"><span class="lb">메인</span></span></div>
+      <div class="leader" style="left:1140px;top:280px;height:20px"></div>
+
+      <!-- 등장~퇴장 강조 띠 -->
+      <div class="band" style="left:440px;top:348px;width:1000px;height:56px"></div>
+      <div class="band" style="left:620px;top:420px;width:700px;height:56px"></div>
+      <div class="band" style="left:890px;top:564px;width:550px;height:56px"></div>
+
+      <!-- 레인별 상태 블록 -->
+      <div class="st" style="left:440px;top:358px">▲ <b>카엘</b> 등장</div>
+      <div class="st" style="left:1140px;top:358px">◆ 소속: 기사단 → 반란군</div>
+      <div class="st" style="left:620px;top:430px">▲ <b>리아</b> 등장</div>
+      <div class="st" style="left:800px;top:430px">◆ 관계·카엘: 동료 → 적대</div>
+      <div class="st exit" style="left:1320px;top:430px">▼ <b>리아</b> 퇴장</div>
+      <div class="st" style="left:205px;top:502px">▲ <b>가면 기사</b> 등장</div>
+      <div class="st exit" style="left:1230px;top:502px">▼ <b>가면 기사</b> 퇴장</div>
+      <div class="st" style="left:890px;top:574px">▲ <b>벨라</b> 등장</div>
+
+      <!-- 레인 머리 -->
+      <div class="lanehead" style="top:340px;height:72px"><span class="muted">⋮⋮</span><span class="dot"></span>카엘<span class="cap" style="margin-left:auto">2</span></div>
+      <div class="lanehead" style="top:412px;height:72px"><span class="muted">⋮⋮</span><span class="dot"></span>리아<span class="cap" style="margin-left:auto">3</span></div>
+      <div class="lanehead" style="top:484px;height:72px"><span class="muted">⋮⋮</span><span class="dot"></span>가면 기사<span class="cap" style="margin-left:auto">2</span></div>
+      <div class="lanehead" style="top:560px;height:72px;left:6px;box-shadow:0 6px 16px rgba(0,0,0,.2);border:1px solid var(--g4)"><span class="muted">⋮⋮</span><span class="dot"></span>벨라<span class="cap" style="margin-left:auto">1</span></div>
+      <div style="position:absolute;left:0;width:170px;top:483px;height:3px;background:#333;z-index:8"></div>
+
+      <div class="zoom float"><span class="z">−</span><span class="z num">80%</span><span class="z">+</span><span class="z">⤢</span></div>
+      <div class="minimap float"><span class="vp" style="left:30px;top:14px;width:130px;height:100px"></span></div>
+    </div>
+
+    <span class="m abs" style="left:996px;top:66px">1</span>
+    <span class="m abs" style="left:140px;top:374px">2</span>
+    <span class="m abs" style="left:1400px;top:400px">3</span>
+    <span class="m abs" style="left:176px;top:542px">4</span>
+    <span class="m abs" style="left:140px;top:600px">5</span>
+    <span class="m abs" style="left:1330px;top:522px">6</span>
+  </div>
+  <div class="notes"><ol>
+    <li><span class="m">1</span><span>"캐릭터별 정렬" 켜짐(눌린 상태). 끄면 상태 블록이 원래 세로 위치로 복귀 (수동 위치 <code>place.y</code> 보존)</span></li>
+    <li><span class="m">2</span><span>레인 머리: 캐릭터 이름 + 상태 블록 수. 화면 왼쪽에 고정돼 가로 스크롤해도 보임. 레인 배경은 교차 명암(<code>surface-card</code>)</span></li>
+    <li><span class="m">3</span><span>등장~퇴장 강조 띠(빗금). 퇴장이 없으면 오른쪽 끝까지</span></li>
+    <li><span class="m">4</span><span>미정 영역의 상태 블록도 자기 레인 높이에 정렬. 강조 띠 계산에서는 제외 (시작 미정 → 띠 없음)</span></li>
+    <li><span class="m">5</span><span>레인 머리 ⋮⋮ 끌어서 순서 변경 (끌기 중: 떠 있는 머리 + 놓을 위치 굵은 선). 레인 모드에선 상태 블록 ↑↓ 이동 무시</span></li>
+    <li><span class="m">6</span><span>레인 모드에서 상태 블록 지시선은 생략 (레인과 겹침). 시점은 블록 왼쪽 끝 = 눈금</span></li>
+  </ol></div>
+</section>
+
+<!-- ================= B-5 ================= -->
+<section class="fw" id="b-5">
+  <h2>B-5 필터 메뉴</h2>
+  <p class="desc">캐릭터 · 태그 · 분류 · 스토리 라인별 표시/숨김. 예시는 "사이드" 라인 숨김 (UC-23)</p>
+  <div class="frame">
+    <div class="topbar">
+      <span class="btn text">← 서재</span>
+      <span class="ntitle">검은 왕관의 기사</span>
+      <div class="tabs"><span class="tab on">보드</span><span class="tab">위키</span></div>
+      <span class="spacer"></span>
+      <span class="save">✓ 저장됨</span>
+      <div class="search"><span>빠른 이동 — 문서 · 시점</span><span class="kbd">Ctrl K</span></div>
+      <span class="ibtn">?</span>
+      <span class="ibtn">⋯</span>
+    </div>
+
+    <div class="canvas">
+      <div class="toolbar float">
+        <span class="tool on">↖<small>V</small></span><span class="tool">✋<small>H</small></span><span class="sep"></span>
+        <span class="tool">▭<small>E</small></span><span class="tool">◐<small>C</small></span><span class="tool">▢<small>S</small></span><span class="tool">T<small>T</small></span><span class="tool">⬚<small>F</small></span><span class="tool">↗<small>L</small></span><span class="sep"></span>
+        <span class="tbtn">☰ 캐릭터별 정렬</span><span class="tbtn">스냅 <span class="toggle on"></span></span><span class="tbtn on">필터 ▾ <span class="chip" style="height:18px;padding:0 6px">2</span></span>
+      </div>
+
+      <div class="bframe" style="left:280px;top:120px;width:490px;height:660px"><span class="ft">1부 — 몰락</span></div>
+      <div class="undated" style="left:24px;top:150px;width:220px;height:560px"><span class="zl">시점 미정</span></div>
+      <div class="ev" style="left:44px;top:250px;width:180px">정체불명의 편지</div>
+
+      <div class="axis" style="left:262px;top:440px;width:1178px"></div>
+      <div class="tick" style="left:300px;top:435px"></div><div class="tl named" style="left:300px;top:452px">1년차 봄</div>
+      <div class="tick" style="left:390px;top:435px"></div><div class="tl named" style="left:390px;top:452px">1년차 여름</div>
+      <div class="tick" style="left:480px;top:435px"></div><div class="tl" style="left:480px;top:452px">2</div>
+      <div class="tick" style="left:570px;top:435px"></div><div class="tl" style="left:570px;top:452px">3</div>
+      <div class="tick" style="left:660px;top:435px"></div><div class="tl named" style="left:660px;top:452px">2년차 봄</div>
+      <div class="tick" style="left:750px;top:435px"></div><div class="tl" style="left:750px;top:452px">5</div>
+      <div class="fold" style="left:790px;top:428px;width:80px">≈ 6~40</div>
+      <div class="tick" style="left:910px;top:435px"></div><div class="tl named" style="left:910px;top:452px">30년 후</div>
+      <div class="tick" style="left:1000px;top:435px"></div><div class="tl" style="left:1000px;top:452px">42</div>
+      <div class="tick" style="left:1180px;top:435px"></div><div class="tl" style="left:1180px;top:452px">44</div>
+      <div class="tick" style="left:1270px;top:435px"></div><div class="tl" style="left:1270px;top:452px">45</div>
+
+      <div class="ev core ln-main" style="left:330px;top:340px;width:120px">왕도 습격<span class="meta"><span class="lb">메인</span></span></div>
+      <div class="leader" style="left:390px;top:396px;height:44px"></div>
+      <div class="ev ln-sub" style="left:480px;top:250px;width:180px">기사단 원정<span class="meta"><span class="lb">서브</span></span></div>
+      <div class="leader" style="left:480px;top:306px;height:134px"></div>
+      <div class="leader" style="left:660px;top:306px;height:134px"></div>
+      <div class="ev core ln-main" style="left:940px;top:300px;width:120px">반란<span class="meta"><span class="lb">메인</span></span></div>
+      <div class="leader" style="left:1000px;top:356px;height:84px"></div>
+      <div class="ev" style="left:1120px;top:360px;width:120px">수확 축제</div>
+      <div class="leader" style="left:1180px;top:416px;height:24px"></div>
+
+      <div class="leader" style="left:300px;top:442px;height:58px"></div>
+      <div class="st" style="left:300px;top:500px">▲ <b>카엘</b> 등장</div>
+      <div class="leader" style="left:480px;top:442px;height:118px"></div>
+      <div class="st" style="left:480px;top:560px">▲ <b>리아</b> 등장</div>
+      <div class="leader" style="left:1270px;top:442px;height:118px"></div>
+      <div class="st exit" style="left:1270px;top:560px">▼ <b>리아</b> 퇴장</div>
+
+      <div class="menu float" style="left:880px;top:76px;width:290px;padding:8px">
+        <div class="mh">스토리 라인</div>
+        <div class="mi"><span class="chk on">✓</span>메인<span class="r num">8</span></div>
+        <div class="mi"><span class="chk on">✓</span>서브<span class="r num">5</span></div>
+        <div class="mi"><span class="chk"></span>사이드<span class="r num">3</span></div>
+        <div class="mi"><span class="chk on">✓</span>미지정<span class="r num">4</span></div>
+        <div class="mi" style="color:var(--anno)">라인 편집…</div>
+        <hr />
+        <div class="mh">캐릭터</div>
+        <div class="mi"><span class="chk on">✓</span><span class="dot"></span>카엘</div>
+        <div class="mi"><span class="chk on">✓</span><span class="dot"></span>리아</div>
+        <div class="mi"><span class="chk"></span><span class="dot"></span>가면 기사</div>
+        <hr />
+        <div class="mh">태그</div>
+        <div class="mi"><span class="chk on">✓</span>#정치 <span class="chk on" style="margin-left:12px">✓</span>#전투 <span class="chk on" style="margin-left:12px">✓</span>#복선</div>
+        <hr />
+        <div class="mh">분류</div>
+        <div class="mi"><span class="chk on">✓</span>사건 <span class="chk on" style="margin-left:12px">✓</span>사건 › 과거사</div>
+        <hr />
+        <div class="row" style="padding:4px 6px"><span class="cap">숨김 2개</span><span class="spacer"></span><span class="btn sm">모두 표시</span></div>
+      </div>
+    </div>
+
+    <span class="m abs" style="left:1074px;top:66px">1</span>
+    <span class="m abs" style="left:1236px;top:176px">2</span>
+    <span class="m abs" style="left:1236px;top:272px">3</span>
+    <span class="m abs" style="left:1236px;top:330px">4</span>
+    <span class="m abs" style="left:640px;top:396px">5</span>
+  </div>
+  <div class="notes"><ol>
+    <li><span class="m">1</span><span>필터 버튼: 숨긴 항목이 있으면 눌린 상태 + 개수 배지. 필터 상태는 소설별로 기억 (<code>UiState.filters</code>)</span></li>
+    <li><span class="m">2</span><span>스토리 라인: 메인/서브/사이드/추가 라인/미지정 체크 + 사건 수 (UC-23)</span></li>
+    <li><span class="m">3</span><span>"라인 편집…" → B-6 대화상자</span></li>
+    <li><span class="m">4</span><span>캐릭터(상태 블록) · 태그 · 분류(사건 하위 분류 포함) 체크. 하단 "모두 표시"로 초기화</span></li>
+    <li><span class="m">5</span><span>숨긴 사건("예언서 발견", 사이드)과 그 연결선("복선→회수")이 사라진 결과</span></li>
+  </ol></div>
+</section>
+
+<!-- ================= B-6 ================= -->
+<section class="fw" id="b-6">
+  <h2>B-6 스토리 라인 편집</h2>
+  <p class="desc">라인 추가 · 이름 변경 · 순서 변경 · 삭제 (UC-23)</p>
+  <div class="frame">
+    <div class="topbar">
+      <span class="btn text">← 서재</span>
+      <span class="ntitle">검은 왕관의 기사</span>
+      <div class="tabs"><span class="tab on">보드</span><span class="tab">위키</span></div>
+      <span class="spacer"></span>
+      <span class="save">✓ 저장됨</span>
+      <div class="search"><span>빠른 이동 — 문서 · 시점</span><span class="kbd">Ctrl K</span></div>
+      <span class="ibtn">?</span>
+      <span class="ibtn">⋯</span>
+    </div>
+    <div class="canvas">
+      <div class="axis" style="left:262px;top:440px;width:1178px"></div>
+      <div class="ev core ln-main" style="left:330px;top:340px;width:120px">왕도 습격</div>
+      <div class="ev ln-sub" style="left:480px;top:250px;width:180px">기사단 원정</div>
+      <div class="ev ln-side" style="left:510px;top:340px;width:120px">예언서 발견</div>
+      <div class="ev core ln-main" style="left:940px;top:300px;width:120px">반란</div>
+    </div>
+    <div class="dim"></div>
+
+    <div class="dialog" style="left:440px;top:150px;width:560px">
+      <div class="row"><h3 style="margin:0">스토리 라인 편집</h3><span class="spacer"></span><span class="ibtn">×</span></div>
+      <p class="cap" style="margin:6px 0 16px">사건마다 라인 1개. 테두리 모양은 목록 순서로 정해집니다 (1번 굵은 실선 · 2번 실선 · 3번 점선 · 4번부터 실선 + 배지로 구분)</p>
+      <div class="list">
+        <div class="li"><span class="muted">⋮⋮</span><span style="width:36px;height:20px;border:2px solid #111;border-radius:5px"></span><div class="input sm filled" style="flex:1">메인</div><span class="cap num" style="width:56px">사건 8</span><span class="ibtn">×</span></div>
+        <div class="li"><span class="muted">⋮⋮</span><span style="width:36px;height:20px;border:1.5px solid #6a6a6a;border-radius:5px"></span><div class="input sm filled" style="flex:1">서브</div><span class="cap num" style="width:56px">사건 5</span><span class="ibtn">×</span></div>
+        <div class="li"><span class="muted">⋮⋮</span><span style="width:36px;height:20px;border:1.5px dashed #6a6a6a;border-radius:5px"></span><div class="input sm filled" style="flex:1">사이드</div><span class="cap num" style="width:56px">사건 3</span><span class="ibtn on">×</span></div>
+        <div class="li"><span class="muted">⋮⋮</span><span style="width:36px;height:20px;border:1.5px solid #6a6a6a;border-radius:5px"></span><div class="input sm filled focus" style="flex:1">회상편<span class="caret"></span></div><span class="cap num" style="width:56px">사건 0</span><span class="ibtn">×</span></div>
+      </div>
+      <span class="btn text sm" style="margin-top:8px">+ 라인 추가</span>
+      <div class="foot"><span class="btn primary">완료</span></div>
+    </div>
+
+    <div class="popover float" style="left:990px;top:330px;width:300px;z-index:45">
+      <b>'사이드' 라인을 삭제할까요?</b>
+      <p class="cap" style="margin:6px 0 12px">사건 3개가 미지정이 됩니다.</p>
+      <div class="row" style="justify-content:flex-end"><span class="btn sm">취소</span><span class="btn sm primary">삭제</span></div>
+    </div>
+
+    <span class="m abs" style="left:430px;top:230px">1</span>
+    <span class="m abs" style="left:1010px;top:450px">2</span>
+    <span class="m abs" style="left:1300px;top:330px">3</span>
+  </div>
+  <div class="notes"><ol>
+    <li><span class="m">1</span><span>⋮⋮ 끌어서 순서 변경 → 테두리 모양이 새 순서를 따름. 이름은 바로 수정, 사용 중인 사건 수 표시</span></li>
+    <li><span class="m">2</span><span>"+ 라인 추가"로 새 라인(예: 회상편). 4번째부터는 실선 + 배지로만 구분. 라인 색 지정은 MVP 이후</span></li>
+    <li><span class="m">3</span><span>사용 중인 라인 삭제 → "사건 N개가 미지정이 됩니다" 확인. 라인을 모두 지워도 됨 (배지·테두리 없이 표시)</span></li>
+  </ol></div>
+</section>
+
+<!-- ================= B-7 ================= -->
+<section class="fw" id="b-7">
+  <h2>B-7 눈금 편집 · 구간 접기 · 보드 설정 · 저장 실패</h2>
+  <p class="desc">시간축 조작과 상단 바 메뉴를 한 프레임에 겹쳐 표시 (UC-14 · 15 · 04 · 42)</p>
+  <div class="frame">
+    <div class="topbar">
+      <span class="btn text">← 서재</span>
+      <span class="ntitle">검은 왕관의 기사</span>
+      <div class="tabs"><span class="tab on">보드</span><span class="tab">위키</span></div>
+      <span class="spacer"></span>
+      <span class="save fail">⚠ 저장 실패 · 다시 시도</span>
+      <div class="search"><span>빠른 이동 — 문서 · 시점</span><span class="kbd">Ctrl K</span></div>
+      <span class="ibtn">?</span>
+      <span class="ibtn" style="background:var(--g3)">⋯</span>
+    </div>
+
+    <div class="canvas">
+      <div class="toolbar float">
+        <span class="tool on">↖<small>V</small></span><span class="tool">✋<small>H</small></span><span class="sep"></span>
+        <span class="tool">▭<small>E</small></span><span class="tool">◐<small>C</small></span><span class="tool">▢<small>S</small></span><span class="tool">T<small>T</small></span><span class="tool">⬚<small>F</small></span><span class="tool">↗<small>L</small></span><span class="sep"></span>
+        <span class="tbtn">☰ 캐릭터별 정렬</span><span class="tbtn">스냅 <span class="toggle on"></span></span><span class="tbtn">필터 ▾</span>
+      </div>
+
+      <div class="undated" style="left:24px;top:150px;width:220px;height:560px"><span class="zl">시점 미정</span></div>
+      <div class="axis" style="left:262px;top:440px;width:1178px"></div>
+      <div style="position:absolute;left:916px;top:426px;width:288px;height:30px;background:rgba(0,0,0,.08);border:1.5px solid #333;border-radius:6px;z-index:1"></div>
+      <div class="tick" style="left:300px;top:435px"></div><div class="tl named" style="left:300px;top:452px">1년차 봄</div>
+      <div class="tick" style="left:390px;top:435px"></div><div class="tl named" style="left:390px;top:452px">1년차 여름</div>
+      <div class="tick" style="left:480px;top:435px;background:#111;width:3px"></div>
+      <div class="input sm focus filled" style="position:absolute;left:436px;top:450px;width:110px;z-index:6">1년차 가을<span class="caret"></span></div>
+      <div class="tick" style="left:570px;top:435px"></div><div class="tl" style="left:570px;top:452px">3</div>
+      <div class="tick" style="left:660px;top:435px"></div><div class="tl named" style="left:660px;top:452px">2년차 봄</div>
+      <div class="tick" style="left:750px;top:435px;background:#111;width:3px"></div><div class="tl" style="left:750px;top:452px">5</div>
+      <div class="tick" style="left:840px;top:435px"></div><div class="tl" style="left:840px;top:452px">6</div>
+      <div class="tick" style="left:930px;top:435px"></div><div class="tl" style="left:930px;top:462px">7</div>
+      <div class="tick" style="left:1020px;top:435px"></div><div class="tl" style="left:1020px;top:462px">8</div>
+      <div class="tick" style="left:1110px;top:435px"></div><div class="tl" style="left:1110px;top:462px">9</div>
+      <div class="tick" style="left:1200px;top:435px"></div><div class="tl" style="left:1200px;top:462px">10</div>
+      <div class="tick" style="left:1290px;top:435px"></div><div class="tl" style="left:1290px;top:452px">11</div>
+      <div class="tick" style="left:1380px;top:435px"></div><div class="tl" style="left:1380px;top:452px">12</div>
+      <span class="btn sm primary" style="position:absolute;left:990px;top:386px;z-index:6">≈ 구간 7~10 접기</span>
+
+      <div class="ev core ln-main" style="left:330px;top:340px;width:120px">왕도 습격<span class="meta"><span class="lb">메인</span></span></div>
+      <div class="leader" style="left:390px;top:396px;height:44px"></div>
+      <div class="ev ln-sub" style="left:480px;top:250px;width:180px">기사단 원정<span class="meta"><span class="lb">서브</span></span></div>
+      <div class="leader" style="left:480px;top:306px;height:134px"></div>
+      <div class="leader" style="left:660px;top:306px;height:134px"></div>
+      <div class="ev ln-main" style="left:960px;top:250px;width:120px">밀약<span class="meta"><span class="lb">메인</span></span></div>
+      <div class="leader" style="left:1020px;top:306px;height:120px"></div>
+      <div class="leader" style="left:300px;top:442px;height:58px"></div>
+      <div class="st" style="left:300px;top:500px">▲ <b>카엘</b> 등장</div>
+
+      <div class="menu float" style="left:756px;top:480px;width:210px">
+        <div class="mh">눈금 5</div>
+        <div class="mi">＋ 앞에 눈금 삽입</div>
+        <div class="mi">✎ 라벨 편집</div>
+        <div class="mi dis">라벨 지우기</div>
+        <hr />
+        <div class="mi">⇤ 여기부터 구간 선택</div>
+      </div>
+    </div>
+
+    <!-- 저장 실패 안내 -->
+    <div class="popover float" style="left:640px;top:60px;width:330px;z-index:31;padding:12px 14px">
+      <b style="font-size:13px">저장하지 못했습니다</b>
+      <p class="cap" style="margin:4px 0 8px">최근 변경이 아직 이 브라우저에 저장되지 않았어요. 공간 부족이면 L-5 안내를 엽니다.</p>
+      <div class="row"><span class="btn sm primary">다시 시도</span><span class="btn sm">JSON 내보내기</span></div>
+    </div>
+
+    <!-- ⋯ 메뉴 + 보드 설정 -->
+    <div class="menu float" style="left:1196px;top:52px;width:230px">
+      <div class="mi">⤒ JSON 내보내기</div>
+      <div class="mi on">⚙ 보드 설정<span class="r">›</span></div>
+      <div class="mi">? 단축키 도움말<span class="r">?</span></div>
+      <hr />
+      <div class="mi">✎ 소설 정보</div>
+    </div>
+    <div class="popover float" style="left:1120px;top:228px;width:300px">
+      <b>보드 설정</b>
+      <div class="field" style="margin-top:12px"><div class="label">눈금 간격</div>
+        <div class="row"><div class="bar" style="flex:1"><i style="width:45%"></i></div><div class="input sm filled num" style="width:72px">90 px</div></div>
+        <div class="cap" style="margin-top:4px">바꿔도 작중 시점은 그대로, 블록 위치만 다시 계산</div></div>
+      <div class="row field"><span>눈금 스냅</span><span class="spacer"></span><span class="toggle on"></span></div>
+      <div class="row"><span>축소 시 간략 표시</span><span class="spacer"></span><span class="toggle on"></span></div>
+    </div>
+
+    <span class="m abs" style="left:552px;top:510px">1</span>
+    <span class="m abs" style="left:970px;top:560px">2</span>
+    <span class="m abs" style="left:1212px;top:490px">3</span>
+    <span class="m abs" style="left:612px;top:66px">4</span>
+    <span class="m abs" style="left:1170px;top:60px">5</span>
+    <span class="m abs" style="left:1094px;top:236px">6</span>
+  </div>
+  <div class="notes"><ol>
+    <li><span class="m">1</span><span>눈금 클릭 → 그 자리에서 라벨 입력("1년차 가을"). 비우면 숫자 표시. <code>Enter</code> 확정 · <code>Esc</code> 취소 (UC-14)</span></li>
+    <li><span class="m">2</span><span>눈금 우클릭 메뉴: 앞에 눈금 삽입(그 눈금 이상의 블록·라벨·접힌 구간이 1칸씩 뒤로) · 라벨 편집/지우기 · 구간 선택 시작 (UC-14)</span></li>
+    <li><span class="m">3</span><span>구간 선택(7~10, 눈금 끌기 또는 <code>Shift</code>+클릭) → "구간 접기" → <code>≈ 7~10</code> 칩으로 축소 (UC-15)</span></li>
+    <li><span class="m">4</span><span>저장 상태 "저장 실패" 클릭 → 다시 시도 · 내보내기. 공간 부족이면 L-5 대화상자 (UC-42)</span></li>
+    <li><span class="m">5</span><span>⋯ 메뉴: JSON 내보내기(UC-04) · 보드 설정 · 단축키 도움말 · 소설 정보(L-3 수정 모드)</span></li>
+    <li><span class="m">6</span><span>보드 설정: 눈금 간격(px) · 눈금 스냅 · 축소 시 간략 표시 (UC-14 · 21)</span></li>
+  </ol></div>
+</section>
+
+<!-- ================= B-8 ================= -->
+<section class="fw" id="b-8">
+  <h2>B-8 빠른 이동 (Ctrl+K)</h2>
+  <p class="desc">위키 문서와 시간축 시점을 한 입력으로 검색 (UC-21 · 34)</p>
+  <div class="frame">
+    <div class="topbar">
+      <span class="btn text">← 서재</span>
+      <span class="ntitle">검은 왕관의 기사</span>
+      <div class="tabs"><span class="tab on">보드</span><span class="tab">위키</span></div>
+      <span class="spacer"></span>
+      <span class="save">✓ 저장됨</span>
+      <div class="search"><span>빠른 이동 — 문서 · 시점</span><span class="kbd">Ctrl K</span></div>
+      <span class="ibtn">?</span>
+      <span class="ibtn">⋯</span>
+    </div>
+    <div class="canvas">
+      <div class="axis" style="left:262px;top:440px;width:1178px"></div>
+      <div class="ev core ln-main" style="left:330px;top:340px;width:120px">왕도 습격</div>
+      <div class="ev ln-sub" style="left:480px;top:250px;width:180px">기사단 원정</div>
+      <div class="ev core ln-main" style="left:940px;top:300px;width:120px">반란</div>
+      <div class="st" style="left:300px;top:500px">▲ <b>카엘</b> 등장</div>
+    </div>
+    <div class="dim" style="background:rgba(0,0,0,.2)"></div>
+
+    <div class="dialog" style="left:400px;top:110px;width:640px;padding:12px">
+      <div class="input focus filled" style="height:48px;font-size:16px">⌕ 왕<span class="caret"></span></div>
+      <div class="menu" style="position:static;padding:8px 0 0">
+        <div class="mh">위키 문서</div>
+        <div class="mi on"><span class="dot"></span><b><mark>왕</mark>도</b><span class="cap">장소 · 별칭 <span>로엔 <mark>왕</mark>도</span></span><span class="r">문서 열기 ↵</span></div>
+        <div class="mi"><span class="dot"></span><span><mark>왕</mark>도 습격</span><span class="cap">사건 · 보드 1</span><span class="r">보드 블록으로 ⇧↵</span></div>
+        <div class="mi"><span class="dot"></span><span><mark>왕</mark>실 근위대</span><span class="cap">세력·조직</span></div>
+        <hr />
+        <div class="mh">시간축 시점</div>
+        <div class="mi"><span class="num b" style="width:28px">12</span><span><mark>왕</mark>국력 302년</span><span class="r">보드에서 이동</span></div>
+        <div class="mi"><span class="num b" style="width:28px">30</span><span><mark>왕</mark>위 즉위식</span><span class="cap">접힌 구간 6~40</span><span class="r">펼치고 이동</span></div>
+      </div>
+      <div class="row cap" style="padding:10px 10px 4px;border-top:1px solid var(--hair);margin-top:6px"><span class="kbd">↑</span><span class="kbd">↓</span> 이동 <span class="kbd">Enter</span> 열기 <span class="kbd">Esc</span> 닫기<span class="spacer"></span>숫자 입력 → 눈금 번호로 이동</div>
+    </div>
+
+    <span class="m abs" style="left:1050px;top:122px">1</span>
+    <span class="m abs" style="left:1050px;top:200px">2</span>
+    <span class="m abs" style="left:1050px;top:360px">3</span>
+  </div>
+  <div class="notes"><ol>
+    <li><span class="m">1</span><span><code>Ctrl+K</code> 또는 상단 바 검색칸 클릭. 보드·위키 어디서나 같은 팔레트</span></li>
+    <li><span class="m">2</span><span>위키 문서: 제목·별칭 부분 일치, 분류 표시. <code>Enter</code> = 문서 열기(보드에서는 위키 패널), 보드에 블록이 있는 사건은 블록으로 이동도 가능</span></li>
+    <li><span class="m">3</span><span>시간축 시점: 눈금 라벨 · 눈금 번호 검색 → 보드 해당 위치로 이동 (접힌 구간이면 펼침) (UC-21)</span></li>
+  </ol></div>
+</section>
+
+</body>
+</html>
