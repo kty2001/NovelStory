@@ -207,6 +207,17 @@ Pretendard는 **다이나믹 서브셋**(페이지에 쓰인 글자 조각만 �
   - 접힌 구간: 축 위 물결 기호 ≈ + 접힌 눈금 범위 라벨(예: `12~40`), `{colors.surface-strong}` 배경 칩, 클릭 시 펼침
 - **`undated-zone`**: 시간축 왼쪽의 시점 미정 영역. `{colors.surface-soft}` 배경 + 1.5px 점선 `{colors.muted}` 테두리 + `{rounded.lg}`, 상단에 "시점 미정" 라벨(`{typography.caption}`)
 - **`event-block`**: 사건 블록. 브랜드 색 채움, `{rounded.md}`, `{typography.block-label}`, 기간 사건은 가로 길이로 기간 표현, 선택 시 양 끝 리사이즈 핸들. 하단에 시간축까지 이어지는 점선 지시선
+  - 스토리 라인: 제목 옆 `badge-pill` 1개(라인 이름, 미지정이면 없음) + 라인 순서별 테두리. 줌 0.5 미만 간략 표시에선 배지 숨김, 테두리 유지
+
+    | 라인 순서 (기본 이름) | 테두리 |
+    |---|---|
+    | 0 (메인) | 2px 실선 `{colors.ink}` |
+    | 1 (서브) | 1.5px 실선 `{colors.muted}` |
+    | 2 (사이드) | 1.5px 점선 `{colors.muted}` |
+    | 3 이후 (추가 라인) | 1.5px 실선 `{colors.muted}`, 배지로만 구분 |
+    | 미지정 | 테두리 없음 |
+
+  - 채움 색(`color`)은 라인과 무관하게 작가가 고른 색 유지. 선택 강조(`{colors.brand-teal}`)는 라인 테두리 바깥에 표시. 라인 색 지정은 MVP 이후
 - **`state-block`**: 캐릭터 상태 블록. `{rounded.sm}`, 유형별 색 (등장 mint / 변화 lavender / 퇴장 teal) + 아이콘, 좌측에 캐릭터 이름. 상단에 시간축까지 이어지는 점선 지시선
 - **`sticky-note`**: 포스트잇. 포스트잇 색, `{rounded.xs}`, 약한 그림자, 기본 160 × 160px, 텍스트 `{typography.body-sm}`
 - **`board-text`**: 배경 없는 자유 텍스트, `{typography.title-md}` 기본

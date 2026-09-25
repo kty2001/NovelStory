@@ -19,7 +19,7 @@
 | 저장 1단계 | IndexedDB (브라우저 로컬) + JSON 내보내기/가져오기 | 서버 비용·한도 부담 없음. 보드 요소·위키·이미지(Blob) 저장 |
 | 저장 2단계 | Cloudflare Workers API + D1 | 로그인·기기 간 동기화, 인증 방식 미정 |
 | 배포 | GitHub + Cloudflare Workers Builds → Workers Static Assets | main 푸시 시 자동 빌드·배포, 무료 티어. `@cloudflare/vite-plugin` + wrangler |
-| 폰트 | Pretendard Variable, Noto Serif KR | [UIGuide.md](./UIGuide.md) 참고 |
+| 폰트 | Pretendard Variable, Noto Serif KR | [ui_guide.md](./ui_guide.md) 참고 |
 
 ## 2. Cloudflare 무료 티어 + React + Tailwind 호환성 확인
 
@@ -46,7 +46,7 @@
 | 연결선·라벨 | 커스텀 엣지 (`edgeTypes`) |
 | 시간축 선·눈금 | `ViewportPortal`로 캔버스 좌표계에 렌더링 |
 | 도구 모음 → 캔버스 배치 | 드래그앤드롭 예제의 **Pointer Events 방식** + `screenToFlowPosition` (HTML Drag and Drop API는 터치 기기 미지원) |
-| 눈금 스냅 | x좌표를 `pxPerTick` 배수로 보정 (정수 눈금) |
+| 눈금 스냅 | 스파이크 C4 `timeAxis.ts`의 `snapTick` (접힌 구간 반영). 블록은 눈금 좌표로 저장 ([data_model.md](./data_model.md) 4.1) |
 | 다중 선택 | 기본 선택 박스 (라소 선택은 공식 화이트보드 예제 참고) |
 | 미니맵 | `MiniMap` |
 | 실행 취소 / 다시 실행 | Zustand 스토어 + zundo (`temporal` 미들웨어) |
@@ -116,7 +116,7 @@ export default defineConfig({
 ### `src/index.css`
 ```css
 @import "tailwindcss";
-/* UIGuide 토큰은 @theme 블록에 정의 */
+/* ui_guide.md 토큰은 @theme 블록에 정의 */
 ```
 
 ### `wrangler.jsonc` (SPA 라우팅)

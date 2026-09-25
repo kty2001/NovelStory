@@ -1,5 +1,28 @@
 # 기능 명세 (Features Spec)
 
+```mermaid
+%%{init: {"flowchart": {"wrappingWidth": 320}}}%%
+flowchart TB
+    F0["F0 서재<br/>소설 목록 · 생성 · 복제 · 삭제 · JSON 백업"]:::mvp --> WS
+    subgraph WS["소설 작업공간"]
+        direction LR
+        F1["F1 보드<br/>시간축 · 사건 · 캐릭터 상태 · 포스트잇 · 프레임 · 연결선"]:::mvp
+        F4["F4 위키<br/>분류 · 문서 · 템플릿 · @ 링크 · 표 · 검색"]:::mvp
+        F2["F2 서술 순서<br/>회차 · 서술 방식 · 비교 오버레이"]:::later
+        F3["F3 캐릭터 상태 조회<br/>시점별 속성 누적"]:::later
+        F5["F5 메모<br/>핀 · 포스트잇/문서 변환"]:::later
+    end
+    F1 <-->|"사건·상태 블록 = 위키 문서"| F4
+    F2 -.->|"사건 배치"| F1
+    F3 -.->|"상태 블록 누적"| F1
+    F5 -.->|"변환"| F4
+    WS --> F6[("F6 저장<br/>IndexedDB 자동 저장 · JSON 내보내기")]:::mvp
+
+    classDef mvp fill:#ffb084,stroke:#0a0a0a,color:#0a0a0a
+    classDef later fill:#f5f0e0,stroke:#9a9384,color:#55503f,stroke-dasharray:4 3
+```
+주황 = MVP, 점선 = MVP 이후
+
 ## 1. 개요
 - **목적**: 웹소설 작가가 스토리를 시각적으로 설계하는 웹 서비스
 - **대상**: 연재형 웹소설 작가 (회차 단위 집필, 다수 인물·복선·설정 관리 필요)
@@ -22,6 +45,7 @@
 | 시간축 (Time Axis) | 보드를 가로지르는 기준선. 가로 위치 = 작중 시점 |
 | 작중 시간 (Story Time) | 작품 세계 안에서 사건이 일어난 순서. **상대 순서(정수 눈금)** 로 표현, 눈금마다 라벨("1년차 봄" 등) 지정 가능 |
 | 사건 블록 (Event) | 특정 시점 또는 기간에 발생한 사건. 시간축 위쪽 배치 |
+| 스토리 라인 (Story Line) | 사건이 속한 이야기 갈래 (메인·서브·사이드 등). 사건당 1개, UI 표기는 "라인" |
 | 상태 블록 (Character State) | 캐릭터의 등장 / 변화 / 퇴장 기록. 시간축 아래쪽 배치 |
 | 포스트잇 (Sticky) | 보드 아무 곳에나 붙이는 자유 메모 |
 | 연결선 (Edge) | 블록·포스트잇 사이 화살표 (인과, 복선 등) |
@@ -72,7 +96,12 @@
   - 이 영역 블록은 작중 시점 없음, 시간축으로 옮기면 시점 부여
 - **사건 블록**
   - 단일 시점 또는 기간 (블록 가로 폭 = 기간, 양 끝 드래그로 조절)
-  - 표시: 제목, 색상, 태그 배지
+  - 표시: 제목, 색상, 태그 배지, 스토리 라인 배지·테두리
+  - **스토리 라인**: 사건마다 라인 1개 지정 (미지정 가능)
+    - 기본 라인: 메인 / 서브 / 사이드. 소설마다 추가·이름 변경·순서 변경·삭제
+    - 블록 메뉴에서 지정, 다중 선택 시 한꺼번에 지정. 위키 사건 문서에서도 지정
+    - 보드 표시: 블록 안 라인 배지 + 라인별 테두리 모양(굵기·실선/점선)
+    - 라인 색 지정은 MVP 이후
   - 생성 시 위키 문서(사건 분류) 자동 생성
 - **캐릭터 상태 블록**
   - 유형: `등장` / `변화`(성격·관계·능력·소속 등) / `퇴장`(사망·이탈·봉인 등)
@@ -99,7 +128,7 @@
   - 사건·상태 블록 상세 버튼 → 우측 위키 패널에서 문서 열기
   - 위키 문서를 보드로 드래그해 블록 생성
 - **터치**: 한 손가락 이동·선택, 두 손가락 줌·팬, 길게 눌러 컨텍스트 메뉴
-- 필터: 캐릭터·태그·분류별 표시/숨김
+- 필터: 캐릭터·태그·분류·스토리 라인별 표시/숨김
 
 ### F2. 서술 순서
 - 회차(Episode) 목록에 사건을 드래그해 배치, 회차 내 순서 변경
@@ -130,13 +159,13 @@
   - 삭제된 문서 링크는 깨진 링크로 표시
 - **보기**
   - 트리: 분류별 문서 목록
-  - 표: 한 분류의 문서들을 속성 열로 비교 (예: 캐릭터 나이·소속 일람)
+  - 표: 한 분류의 문서들을 속성 열로 비교 (예: 캐릭터 나이·소속 일람). 사건 분류는 "라인" 열 포함
   - 검색: 제목·별칭·본문 전체 검색
 - **보드 연동**
   - 사건·캐릭터 블록 = 사건·캐릭터 분류 위키 문서 (1:1, 데이터 중복 없음)
   - 보드에서 블록 생성 시 문서 자동 생성, 블록 제목 = 문서 제목
   - 캐릭터 문서: 등장 사건, 상태 변화 이력 자동 표시
-  - 사건 문서: 관련 캐릭터, 배치된 회차 자동 표시
+  - 사건 문서: 스토리 라인 선택, 관련 캐릭터, 배치된 회차 자동 표시
   - 보드에 쓰인 문서 삭제 시 경고 + 연결 블록 함께 삭제
 
 ### F5. 메모
@@ -153,80 +182,10 @@
   - 마지막 백업 후 일정 기간이 지나면 JSON 백업 알림
 - **2단계**: Cloudflare D1 서버 저장 및 기기 간 동기화 (로그인 필요)
 
-## 4. 데이터 모델 (초안)
+## 4. 데이터 모델
 
-```ts
-type Novel = {
-  id: string; title: string; genre?: string; synopsis?: string;
-  coverImage?: string; createdAt: string; updatedAt: string;
-};
-
-// ── 위키 ──
-type WikiCategory = {
-  id: string; novelId: string; name: string;
-  parentId?: string; order: number;
-  templateProps: string[];              // 템플릿 기본 속성 키
-  system?: 'character' | 'event';       // 보드 연동 기본 분류 표시
-};
-
-// 모든 레코드 공통: id = crypto.randomUUID(), updatedAt 필수, 삭제는 deletedAt 기록(소프트 삭제)
-// → 2단계 D1 동기화 대비 (tech-stack.md 데이터 규칙)
-
-type WikiDoc = {
-  id: string; novelId: string; categoryId: string;
-  title: string; aliases: string[];
-  props: Record<string, string>;
-  body: unknown;                         // 서식 텍스트 JSON (mention 노드에 docId 포함)
-  image?: string;
-  createdAt: string; updatedAt: string;
-};
-// 역링크는 저장하지 않고 body의 mention 노드에서 조회 시 계산
-
-// ── 보드 ──
-type StoryTime = number; // 상대 순서 정수 눈금 (0, 1, 2, …)
-
-type Board = {
-  novelId: string;
-  viewport: { x: number; y: number; zoom: number };
-  timeScale: {
-    pxPerTick: number;                      // 눈금 간격, x ↔ 작중 시점 변환
-    tickLabels: Record<StoryTime, string>;  // 눈금별 라벨 ("1년차 봄" 등)
-    collapsed: { from: StoryTime; to: StoryTime }[]; // 접힌 구간
-  };
-};
-
-type BoardItem = {
-  id: string; novelId: string;
-  kind: 'event' | 'state' | 'sticky' | 'text' | 'shape' | 'frame';
-  x: number; y: number; w: number; h: number;
-  parentFrameId?: string;
-  style?: { color?: string; shape?: 'rect' | 'ellipse' | 'diamond' };
-  docId?: string;                        // event: 사건 문서, state: 캐릭터 문서
-  stateType?: 'appear' | 'change' | 'exit';
-  linkedEventItemId?: string;            // state → 연결된 사건 블록
-  changes?: { key: string; from?: string; to: string }[]; // state: 위키 속성 변경
-  undated?: boolean;                     // 미정 영역 블록 (작중 시점 없음)
-  text?: string;                         // sticky / text / shape / frame 제목, state 요약
-};
-// 사건·상태 블록의 작중 시점 = timeScale로 x(및 x + w) 변환
-
-type BoardEdge = {
-  id: string; novelId: string; source: string; target: string;
-  label?: string; style?: { dashed?: boolean };
-};
-
-// ── 서술 순서 ──
-type Episode = { id: string; novelId: string; number: number; title?: string };
-
-type NarrativeSlot = {
-  id: string; episodeId: string; order: number;
-  eventItemId: string;                   // 사건 BoardItem.id
-  mode: 'linear' | 'flashback' | 'flashforward' | 'foreshadow' | 'payoff';
-};
-
-// ── 메모 ──
-type Memo = { id: string; novelId: string; body: string; pinned: boolean; updatedAt: string };
-```
+- 확정본: [data_model.md](./data_model.md) (타입·계산 규칙·무결성·Dexie 스키마·JSON 내보내기 형식)
+- 흐름별 사용 데이터: [usecase.md](./usecase.md)
 
 ## 5. 화면 구성 (반응형)
 
@@ -249,13 +208,13 @@ type Memo = { id: string; novelId: string; body: string; pinned: boolean; update
   - 불가: 보드 블록 생성·배치·연결선 편집 (태블릿 이상에서 가능)
 - 다크 모드: MVP 미지원 (크림 테마만)
 
-- 상세 UI 규칙은 [UIGuide.md](./UIGuide.md) 참고
+- 상세 UI 규칙은 [ui_guide.md](./ui_guide.md) 참고
 
 ## 6. 비기능 요구사항
 - 반응형: 모바일 터치 조작 지원, 터치 타깃 44px 이상
 - 접근성: 키보드로 블록 선택·이동·삭제 가능, 주요 단축키 제공
 - 성능: 보드 요소 수백 개 규모에서 부드러운 줌·드래그
-- 무료 운영: Cloudflare 무료 티어 한도 내 운영 ([tech-stack.md](./tech-stack.md) 참고)
+- 무료 운영: Cloudflare 무료 티어 한도 내 운영 ([tech_stack.md](./tech_stack.md) 참고)
 
 ## 7. 보류 사항
 - 구현 전 결정 항목은 모두 확정 ([TODO.md](../TODO.md)의 "구현 전 결정" 참고)

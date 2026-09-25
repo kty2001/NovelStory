@@ -2,6 +2,23 @@
 
 구현 전 위험 요소(C1~C8)를 소규모 프로토타입으로 검증하는 방법·합격 기준·실패 시 대안. 항목 목록은 [TODO.md](../TODO.md)의 "기술 스파이크" 참고.
 
+```mermaid
+%%{init: {"flowchart": {"wrappingWidth": 320}}}%%
+flowchart LR
+    A["1 자동<br/>Vitest · Playwright<br/>(Chromium · WebKit)"]:::done --> B["2 PC 수동<br/>Chrome · Edge 한글 IME"]:::done
+    B --> C["3 원격 실기기<br/>에뮬레이터 → Remote Test Lab → iOS"]:::hold
+    B --> R1["<b>채택</b><br/>C1 한글 IME · C2 단축키 × IME<br/>C4 시간축 · C6 인라인 편집 · C7 프레임"]:::adopt
+    B --> R2["<b>대안 적용</b><br/>C3 성능: 화면 밖 렌더 생략 + 축소 시 간략 표시<br/>C8 용량: 1600px WebP 리사이즈 (Web Worker)"]:::alt
+    B --> R3["<b>채택 · 위험 수용</b><br/>C5 터치 (CDP 터치 근사)"]:::alt
+    C -.-> REM["<b>남은 확인 (보류)</b><br/>C1 삼성 키보드 · iOS<br/>C3 Galaxy A 실측<br/>C5 실제 태블릿 (MVP 배포 전 필수)"]:::hold
+
+    classDef done fill:#a4d4c5,stroke:#0a0a0a,color:#0a0a0a
+    classDef hold fill:#f5f0e0,stroke:#9a9384,color:#55503f,stroke-dasharray:4 3
+    classDef adopt fill:#a4d4c5,stroke:#0a0a0a,color:#0a0a0a
+    classDef alt fill:#e8b94a,stroke:#0a0a0a,color:#0a0a0a
+```
+민트 = 완료·채택, 황토 = 대안 적용·위험 수용, 점선 = 남은 원격 실기기 확인(보류)
+
 ## 1. 테스트 환경
 
 보유 기기는 **Windows PC(Chrome / Edge)** 뿐 → 한글 입력·터치·모바일 성능은 아래 수단으로 보완.

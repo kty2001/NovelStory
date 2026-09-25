@@ -4,6 +4,18 @@
 
 웹소설 작가를 위한 스토리 설계 웹 서비스. 화이트보드에 쓰듯 작중 사건, 캐릭터 변화, 설정을 한 화면에서 정리.
 
+```mermaid
+%%{init: {"flowchart": {"wrappingWidth": 320}}}%%
+flowchart LR
+    LIB["서재<br/>소설 목록"] --> NOVEL["소설"]
+    NOVEL --> BOARD["<b>화이트보드 타임라인</b><br/>▲ 사건 블록<br/>━━━ 시간축 ━━━<br/>▼ 캐릭터 등장 · 변화 · 퇴장<br/>+ 포스트잇 · 화살표 · 프레임"]
+    NOVEL --> WIKI["<b>설정 위키</b><br/>캐릭터 · 사건 · 장소 · 세계관"]
+    BOARD <-->|"블록 = 문서"| WIKI
+    NOVEL -.-> NARR["서술 순서<br/>회차별 배치 (MVP 이후)"]
+    NOVEL -.-> MEMO["메모 (MVP 이후)"]
+    NARR -.->|"사건 배치"| WIKI
+```
+
 ## 핵심 기능
 - **소설별 관리**: 서재에서 작품 단위로 보드·위키·메모 관리
 - **화이트보드 타임라인**: 무한 캔버스의 시간축 위에 사건 블록, 아래에 캐릭터 등장·변화·퇴장 블록 배치. 포스트잇·화살표·프레임 자유 배치
@@ -15,8 +27,12 @@ React + TypeScript + Vite + Tailwind CSS v4 + React Flow, Cloudflare Workers(Sta
 
 ## 문서
 - [기능 명세](docs/design/features_spec.md)
-- [기술 스택](docs/design/tech-stack.md)
-- [UI 가이드](docs/design/UIGuide.md)
+- [유스케이스](docs/design/usecase.md)
+- [데이터 모델](docs/design/data_model.md)
+- [ERD](docs/design/erd.md)
+- [단축키](docs/design/shortcuts.md)
+- [기술 스택](docs/design/tech_stack.md)
+- [UI 가이드](docs/design/ui_guide.md)
 - [기술 스파이크 검증 방법](docs/design/spikes.md)
 - [레퍼런스](docs/references.md)
 - [할 일](docs/TODO.md)
