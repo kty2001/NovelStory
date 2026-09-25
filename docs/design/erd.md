@@ -6,7 +6,7 @@
 - `json` = 배열·객체 필드, 괄호 안은 구조
 - 저장소: IndexedDB(Dexie) 테이블 이름은 data_model.md 6장
 
-## 1. MVP (F0 서재 · F1 보드 · F4 위키 · F6 저장)
+## 1. MVP (F0 서재 · F1 보드 · F4 사전 · F6 저장)
 
 ```mermaid
 erDiagram

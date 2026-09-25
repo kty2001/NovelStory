@@ -8,15 +8,15 @@
 | UI 프레임워크 | React + TypeScript | SPA |
 | 스타일 | Tailwind CSS v4 | `@tailwindcss/vite` 플러그인, PostCSS 설정 불필요 |
 | 화이트보드 캔버스 | React Flow (`@xyflow/react`) | 무한 캔버스·줌·팬·연결선·그룹. 사건/상태 블록을 커스텀 노드로 구현 |
-| 드래그앤드롭 (캔버스 밖) | dnd kit (`@dnd-kit/core` + `@dnd-kit/sortable`, v6 안정판) | 서술 순서 회차 목록, 위키 트리 정렬. `@dnd-kit/react`는 1.0 이전(v0.5)이라 제외 |
-| 위키 본문 에디터 | Tiptap | 서식 텍스트 + Mention 확장으로 `@` 문서 링크. 한글 IME 검증 필요 (TODO 기술 스파이크 C1) |
+| 드래그앤드롭 (캔버스 밖) | dnd kit (`@dnd-kit/core` + `@dnd-kit/sortable`, v6 안정판) | 서술 순서 회차 목록, 사전 트리 정렬. `@dnd-kit/react`는 1.0 이전(v0.5)이라 제외 |
+| 사전 본문 에디터 | Tiptap | 서식 텍스트 + Mention 확장으로 `@` 문서 링크. 한글 IME 검증 필요 (TODO 기술 스파이크 C1) |
 | 상태 관리 | Zustand + zundo | React Flow 공식 문서의 Zustand 연동 방식, zundo로 실행 취소/다시 실행 |
 | IndexedDB 래퍼 | Dexie | 스키마 버전·마이그레이션, 반응형 쿼리 |
 | 라우팅 | React Router | `/`, `/novel/:id/board`, `/novel/:id/narrative`, `/novel/:id/wiki`, `/novel/:id/memo` |
 | 아이콘 | Lucide | 오픈 라이선스, React 패키지 |
 | 품질 도구 | ESLint + Prettier + Vitest + Playwright | Vitest = 로직(시간 변환, 상태 누적), Playwright = 드래그·IME E2E |
 | 검색 | 부분 일치 (1단계) | 초성 검색(es-hangul)은 MVP 이후 |
-| 저장 1단계 | IndexedDB (브라우저 로컬) + JSON 내보내기/가져오기 | 서버 비용·한도 부담 없음. 보드 요소·위키·이미지(Blob) 저장 |
+| 저장 1단계 | IndexedDB (브라우저 로컬) + JSON 내보내기/가져오기 | 서버 비용·한도 부담 없음. 보드 요소·사전·이미지(Blob) 저장 |
 | 저장 2단계 | Cloudflare Workers API + D1 | 로그인·기기 간 동기화, 인증 방식 미정 |
 | 배포 | GitHub + Cloudflare Workers Builds → Workers Static Assets | main 푸시 시 자동 빌드·배포, 무료 티어. `@cloudflare/vite-plugin` + wrangler |
 | 폰트 | Pretendard Variable, Noto Serif KR | [ui_guide.md](./ui_guide.md) 참고 |

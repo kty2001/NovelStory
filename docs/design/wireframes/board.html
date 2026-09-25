@@ -14,7 +14,7 @@
     <a href="index.html">목차</a>
     <a href="library.html">서재</a>
     <a href="board.html" class="on">보드</a>
-    <a href="wiki.html">위키</a>
+    <a href="wiki.html">사전</a>
   </nav>
 </header>
 
@@ -26,7 +26,7 @@
     <div class="topbar">
       <span class="btn text">← 서재</span>
       <span class="ntitle">검은 왕관의 기사</span>
-      <div class="tabs"><span class="tab on">보드</span><span class="tab">위키</span></div>
+      <div class="tabs"><span class="tab on">보드</span><span class="tab">사전</span></div>
       <span class="spacer"></span>
       <span class="save">✓ 저장됨</span>
       <div class="search"><span>빠른 이동 — 문서 · 시점</span><span class="kbd">Ctrl K</span></div>
@@ -154,7 +154,7 @@
     <span class="m abs" style="left:1196px;top:726px">14</span>
   </div>
   <div class="notes"><ol>
-    <li><span class="m">1</span><span><b>작업공간 상단 바</b> (보드·위키 공통): ← 서재 · 소설 제목 · 탭 보드/위키(<code>Alt+1</code>/<code>Alt+2</code>) · 저장 상태(저장 중/저장됨/저장 실패, UC-40·42) · 빠른 이동 <code>Ctrl+K</code>(B-8) · <code>?</code> 단축키 도움말 · ⋯ 메뉴(B-7)</span></li>
+    <li><span class="m">1</span><span><b>작업공간 상단 바</b> (보드·사전 공통): ← 서재 · 소설 제목 · 탭 보드/사전(<code>Alt+1</code>/<code>Alt+2</code>) · 저장 상태(저장 중/저장됨/저장 실패, UC-40·42) · 빠른 이동 <code>Ctrl+K</code>(B-8) · <code>?</code> 단축키 도움말 · ⋯ 메뉴(B-7)</span></li>
     <li><span class="m">2</span><span><b>백업 알림 배너</b>: 마지막 내보내기 후 변경 있고 7일 경과 시. "지금 내보내기" → UC-04, "나중에" → 3일 숨김 (UC-41)</span></li>
     <li><span class="m">3</span><span><code>board-toolbar</code>: 선택 V · 손 H │ 사건 E · 캐릭터 상태 C(다시 누르면 등장→변화→퇴장) · 포스트잇 S · 텍스트 T · 프레임 F · 연결선 L │ 캐릭터별 정렬(B-4) · 스냅 · 필터(B-5). 툴팁에 키 표시, 배치 도구는 1회 배치 후 V로 복귀</span></li>
     <li><span class="m">4</span><span><code>undated-zone</code>: 시간축 왼쪽 "시점 미정" 영역. 여기 블록은 작중 시점 없음, 축 위로 끌면 시점 부여 (UC-16)</span></li>
@@ -173,13 +173,13 @@
 
 <!-- ================= B-2 ================= -->
 <section class="fw" id="b-2">
-  <h2>B-2 블록 선택 · 블록 메뉴 · 위키 패널</h2>
-  <p class="desc">사건 블록 선택 → 블록 메뉴에서 라인 지정, 상세 → 우측 위키 패널 (UC-11 · 20 · 22 · 23)</p>
+  <h2>B-2 블록 선택 · 블록 메뉴 · 사전 패널</h2>
+  <p class="desc">사건 블록 선택 → 블록 메뉴에서 라인 지정, 상세 → 우측 사전 패널 (UC-11 · 20 · 22 · 23)</p>
   <div class="frame">
     <div class="topbar">
       <span class="btn text">← 서재</span>
       <span class="ntitle">검은 왕관의 기사</span>
-      <div class="tabs"><span class="tab on">보드</span><span class="tab">위키</span></div>
+      <div class="tabs"><span class="tab on">보드</span><span class="tab">사전</span></div>
       <span class="spacer"></span>
       <span class="save">저장 중…</span>
       <div class="search"><span>빠른 이동 — 문서 · 시점</span><span class="kbd">Ctrl K</span></div>
@@ -246,7 +246,7 @@
       <div class="leader" style="left:480px;top:442px;height:118px"></div>
       <div class="st sel" style="left:480px;top:560px">▲ <b>리아</b> 등장</div>
 
-      <!-- 위키 문서 → 보드 드래그 -->
+      <!-- 사전 문서 → 보드 드래그 -->
       <div class="st new" style="left:780px;top:620px;box-shadow:0 6px 16px rgba(0,0,0,.25);opacity:.8">▲ <b>벨라</b> 등장</div>
       <svg class="edges" width="1440" height="844">
         <defs><marker id="ah2" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="8" markerHeight="8" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z" fill="#333" /></marker></defs>
@@ -254,9 +254,9 @@
       </svg>
     </div>
 
-    <!-- 우측 위키 패널 -->
+    <!-- 우측 사전 패널 -->
     <div class="panel">
-      <div class="row"><span class="chip"><span class="dot"></span>사건</span><span class="spacer"></span><span class="btn text sm">↗ 위키에서 열기</span><span class="ibtn">×</span></div>
+      <div class="row"><span class="chip"><span class="dot"></span>사건</span><span class="spacer"></span><span class="btn text sm">↗ 사전에서 열기</span><span class="ibtn">×</span></div>
       <div style="font-size:22px;font-weight:700;margin:10px 0 14px">기사단 원정</div>
       <div class="field"><div class="label">라인</div><div class="input sm filled" style="width:160px;justify-content:space-between">서브 <span>▾</span></div></div>
       <div class="field"><div class="label">작중 시점 (보드)</div><div class="num">2 ~ 2년차 봄 <span class="cap">· 기간 3칸</span></div></div>
@@ -287,7 +287,7 @@
     <li><span class="m">1</span><span>선택된 사건 블록: 바깥 강조 테두리(실제 <code>brand-teal</code>, 라인 테두리 바깥) + 양 끝 리사이즈 핸들. 끌기 = 시점 이동, 핸들 = 기간 조절, 방향키 ←→ = 1 눈금 (UC-11)</span></li>
     <li><span class="m">2</span><span><b>블록 메뉴</b> (선택 시 블록 위에 뜨는 바): 색 · 태그 · 라인 · 상세 · 복제 · 삭제. 다중 선택이면 공통 항목(라인·색·삭제)만 (UC-10 · 20)</span></li>
     <li><span class="m">3</span><span>라인 하위 메뉴: 메인/서브/사이드/추가 라인/미지정, 테두리 견본 표시. 여러 블록 선택 시 한꺼번에 지정. "라인 편집…" → B-6 (UC-23)</span></li>
-    <li><span class="m">4</span><span><b>우측 위키 패널</b>(약 400px): 상세 버튼 또는 <code>Enter</code>로 열림 (더블클릭은 제목 인라인 편집). 캔버스는 패널만큼 좁아짐. "위키에서 열기" → 위키 탭 W-2 (UC-22)</span></li>
+    <li><span class="m">4</span><span><b>우측 사전 패널</b>(약 400px): 상세 버튼 또는 <code>Enter</code>로 열림 (더블클릭은 제목 인라인 편집). 캔버스는 패널만큼 좁아짐. "사전에서 열기" → 사전 탭 W-2 (UC-22)</span></li>
     <li><span class="m">5</span><span>패널에서 라인·태그·제목 수정 → 블록에 즉시 반영. 저장 상태 "저장 중…" (UC-22 · 40)</span></li>
     <li><span class="m">6</span><span>패널의 문서를 보드로 끌기: 캐릭터 → 그 캐릭터 "등장" 상태 블록 생성, 사건 → 사건 블록 생성(이미 있으면 그 블록으로 이동) (UC-22)</span></li>
     <li><span class="m">7</span><span>빈 곳 드래그 = 박스 선택(별도 동작 예시). <code>Shift</code>/<code>Ctrl</code>+클릭으로 추가·해제, <code>Ctrl+C/V/D</code>, <code>Delete</code>(확인 없음, <code>Ctrl+Z</code>) (UC-20)</span></li>
@@ -302,7 +302,7 @@
     <div class="topbar">
       <span class="btn text">← 서재</span>
       <span class="ntitle">검은 왕관의 기사</span>
-      <div class="tabs"><span class="tab on">보드</span><span class="tab">위키</span></div>
+      <div class="tabs"><span class="tab on">보드</span><span class="tab">사전</span></div>
       <span class="spacer"></span>
       <span class="save">✓ 저장됨</span>
       <div class="search"><span>빠른 이동 — 문서 · 시점</span><span class="kbd">Ctrl K</span></div>
@@ -393,7 +393,7 @@
     <li><span class="m">2</span><span>① 캐릭터 선택: 기존 캐릭터 문서 제목·별칭 부분 일치 검색, 없으면 새 캐릭터 문서 생성 (캐릭터 분류 템플릿 적용)</span></li>
     <li><span class="m">3</span><span>② 유형 탭: <b>등장</b> = 초기 속성값(템플릿 키 목록 제공) · <b>변화</b> = 속성 변경 여러 줄 · <b>퇴장</b> = 사유 메모(예: <code>상태: 생존 → 사망</code>)</span></li>
     <li><span class="m">4</span><span>속성 변경 행: 키 선택(캐릭터 문서 속성 키 + 직접 입력), 이전값은 직전 시점까지 누적값으로 자동 채움(기울임, 수정 가능), 새값 입력</span></li>
-    <li><span class="m">5</span><span>메모 · 관련 사건(선택) · 캐릭터 문서 열기(→ 위키 패널). 입력은 자동 저장, "완료"는 닫기만</span></li>
+    <li><span class="m">5</span><span>메모 · 관련 사건(선택) · 캐릭터 문서 열기(→ 사전 패널). 입력은 자동 저장, "완료"는 닫기만</span></li>
     <li><span class="m">6</span><span>같은 캐릭터의 퇴장 이후 블록 → 막지 않고 ⚠ 표시 + 안내만 (부활·재등장 허용)</span></li>
   </ol></div>
 </section>
@@ -406,7 +406,7 @@
     <div class="topbar">
       <span class="btn text">← 서재</span>
       <span class="ntitle">검은 왕관의 기사</span>
-      <div class="tabs"><span class="tab on">보드</span><span class="tab">위키</span></div>
+      <div class="tabs"><span class="tab on">보드</span><span class="tab">사전</span></div>
       <span class="spacer"></span>
       <span class="save">✓ 저장됨</span>
       <div class="search"><span>빠른 이동 — 문서 · 시점</span><span class="kbd">Ctrl K</span></div>
@@ -505,7 +505,7 @@
     <div class="topbar">
       <span class="btn text">← 서재</span>
       <span class="ntitle">검은 왕관의 기사</span>
-      <div class="tabs"><span class="tab on">보드</span><span class="tab">위키</span></div>
+      <div class="tabs"><span class="tab on">보드</span><span class="tab">사전</span></div>
       <span class="spacer"></span>
       <span class="save">✓ 저장됨</span>
       <div class="search"><span>빠른 이동 — 문서 · 시점</span><span class="kbd">Ctrl K</span></div>
@@ -600,7 +600,7 @@
     <div class="topbar">
       <span class="btn text">← 서재</span>
       <span class="ntitle">검은 왕관의 기사</span>
-      <div class="tabs"><span class="tab on">보드</span><span class="tab">위키</span></div>
+      <div class="tabs"><span class="tab on">보드</span><span class="tab">사전</span></div>
       <span class="spacer"></span>
       <span class="save">✓ 저장됨</span>
       <div class="search"><span>빠른 이동 — 문서 · 시점</span><span class="kbd">Ctrl K</span></div>
@@ -654,7 +654,7 @@
     <div class="topbar">
       <span class="btn text">← 서재</span>
       <span class="ntitle">검은 왕관의 기사</span>
-      <div class="tabs"><span class="tab on">보드</span><span class="tab">위키</span></div>
+      <div class="tabs"><span class="tab on">보드</span><span class="tab">사전</span></div>
       <span class="spacer"></span>
       <span class="save fail">⚠ 저장 실패 · 다시 시도</span>
       <div class="search"><span>빠른 이동 — 문서 · 시점</span><span class="kbd">Ctrl K</span></div>
@@ -752,12 +752,12 @@
 <!-- ================= B-8 ================= -->
 <section class="fw" id="b-8">
   <h2>B-8 빠른 이동 (Ctrl+K)</h2>
-  <p class="desc">위키 문서와 시간축 시점을 한 입력으로 검색 (UC-21 · 34)</p>
+  <p class="desc">사전 문서와 시간축 시점을 한 입력으로 검색 (UC-21 · 34)</p>
   <div class="frame">
     <div class="topbar">
       <span class="btn text">← 서재</span>
       <span class="ntitle">검은 왕관의 기사</span>
-      <div class="tabs"><span class="tab on">보드</span><span class="tab">위키</span></div>
+      <div class="tabs"><span class="tab on">보드</span><span class="tab">사전</span></div>
       <span class="spacer"></span>
       <span class="save">✓ 저장됨</span>
       <div class="search"><span>빠른 이동 — 문서 · 시점</span><span class="kbd">Ctrl K</span></div>
@@ -776,7 +776,7 @@
     <div class="dialog" style="left:400px;top:110px;width:640px;padding:12px">
       <div class="input focus filled" style="height:48px;font-size:16px">⌕ 왕<span class="caret"></span></div>
       <div class="menu" style="position:static;padding:8px 0 0">
-        <div class="mh">위키 문서</div>
+        <div class="mh">사전 문서</div>
         <div class="mi on"><span class="dot"></span><b><mark>왕</mark>도</b><span class="cap">장소 · 별칭 <span>로엔 <mark>왕</mark>도</span></span><span class="r">문서 열기 ↵</span></div>
         <div class="mi"><span class="dot"></span><span><mark>왕</mark>도 습격</span><span class="cap">사건 · 보드 1</span><span class="r">보드 블록으로 ⇧↵</span></div>
         <div class="mi"><span class="dot"></span><span><mark>왕</mark>실 근위대</span><span class="cap">세력·조직</span></div>
@@ -793,8 +793,8 @@
     <span class="m abs" style="left:1050px;top:360px">3</span>
   </div>
   <div class="notes"><ol>
-    <li><span class="m">1</span><span><code>Ctrl+K</code> 또는 상단 바 검색칸 클릭. 보드·위키 어디서나 같은 팔레트</span></li>
-    <li><span class="m">2</span><span>위키 문서: 제목·별칭 부분 일치, 분류 표시. <code>Enter</code> = 문서 열기(보드에서는 위키 패널), 보드에 블록이 있는 사건은 블록으로 이동도 가능</span></li>
+    <li><span class="m">1</span><span><code>Ctrl+K</code> 또는 상단 바 검색칸 클릭. 보드·사전 어디서나 같은 팔레트</span></li>
+    <li><span class="m">2</span><span>사전 문서: 제목·별칭 부분 일치, 분류 표시. <code>Enter</code> = 문서 열기(보드에서는 사전 패널), 보드에 블록이 있는 사건은 블록으로 이동도 가능</span></li>
     <li><span class="m">3</span><span>시간축 시점: 눈금 라벨 · 눈금 번호 검색 → 보드 해당 위치로 이동 (접힌 구간이면 펼침) (UC-21)</span></li>
   </ol></div>
 </section>

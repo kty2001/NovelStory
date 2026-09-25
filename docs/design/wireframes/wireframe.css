@@ -299,7 +299,7 @@ a { color: inherit; }
 .lanehead { position: absolute; left: 0; width: 170px; z-index: 7; display: flex; align-items: center; gap: 8px; padding: 0 12px; background: #fff; border-right: 1px solid var(--hair); font-size: 14px; font-weight: 600; }
 .band { position: absolute; z-index: 1; border-radius: 6px; background: repeating-linear-gradient(45deg, rgba(0, 0, 0, 0.07) 0 6px, rgba(0, 0, 0, 0.02) 6px 12px); }
 
-/* 우측 위키 패널 */
+/* 우측 사전 패널 */
 .panel { position: absolute; top: 56px; right: 0; bottom: 0; width: 400px; z-index: 18; padding: 20px 24px; background: var(--g1); border-left: 1px solid var(--hair); overflow: hidden; }
 
 /* ---------- 서재 ---------- */
@@ -315,7 +315,7 @@ a { color: inherit; }
 .ncard .t { font-size: 16px; font-weight: 600; margin-bottom: 6px; padding-right: 32px; }
 .ncard .more { position: absolute; right: 8px; bottom: 36px; }
 
-/* ---------- 위키 ---------- */
+/* ---------- 사전 ---------- */
 .wiki { position: absolute; top: 56px; left: 0; right: 0; bottom: 0; }
 .tree { position: absolute; top: 0; bottom: 0; left: 80px; width: 240px; padding: 16px 12px; background: var(--g1); border-right: 1px solid var(--hair); border-left: 1px solid var(--hair); }
 .doc { position: absolute; top: 0; bottom: 0; left: 320px; width: 1040px; padding: 32px 48px; overflow: hidden; }

@@ -48,7 +48,7 @@ flowchart LR
 
 ## 3. 항목별 검증 방법
 
-### C1. 한글 IME — Tiptap 위키 본문·`@` 멘션
+### C1. 한글 IME — Tiptap 사전 본문·`@` 멘션
 
 | 구분 | 내용 |
 |---|---|
@@ -56,7 +56,7 @@ flowchart LR
 | 자동 | Playwright(Chromium) + CDP 조합 시퀀스 → 에디터 문서 JSON의 텍스트·멘션 노드 검증 |
 | 수동 | PC Chrome·Edge(MS 한글 IME) / 에뮬레이터(Gboard) / Remote Test Lab 갤럭시(삼성 키보드) / iOS Safari(체험 가능 시) |
 | 합격 기준 | 글자 누락·중복 없음, 멘션이 조합 완료 후 정확한 문서로 삽입, 서식 유지 |
-| 실패 시 | 문제 환경 한정 우회 코드 검토 → 해결 불가 시 위키 본문을 `textarea` + 자체 `@` 자동완성(마크다운 유사)으로 대체 |
+| 실패 시 | 문제 환경 한정 우회 코드 검토 → 해결 불가 시 사전 본문을 `textarea` + 자체 `@` 자동완성(마크다운 유사)으로 대체 |
 
 ### C2. 보드 단축키 × IME
 
@@ -159,7 +159,7 @@ flowchart LR
 | PC 실제 IME (사용자) | ①~⑦ 전체 | 통과 | ③ 제목 표시 문제는 CSS 누락 (4.1.1) |
 | 삼성 키보드 · iOS | 전체 | 보류 | 5장 체크리스트 |
 
-- **발견**: Tailwind preflight가 `h1`~`h6` 서식을 초기화 → 위키 본문 제목(H1~H3) 스타일을 UIGuide 기준으로 명시 필요
+- **발견**: Tailwind preflight가 `h1`~`h6` 서식을 초기화 → 사전 본문 제목(H1~H3) 스타일을 UIGuide 기준으로 명시 필요
 - 구현 규칙: 후보 목록 키 처리에서 `event.isComposing`이면 무시(IME에 맡김). ProseMirror는 조합 중 `handleKeyDown`을 호출하지 않음
 
 **결론**: 채택 — 자동 검증 범위에선 문제 없음. 삼성 키보드는 보고된 이슈가 있어 실기기 확인 후 확정

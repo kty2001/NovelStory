@@ -37,7 +37,7 @@ flowchart LR
 | 쌓임 순서 | 없음 | `z` + 프레임 항상 먼저 | C7: 부모가 배열에서 자식보다 앞 |
 | 프레임 중첩 | 제약 없음 | 금지 | C7 결정 |
 | 이미지 | `string` | `ImageAsset` 테이블(Blob, WebP 1600px) + `imageId` 참조 | C8 |
-| 위키 속성 | `Record<string, string>` | `{ key, value }[]` | 순서 유지 (숫자 키 재정렬 방지), 표 보기 열 순서 |
+| 사전 속성 | `Record<string, string>` | `{ key, value }[]` | 순서 유지 (숫자 키 재정렬 방지), 표 보기 열 순서 |
 | 태그 | 없음 | `WikiDoc.tags` | F1 태그 배지·필터 |
 | 스토리 라인 | 없음 | `StoryLine` 테이블 + `WikiDoc.lineId` (사건당 1개) | UC-23 메인·서브·사이드 구분 |
 | 역링크·검색 | 조회 시 계산 | 저장 시 파생 필드 `mentions`·`plainText` 계산 (Dexie 색인) | 역링크 조회 비용 |
@@ -86,7 +86,7 @@ type ImageAsset = NovelScoped & {
   bytes: number;
 };
 
-// ── 위키 ──
+// ── 사전 ──
 type WikiCategory = NovelScoped & {
   name: string;
   parentId?: string;              // 상위 분류 (계층)
@@ -257,7 +257,7 @@ type Memo = NovelScoped & { body: string; pinned: boolean; createdAt: ISODate };
 - `undated` 블록은 제외
 - `from`은 입력 당시 표시용 기록. 누적 계산에는 `to`만 사용
 
-### 4.5 위키 파생 필드
+### 4.5 사전 파생 필드
 - 저장 시 `body`를 순회해 `mentions`(mention 노드 `attrs.id`, 중복 제거)·`plainText` 계산
 - 역링크 = `wikiDocs.where('mentions').equals(docId)`
 - 링크 표시 이름은 대상 문서의 **현재 제목** (mention `label`은 대상 삭제 시 깨진 링크 표시용)
@@ -347,7 +347,7 @@ type NovelExport = {
 | UC-19 연결선 | `BoardEdge` |
 | UC-20 선택·복사·실행 취소 | `BoardItem`·`BoardEdge`(복사 시 ID 재발급, 사건은 문서도 복제), 실행 취소 기록은 비저장 |
 | UC-21 둘러보기 | `UiState.viewport`, `filters` |
-| UC-22 보드 ↔ 위키 | `BoardItem.docId`, `UiState.wikiPanelDocId` |
+| UC-22 보드 ↔ 사전 | `BoardItem.docId`, `UiState.wikiPanelDocId` |
 | UC-23 스토리 라인 | `StoryLine`, `WikiDoc.lineId`, `UiState.filters.hiddenLineIds`, 5장 라인 삭제 규칙 |
 | UC-30~32 분류·문서·템플릿 | `WikiCategory`, `WikiDoc`(`props`·`aliases`·`tags`·`body`·`imageId`), `ImageAsset` |
 | UC-33 링크 | `WikiDoc.body` mention, `mentions`, 4.5 |

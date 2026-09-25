@@ -43,12 +43,12 @@
 
 | 이름 | URL | 참고 포인트 |
 |---|---|---|
-| dnd kit | https://dndkit.com/ | 캔버스 밖 목록(회차, 위키 트리) 드래그 정렬, 터치·키보드 지원 |
+| dnd kit | https://dndkit.com/ | 캔버스 밖 목록(회차, 사전 트리) 드래그 정렬, 터치·키보드 지원 |
 | dnd kit — core vs react 로드맵 | https://github.com/clauderic/dnd-kit/discussions/1842 | `@dnd-kit/core`(v6 안정) 채택, `@dnd-kit/react`(v0.5) 제외 근거 |
 | React Flow — 상태 관리 | https://reactflow.dev/learn/advanced-use/state-management | Zustand 연동 방식 |
 | zundo | https://github.com/charkour/zundo | Zustand용 실행 취소/다시 실행 미들웨어 |
 | Dexie | https://dexie.org/ | IndexedDB 래퍼, 스키마 버전·마이그레이션 |
-| es-hangul | https://es-hangul.slash.page/ | 한글 초성 검색 등 (위키 검색 검토) |
+| es-hangul | https://es-hangul.slash.page/ | 한글 초성 검색 등 (사전 검색 검토) |
 | Lucide | https://lucide.dev/ | 아이콘 세트 |
 | React Flow (xyflow) | https://reactflow.dev/ | **화이트보드 캔버스 채택**. MIT, 커스텀 노드·엣지, 줌·팬, 미니맵 |
 | React Flow — 화이트보드 예제 | https://reactflow.dev/examples/whiteboard/rectangle | 사각형 그리기, 라소 선택, 지우개 (MIT) |
@@ -57,7 +57,7 @@
 | React Flow — Sub-flows | https://reactflow.dev/learn/layouting/sub-flows | 프레임(그룹) 구현 |
 | React Flow — ViewportPortal | https://reactflow.dev/api-reference/components/viewport-portal | 캔버스 좌표계에 시간축 렌더링 |
 | React Flow — Helper Lines | https://reactflow.dev/examples/interaction/helper-lines | 정렬 보조선 참고. **Pro 라이선스** 예제 → 직접 구현 |
-| Tiptap — Mention | https://tiptap.dev/docs/editor/extensions/nodes/mention | 위키 본문 `@` 문서 링크 |
+| Tiptap — Mention | https://tiptap.dev/docs/editor/extensions/nodes/mention | 사전 본문 `@` 문서 링크 |
 | vis-timeline | https://visjs.github.io/vis-timeline/docs/timeline/ | 그룹(레인)별 타임라인 아이템 드래그 — 타임라인 UX 참고 |
 | Tailwind CSS v4 + Vite | https://tailwindcss.com/docs/guides/vite | `@tailwindcss/vite` 설치 가이드 |
 | Cloudflare Workers — React | https://developers.cloudflare.com/workers/framework-guides/web-apps/react/ | React SPA 생성·배포 명령, Vite 플러그인 설정 |
@@ -107,7 +107,7 @@
 | 도구 모음 → 캔버스 드래그, 색상별 블록 유형 | Scratch | F1 도구 모음 |
 | 시간순 / 서술순 독립 관리, 서술에 명시적으로 넣은 사건만 포함 | Aeon Timeline | F2 서술 순서 |
 | 캐릭터 변화 궤적 (시작 → 전환점 → 결말) | Campfire Arcs | F3 캐릭터 상태 조회 |
-| 계층 분류 + 커스텀 속성 + 템플릿 | 뮤블 위키 | F4 위키 문서 |
-| 표(데이터베이스) 보기로 속성 비교 | 뮤블 위키 | F4 위키 표 보기 |
+| 계층 분류 + 커스텀 속성 + 템플릿 | 뮤블 위키 | F4 사전 문서 |
+| 표(데이터베이스) 보기로 속성 비교 | 뮤블 위키 | F4 사전 표 보기 |
 | `@` 다이나믹 링크 (제목·별칭 인식) | 뮤블 위키 | F4 문서 링크 |
 | 구조화 전 아이디어 보관 | 뮤블 메모 | F5 메모 |
