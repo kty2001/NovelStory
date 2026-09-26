@@ -21,7 +21,7 @@ flowchart TB
     SC --> SETUP
     ON --> SETUP
     WF --> SETUP
-    CORE --> F0["F0 서재<br/>JSON 내보내기·가져오기"]
+    CORE --> F0["F0 서재<br/>JSON 내보내기·가져오기 ✓"]:::done
     CORE --> F1["F1 보드<br/>시간축 · 블록 · 프레임"]
     CORE --> F4["F4 사전<br/>분류 · 문서 · 링크"]
     F1 --> LINK["보드 ↔ 사전 연동"]
@@ -99,10 +99,10 @@ flowchart TB
 - [x] 데이터 유실 대책: `navigator.storage.persist()` + 백업 알림 (A9) (2026-09-26) — 요청 함수·배너 완료, 호출·내보내기 버튼은 F0에서 연결
 
 ### F0 서재
-- [ ] 소설 목록·생성·이름 변경·복제·삭제
-- [ ] 소설 단위 JSON 내보내기 / 가져오기 (백업 알림 배너에 "지금 내보내기" 버튼 추가)
-- [ ] 빈 서재(L-2) + 샘플 소설: `public/samples/sample.whitenoard.json` 작성, 가져오기 경로로 추가, Vitest 가져오기 테스트 ([onboarding.md](./design/onboarding.md) 4장)
-- [ ] 첫 소설 생성 시 `persist()` 1회 요청 (`requestPersistOnce()` 호출)
+- [x] 소설 목록·생성·이름 변경·복제·삭제 (2026-09-26) — 표지 업로드(Web Worker WebP 변환), 되돌리기 알림 포함
+- [x] 소설 단위 JSON 내보내기 / 가져오기 (2026-09-26) — 서재 카드·작업공간 ⋯ 메뉴·백업 배너
+- [x] 빈 서재(L-2) + 샘플 소설 (2026-09-26): `public/samples/sample.whitenoard.json` 작성, 가져오기 경로로 추가, Vitest 가져오기 테스트 ([onboarding.md](./design/onboarding.md) 4장)
+- [x] 첫 소설 생성 시 `persist()` 1회 요청 (2026-09-26)
 
 ### F1 화이트보드 타임라인
 - [ ] React Flow 캔버스 (줌·팬·미니맵·점 격자, `onlyRenderVisibleElements` 기본 on, 줌 0.5 미만 간략 표시 — C3)

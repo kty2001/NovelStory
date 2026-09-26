@@ -2,13 +2,20 @@ import { useEffect, useState } from "react";
 import { backupNotice, snoozeUntil } from "../db/backup";
 import { db } from "../db/db";
 import { patchUiState } from "../db/uiState";
+import Button from "../components/Button";
 import { useNovelStore } from "../store/novelStore";
 
 type Notice = ReturnType<typeof backupNotice>;
 
-// 백업 알림 (UC-41, A9): 소설을 열 때 1회 판단. "지금 내보내기"는 F0 내보내기 작업에서 연결
+// 백업 알림 (UC-41, A9): 소설을 열 때 1회 판단
 // 판단 기준은 불러온 시점의 소설 (열어 둔 동안 편집해도 다시 판단하지 않음)
-export default function BackupBanner({ novelId }: { novelId: string }) {
+export default function BackupBanner({
+  novelId,
+  onExport,
+}: {
+  novelId: string;
+  onExport: () => Promise<void>;
+}) {
   const [notice, setNotice] = useState<Notice>(null);
 
   useEffect(() => {
@@ -39,9 +46,17 @@ export default function BackupBanner({ novelId }: { novelId: string }) {
       <span className="text-muted">
         이 소설은 이 브라우저에만 저장됩니다. JSON으로 내보내 두세요.
       </span>
-      <button className="ml-auto rounded-md px-3 py-2 text-button text-ink" onClick={later}>
+      <Button
+        size="sm"
+        variant="primary"
+        className="ml-auto"
+        onClick={() => void onExport().then(() => setNotice(null))}
+      >
+        지금 내보내기
+      </Button>
+      <Button size="sm" variant="text" onClick={later}>
         나중에
-      </button>
+      </Button>
     </div>
   );
 }

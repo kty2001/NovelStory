@@ -1,5 +1,5 @@
 import { createBrowserRouter, Navigate } from "react-router";
-import LibraryPage from "./pages/LibraryPage";
+import LibraryPage from "./pages/library/LibraryPage";
 import NovelLayout from "./pages/NovelLayout";
 import BoardPage from "./pages/BoardPage";
 import WikiPage from "./pages/WikiPage";

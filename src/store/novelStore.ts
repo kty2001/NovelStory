@@ -74,6 +74,8 @@ export type NovelStore = typeof useNovelStore;
 
 const autosave = createAutosave(useNovelStore);
 export const flushSave = autosave.flush;
+// 내보내기(lastExportedAt)·소설 정보 수정처럼 DB에 직접 쓴 소설 레코드를 반영
+export const adoptNovel = autosave.adoptNovel;
 
 const toCollection = <T extends BaseRecord>(rows: T[]): Collection<T> =>
   Object.fromEntries(rows.map((r) => [r.id, r]));

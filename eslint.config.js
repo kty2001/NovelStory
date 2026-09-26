@@ -17,6 +17,10 @@ export default defineConfig([
       reactRefresh.configs.vite,
     ],
     languageOptions: { globals: globals.browser },
+    rules: {
+      // 구조 분해로 필드를 빼는 용도 허용 (예: { blob, ...rest })
+      "@typescript-eslint/no-unused-vars": ["error", { ignoreRestSiblings: true }],
+    },
   },
   prettier,
 ]);

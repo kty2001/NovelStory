@@ -1,0 +1,1084 @@
+{
+  "format": "whitenoard-novel",
+  "schemaVersion": 1,
+  "exportedAt": "2026-09-26T00:00:00.000Z",
+  "novel": {
+    "id": "sample",
+    "updatedAt": "2026-09-26T00:00:00.000Z",
+    "title": "잿빛 왕관 (샘플)",
+    "genre": "판타지",
+    "synopsis": "왕을 잃은 막내 공주 레아가 호위 기사 카엘과 함께 섭정 모르반에게서 왕관을 되찾는 이야기.",
+    "createdAt": "2026-09-26T00:00:00.000Z"
+  },
+  "board": {
+    "id": "sample",
+    "novelId": "sample",
+    "updatedAt": "2026-09-26T00:00:00.000Z",
+    "timeScale": {
+      "pxPerTick": 120,
+      "collapsedPx": 40,
+      "tickLabels": {
+        "0": "1년차 봄",
+        "3": "1년차 겨울",
+        "6": "2년차 봄",
+        "40": "5년차 가을"
+      },
+      "collapsed": [
+        {
+          "from": 7,
+          "to": 39
+        }
+      ],
+      "snap": true
+    },
+    "stateLanes": {
+      "enabled": false,
+      "order": ["d-lea", "d-kael", "d-morvan"]
+    }
+  },
+  "boardItems": [
+    {
+      "id": "b-frame",
+      "novelId": "sample",
+      "updatedAt": "2026-09-26T00:00:00.000Z",
+      "kind": "frame",
+      "z": 0,
+      "place": {
+        "mode": "free",
+        "x": -40,
+        "y": -240
+      },
+      "w": 960,
+      "h": 560,
+      "title": "1부"
+    },
+    {
+      "id": "b-e1",
+      "novelId": "sample",
+      "updatedAt": "2026-09-26T00:00:00.000Z",
+      "kind": "event",
+      "z": 0,
+      "place": {
+        "mode": "timed",
+        "t": 0,
+        "y": -140
+      },
+      "docId": "d-e1",
+      "color": "brand-pink",
+      "parentFrameId": "b-frame"
+    },
+    {
+      "id": "b-e2",
+      "novelId": "sample",
+      "updatedAt": "2026-09-26T00:00:00.000Z",
+      "kind": "event",
+      "z": 0,
+      "place": {
+        "mode": "timed",
+        "t": 1,
+        "y": -200
+      },
+      "docId": "d-e2",
+      "color": "brand-peach",
+      "parentFrameId": "b-frame"
+    },
+    {
+      "id": "b-e3",
+      "novelId": "sample",
+      "updatedAt": "2026-09-26T00:00:00.000Z",
+      "kind": "event",
+      "z": 0,
+      "place": {
+        "mode": "timed",
+        "t": 2,
+        "y": -140
+      },
+      "docId": "d-e3",
+      "color": "brand-peach",
+      "parentFrameId": "b-frame"
+    },
+    {
+      "id": "b-e4",
+      "novelId": "sample",
+      "updatedAt": "2026-09-26T00:00:00.000Z",
+      "kind": "event",
+      "z": 0,
+      "place": {
+        "mode": "timed",
+        "t": 3,
+        "y": -200,
+        "tEnd": 5
+      },
+      "docId": "d-e4",
+      "color": "brand-peach",
+      "parentFrameId": "b-frame"
+    },
+    {
+      "id": "b-e5",
+      "novelId": "sample",
+      "updatedAt": "2026-09-26T00:00:00.000Z",
+      "kind": "event",
+      "z": 0,
+      "place": {
+        "mode": "timed",
+        "t": 6,
+        "y": -140
+      },
+      "docId": "d-e5",
+      "color": "brand-pink",
+      "parentFrameId": "b-frame"
+    },
+    {
+      "id": "b-e6",
+      "novelId": "sample",
+      "updatedAt": "2026-09-26T00:00:00.000Z",
+      "kind": "event",
+      "z": 0,
+      "place": {
+        "mode": "timed",
+        "t": 40,
+        "y": -140
+      },
+      "docId": "d-e6",
+      "color": "brand-peach"
+    },
+    {
+      "id": "b-e7",
+      "novelId": "sample",
+      "updatedAt": "2026-09-26T00:00:00.000Z",
+      "kind": "event",
+      "z": 0,
+      "place": {
+        "mode": "timed",
+        "t": 41,
+        "y": -140
+      },
+      "docId": "d-e7",
+      "color": "brand-pink"
+    },
+    {
+      "id": "b-e8",
+      "novelId": "sample",
+      "updatedAt": "2026-09-26T00:00:00.000Z",
+      "kind": "event",
+      "z": 0,
+      "place": {
+        "mode": "undated",
+        "x": -260,
+        "y": -140
+      },
+      "docId": "d-e8",
+      "color": "brand-peach"
+    },
+    {
+      "id": "b-s1",
+      "novelId": "sample",
+      "updatedAt": "2026-09-26T00:00:00.000Z",
+      "kind": "state",
+      "z": 0,
+      "place": {
+        "mode": "timed",
+        "t": 0,
+        "y": 60
+      },
+      "docId": "d-lea",
+      "stateType": "appear",
+      "changes": [
+        {
+          "key": "나이",
+          "to": "17"
+        },
+        {
+          "key": "소속",
+          "to": "잿빛 왕가"
+        },
+        {
+          "key": "능력",
+          "to": "없음"
+        }
+      ],
+      "note": "",
+      "parentFrameId": "b-frame"
+    },
+    {
+      "id": "b-s2",
+      "novelId": "sample",
+      "updatedAt": "2026-09-26T00:00:00.000Z",
+      "kind": "state",
+      "z": 0,
+      "place": {
+        "mode": "timed",
+        "t": 0,
+        "y": 220
+      },
+      "docId": "d-morvan",
+      "stateType": "appear",
+      "changes": [
+        {
+          "key": "소속",
+          "to": "섭정 공작가"
+        }
+      ],
+      "note": "",
+      "linkedEventItemId": "b-e1",
+      "parentFrameId": "b-frame"
+    },
+    {
+      "id": "b-s3",
+      "novelId": "sample",
+      "updatedAt": "2026-09-26T00:00:00.000Z",
+      "kind": "state",
+      "z": 0,
+      "place": {
+        "mode": "timed",
+        "t": 2,
+        "y": 140
+      },
+      "docId": "d-kael",
+      "stateType": "appear",
+      "changes": [
+        {
+          "key": "소속",
+          "to": "왕실 근위대"
+        }
+      ],
+      "note": "",
+      "linkedEventItemId": "b-e3",
+      "parentFrameId": "b-frame"
+    },
+    {
+      "id": "b-s4",
+      "novelId": "sample",
+      "updatedAt": "2026-09-26T00:00:00.000Z",
+      "kind": "state",
+      "z": 0,
+      "place": {
+        "mode": "timed",
+        "t": 6,
+        "y": 60
+      },
+      "docId": "d-lea",
+      "stateType": "change",
+      "changes": [
+        {
+          "key": "능력",
+          "from": "없음",
+          "to": "재의 불꽃"
+        }
+      ],
+      "note": "",
+      "linkedEventItemId": "b-e5",
+      "parentFrameId": "b-frame"
+    },
+    {
+      "id": "b-s5",
+      "novelId": "sample",
+      "updatedAt": "2026-09-26T00:00:00.000Z",
+      "kind": "state",
+      "z": 0,
+      "place": {
+        "mode": "timed",
+        "t": 40,
+        "y": 140
+      },
+      "docId": "d-kael",
+      "stateType": "change",
+      "changes": [
+        {
+          "key": "소속",
+          "from": "왕실 근위대",
+          "to": "북부 연합"
+        }
+      ],
+      "note": "",
+      "linkedEventItemId": "b-e6"
+    },
+    {
+      "id": "b-s6",
+      "novelId": "sample",
+      "updatedAt": "2026-09-26T00:00:00.000Z",
+      "kind": "state",
+      "z": 0,
+      "place": {
+        "mode": "timed",
+        "t": 41,
+        "y": 220
+      },
+      "docId": "d-morvan",
+      "stateType": "exit",
+      "changes": [],
+      "note": "레아의 불꽃에 패배",
+      "linkedEventItemId": "b-e7"
+    },
+    {
+      "id": "b-sticky",
+      "novelId": "sample",
+      "updatedAt": "2026-09-26T00:00:00.000Z",
+      "kind": "sticky",
+      "z": 1,
+      "place": {
+        "mode": "free",
+        "x": -320,
+        "y": 120
+      },
+      "w": 200,
+      "h": 160,
+      "text": "이 소설은 샘플입니다. 마음껏 고치고 지워 보세요",
+      "color": "sticky-yellow"
+    },
+    {
+      "id": "b-text",
+      "novelId": "sample",
+      "updatedAt": "2026-09-26T00:00:00.000Z",
+      "kind": "text",
+      "z": 1,
+      "place": {
+        "mode": "free",
+        "x": -40,
+        "y": -330
+      },
+      "w": 420,
+      "text": "잿빛 왕관 — 몰락한 공주의 복수와 계승"
+    }
+  ],
+  "boardEdges": [
+    {
+      "id": "x-1",
+      "novelId": "sample",
+      "updatedAt": "2026-09-26T00:00:00.000Z",
+      "source": "b-e1",
+      "target": "b-e2",
+      "label": "계기",
+      "dashed": false
+    },
+    {
+      "id": "x-2",
+      "novelId": "sample",
+      "updatedAt": "2026-09-26T00:00:00.000Z",
+      "source": "b-e8",
+      "target": "b-e7",
+      "label": "복선",
+      "dashed": true
+    }
+  ],
+  "wikiCategories": [
+    {
+      "id": "c-char",
+      "novelId": "sample",
+      "updatedAt": "2026-09-26T00:00:00.000Z",
+      "name": "캐릭터",
+      "order": 0,
+      "templateProps": ["나이", "성별", "소속", "능력"],
+      "color": "brand-mint",
+      "system": "character"
+    },
+    {
+      "id": "c-event",
+      "novelId": "sample",
+      "updatedAt": "2026-09-26T00:00:00.000Z",
+      "name": "사건",
+      "order": 1,
+      "templateProps": [],
+      "color": "brand-peach",
+      "system": "event"
+    },
+    {
+      "id": "c-place",
+      "novelId": "sample",
+      "updatedAt": "2026-09-26T00:00:00.000Z",
+      "name": "장소",
+      "order": 2,
+      "templateProps": ["지역", "특징"],
+      "color": "brand-teal"
+    },
+    {
+      "id": "c-faction",
+      "novelId": "sample",
+      "updatedAt": "2026-09-26T00:00:00.000Z",
+      "name": "세력·조직",
+      "order": 3,
+      "templateProps": ["대표", "거점"],
+      "color": "brand-pink"
+    },
+    {
+      "id": "c-item",
+      "novelId": "sample",
+      "updatedAt": "2026-09-26T00:00:00.000Z",
+      "name": "아이템",
+      "order": 4,
+      "templateProps": ["소유자", "능력"],
+      "color": "brand-ochre"
+    },
+    {
+      "id": "c-world",
+      "novelId": "sample",
+      "updatedAt": "2026-09-26T00:00:00.000Z",
+      "name": "세계관 설정",
+      "order": 5,
+      "templateProps": [],
+      "color": "brand-lavender"
+    }
+  ],
+  "wikiDocs": [
+    {
+      "id": "d-lea",
+      "novelId": "sample",
+      "updatedAt": "2026-09-26T00:00:00.000Z",
+      "categoryId": "c-char",
+      "title": "레아",
+      "aliases": ["막내 공주"],
+      "tags": [],
+      "props": [
+        {
+          "key": "나이",
+          "value": "17"
+        },
+        {
+          "key": "성별",
+          "value": "여"
+        },
+        {
+          "key": "소속",
+          "value": "잿빛 왕가"
+        },
+        {
+          "key": "능력",
+          "value": "없음"
+        }
+      ],
+      "body": {
+        "type": "doc",
+        "content": [
+          {
+            "type": "paragraph",
+            "content": [
+              {
+                "type": "text",
+                "text": "몰락한 잿빛 왕가의 막내 공주. 왕의 서거 뒤 "
+              },
+              {
+                "type": "mention",
+                "attrs": {
+                  "id": "d-kael",
+                  "label": "카엘"
+                }
+              },
+              {
+                "type": "text",
+                "text": "의 도움으로 "
+              },
+              {
+                "type": "mention",
+                "attrs": {
+                  "id": "d-castle",
+                  "label": "잿빛 성"
+                }
+              },
+              {
+                "type": "text",
+                "text": "을 빠져나온다."
+              }
+            ]
+          },
+          {
+            "type": "paragraph",
+            "content": [
+              {
+                "type": "text",
+                "text": "왕가의 피에 잠든 "
+              },
+              {
+                "type": "mention",
+                "attrs": {
+                  "id": "d-flame",
+                  "label": "재의 불꽃"
+                }
+              },
+              {
+                "type": "text",
+                "text": "을 이어받았지만 아직 깨어나지 않았다."
+              }
+            ]
+          }
+        ]
+      },
+      "createdAt": "2026-09-26T00:00:00.000Z",
+      "color": "brand-pink"
+    },
+    {
+      "id": "d-kael",
+      "novelId": "sample",
+      "updatedAt": "2026-09-26T00:00:00.000Z",
+      "categoryId": "c-char",
+      "title": "카엘",
+      "aliases": [],
+      "tags": [],
+      "props": [
+        {
+          "key": "나이",
+          "value": "24"
+        },
+        {
+          "key": "성별",
+          "value": "남"
+        },
+        {
+          "key": "소속",
+          "value": "왕실 근위대"
+        },
+        {
+          "key": "능력",
+          "value": "검술"
+        }
+      ],
+      "body": {
+        "type": "doc",
+        "content": [
+          {
+            "type": "paragraph",
+            "content": [
+              {
+                "type": "text",
+                "text": "왕실 근위대의 젊은 기사. "
+              },
+              {
+                "type": "mention",
+                "attrs": {
+                  "id": "d-lea",
+                  "label": "레아"
+                }
+              },
+              {
+                "type": "text",
+                "text": "를 끝까지 지키겠다고 맹세한다."
+              }
+            ]
+          }
+        ]
+      },
+      "createdAt": "2026-09-26T00:00:00.000Z",
+      "color": "brand-teal"
+    },
+    {
+      "id": "d-morvan",
+      "novelId": "sample",
+      "updatedAt": "2026-09-26T00:00:00.000Z",
+      "categoryId": "c-char",
+      "title": "모르반",
+      "aliases": ["섭정 공작"],
+      "tags": [],
+      "props": [
+        {
+          "key": "나이",
+          "value": "52"
+        },
+        {
+          "key": "성별",
+          "value": "남"
+        },
+        {
+          "key": "소속",
+          "value": "섭정 공작가"
+        },
+        {
+          "key": "능력",
+          "value": "금지된 계약 마법"
+        }
+      ],
+      "body": {
+        "type": "doc",
+        "content": [
+          {
+            "type": "paragraph",
+            "content": [
+              {
+                "type": "text",
+                "text": "왕을 독살하고 섭정이 된 공작. "
+              },
+              {
+                "type": "mention",
+                "attrs": {
+                  "id": "d-crown",
+                  "label": "잿빛 왕관"
+                }
+              },
+              {
+                "type": "text",
+                "text": "을 손에 넣어 왕위를 노린다."
+              }
+            ]
+          }
+        ]
+      },
+      "createdAt": "2026-09-26T00:00:00.000Z",
+      "color": "brand-lavender"
+    },
+    {
+      "id": "d-e1",
+      "novelId": "sample",
+      "updatedAt": "2026-09-26T00:00:00.000Z",
+      "categoryId": "c-event",
+      "title": "왕의 서거",
+      "aliases": [],
+      "tags": ["1부"],
+      "props": [],
+      "body": {
+        "type": "doc",
+        "content": [
+          {
+            "type": "paragraph",
+            "content": [
+              {
+                "type": "text",
+                "text": "잿빛 왕이 연회 도중 쓰러진다. 궁정은 "
+              },
+              {
+                "type": "mention",
+                "attrs": {
+                  "id": "d-morvan",
+                  "label": "모르반"
+                }
+              },
+              {
+                "type": "text",
+                "text": "을 섭정으로 세운다."
+              }
+            ]
+          }
+        ]
+      },
+      "createdAt": "2026-09-26T00:00:00.000Z",
+      "lineId": "l-main"
+    },
+    {
+      "id": "d-e2",
+      "novelId": "sample",
+      "updatedAt": "2026-09-26T00:00:00.000Z",
+      "categoryId": "c-event",
+      "title": "레아의 도주",
+      "aliases": [],
+      "tags": ["1부"],
+      "props": [],
+      "body": {
+        "type": "doc",
+        "content": [
+          {
+            "type": "paragraph",
+            "content": [
+              {
+                "type": "mention",
+                "attrs": {
+                  "id": "d-lea",
+                  "label": "레아"
+                }
+              },
+              {
+                "type": "text",
+                "text": "는 추격을 피해 비밀 통로로 "
+              },
+              {
+                "type": "mention",
+                "attrs": {
+                  "id": "d-castle",
+                  "label": "잿빛 성"
+                }
+              },
+              {
+                "type": "text",
+                "text": "을 빠져나간다."
+              }
+            ]
+          }
+        ]
+      },
+      "createdAt": "2026-09-26T00:00:00.000Z",
+      "lineId": "l-main"
+    },
+    {
+      "id": "d-e3",
+      "novelId": "sample",
+      "updatedAt": "2026-09-26T00:00:00.000Z",
+      "categoryId": "c-event",
+      "title": "카엘의 맹세",
+      "aliases": [],
+      "tags": ["1부"],
+      "props": [],
+      "body": {
+        "type": "doc",
+        "content": [
+          {
+            "type": "paragraph",
+            "content": [
+              {
+                "type": "mention",
+                "attrs": {
+                  "id": "d-kael",
+                  "label": "카엘"
+                }
+              },
+              {
+                "type": "text",
+                "text": "이 근위대를 떠나 공주의 검이 되기로 맹세한다."
+              }
+            ]
+          }
+        ]
+      },
+      "createdAt": "2026-09-26T00:00:00.000Z",
+      "lineId": "l-sub"
+    },
+    {
+      "id": "d-e4",
+      "novelId": "sample",
+      "updatedAt": "2026-09-26T00:00:00.000Z",
+      "categoryId": "c-event",
+      "title": "폐허의 수도원 은신",
+      "aliases": [],
+      "tags": ["1부"],
+      "props": [],
+      "body": {
+        "type": "doc",
+        "content": [
+          {
+            "type": "paragraph",
+            "content": [
+              {
+                "type": "text",
+                "text": "두 사람은 버려진 수도원에 숨어 겨울을 난다."
+              }
+            ]
+          }
+        ]
+      },
+      "createdAt": "2026-09-26T00:00:00.000Z",
+      "lineId": "l-side"
+    },
+    {
+      "id": "d-e5",
+      "novelId": "sample",
+      "updatedAt": "2026-09-26T00:00:00.000Z",
+      "categoryId": "c-event",
+      "title": "재의 불꽃 각성",
+      "aliases": [],
+      "tags": ["1부"],
+      "props": [],
+      "body": {
+        "type": "doc",
+        "content": [
+          {
+            "type": "paragraph",
+            "content": [
+              {
+                "type": "text",
+                "text": "추격대에 포위된 순간 "
+              },
+              {
+                "type": "mention",
+                "attrs": {
+                  "id": "d-lea",
+                  "label": "레아"
+                }
+              },
+              {
+                "type": "text",
+                "text": "의 "
+              },
+              {
+                "type": "mention",
+                "attrs": {
+                  "id": "d-flame",
+                  "label": "재의 불꽃"
+                }
+              },
+              {
+                "type": "text",
+                "text": "이 깨어난다."
+              }
+            ]
+          }
+        ]
+      },
+      "createdAt": "2026-09-26T00:00:00.000Z",
+      "lineId": "l-main"
+    },
+    {
+      "id": "d-e6",
+      "novelId": "sample",
+      "updatedAt": "2026-09-26T00:00:00.000Z",
+      "categoryId": "c-event",
+      "title": "북부 연합 결성",
+      "aliases": [],
+      "tags": ["2부"],
+      "props": [],
+      "body": {
+        "type": "doc",
+        "content": [
+          {
+            "type": "paragraph",
+            "content": [
+              {
+                "type": "text",
+                "text": "흩어졌던 영주들이 "
+              },
+              {
+                "type": "mention",
+                "attrs": {
+                  "id": "d-lea",
+                  "label": "레아"
+                }
+              },
+              {
+                "type": "text",
+                "text": " 아래 모여 연합을 이룬다."
+              }
+            ]
+          }
+        ]
+      },
+      "createdAt": "2026-09-26T00:00:00.000Z",
+      "lineId": "l-sub"
+    },
+    {
+      "id": "d-e7",
+      "novelId": "sample",
+      "updatedAt": "2026-09-26T00:00:00.000Z",
+      "categoryId": "c-event",
+      "title": "모르반의 최후",
+      "aliases": [],
+      "tags": ["2부"],
+      "props": [],
+      "body": {
+        "type": "doc",
+        "content": [
+          {
+            "type": "paragraph",
+            "content": [
+              {
+                "type": "mention",
+                "attrs": {
+                  "id": "d-morvan",
+                  "label": "모르반"
+                }
+              },
+              {
+                "type": "text",
+                "text": "이 "
+              },
+              {
+                "type": "mention",
+                "attrs": {
+                  "id": "d-crown",
+                  "label": "잿빛 왕관"
+                }
+              },
+              {
+                "type": "text",
+                "text": "의 힘을 끌어내려다 "
+              },
+              {
+                "type": "mention",
+                "attrs": {
+                  "id": "d-lea",
+                  "label": "레아"
+                }
+              },
+              {
+                "type": "text",
+                "text": "의 불꽃에 패한다."
+              }
+            ]
+          }
+        ]
+      },
+      "createdAt": "2026-09-26T00:00:00.000Z",
+      "lineId": "l-main"
+    },
+    {
+      "id": "d-e8",
+      "novelId": "sample",
+      "updatedAt": "2026-09-26T00:00:00.000Z",
+      "categoryId": "c-event",
+      "title": "예언서의 발견",
+      "aliases": [],
+      "tags": ["복선"],
+      "props": [],
+      "body": {
+        "type": "doc",
+        "content": [
+          {
+            "type": "paragraph",
+            "content": [
+              {
+                "type": "text",
+                "text": "수도원 지하에서 '잿빛 왕관은 불꽃을 삼킨다'는 예언서가 나온다. 언제 일어난 일인지 아직 정하지 않았다."
+              }
+            ]
+          }
+        ]
+      },
+      "createdAt": "2026-09-26T00:00:00.000Z"
+    },
+    {
+      "id": "d-castle",
+      "novelId": "sample",
+      "updatedAt": "2026-09-26T00:00:00.000Z",
+      "categoryId": "c-place",
+      "title": "잿빛 성",
+      "aliases": [],
+      "tags": [],
+      "props": [
+        {
+          "key": "지역",
+          "value": "왕도"
+        },
+        {
+          "key": "특징",
+          "value": "재로 덮인 검은 성벽"
+        }
+      ],
+      "body": {
+        "type": "doc",
+        "content": [
+          {
+            "type": "paragraph",
+            "content": [
+              {
+                "type": "text",
+                "text": "잿빛 왕가의 성. "
+              },
+              {
+                "type": "mention",
+                "attrs": {
+                  "id": "d-morvan",
+                  "label": "모르반"
+                }
+              },
+              {
+                "type": "text",
+                "text": "이 섭정이 된 뒤 봉쇄되었다."
+              }
+            ]
+          }
+        ]
+      },
+      "createdAt": "2026-09-26T00:00:00.000Z"
+    },
+    {
+      "id": "d-crown",
+      "novelId": "sample",
+      "updatedAt": "2026-09-26T00:00:00.000Z",
+      "categoryId": "c-item",
+      "title": "잿빛 왕관",
+      "aliases": [],
+      "tags": [],
+      "props": [
+        {
+          "key": "소유자",
+          "value": "잿빛 왕가"
+        },
+        {
+          "key": "능력",
+          "value": "불꽃을 담아 두는 그릇"
+        }
+      ],
+      "body": {
+        "type": "doc",
+        "content": [
+          {
+            "type": "paragraph",
+            "content": [
+              {
+                "type": "text",
+                "text": "왕가의 상징. "
+              },
+              {
+                "type": "mention",
+                "attrs": {
+                  "id": "d-flame",
+                  "label": "재의 불꽃"
+                }
+              },
+              {
+                "type": "text",
+                "text": "을 가둘 수 있다는 전설이 있다."
+              }
+            ]
+          }
+        ]
+      },
+      "createdAt": "2026-09-26T00:00:00.000Z"
+    },
+    {
+      "id": "d-flame",
+      "novelId": "sample",
+      "updatedAt": "2026-09-26T00:00:00.000Z",
+      "categoryId": "c-world",
+      "title": "재의 불꽃",
+      "aliases": [],
+      "tags": [],
+      "props": [],
+      "body": {
+        "type": "doc",
+        "content": [
+          {
+            "type": "paragraph",
+            "content": [
+              {
+                "type": "text",
+                "text": "잿빛 왕가의 피로만 이어지는 마법. 타고 남은 재에서 다시 불을 일으킨다."
+              }
+            ]
+          },
+          {
+            "type": "paragraph",
+            "content": [
+              {
+                "type": "text",
+                "text": "현재 계승자: "
+              },
+              {
+                "type": "mention",
+                "attrs": {
+                  "id": "d-lea",
+                  "label": "레아"
+                }
+              },
+              {
+                "type": "text",
+                "text": "."
+              }
+            ]
+          }
+        ]
+      },
+      "createdAt": "2026-09-26T00:00:00.000Z"
+    }
+  ],
+  "storyLines": [
+    {
+      "id": "l-main",
+      "novelId": "sample",
+      "updatedAt": "2026-09-26T00:00:00.000Z",
+      "name": "메인",
+      "order": 0,
+      "color": "muted"
+    },
+    {
+      "id": "l-sub",
+      "novelId": "sample",
+      "updatedAt": "2026-09-26T00:00:00.000Z",
+      "name": "서브",
+      "order": 1,
+      "color": "muted"
+    },
+    {
+      "id": "l-side",
+      "novelId": "sample",
+      "updatedAt": "2026-09-26T00:00:00.000Z",
+      "name": "사이드",
+      "order": 2,
+      "color": "muted"
+    }
+  ],
+  "images": []
+}

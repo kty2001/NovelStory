@@ -2,7 +2,7 @@ import { expect, test } from "@playwright/test";
 
 test("서재가 열리고 ui_guide 토큰이 적용됨", async ({ page }) => {
   await page.goto("/");
-  await expect(page.getByRole("heading", { name: "서재" })).toBeVisible();
+  await expect(page.getByRole("heading", { name: "아직 소설이 없어요" })).toBeVisible();
   const body = await page.evaluate(() => {
     const s = getComputedStyle(document.body);
     return { bg: s.backgroundColor, font: s.fontFamily };

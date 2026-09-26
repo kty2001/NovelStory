@@ -1,6 +1,6 @@
 import type { Table } from "dexie";
 import { db } from "../db/db";
-import type { BaseRecord } from "../db/types";
+import type { BaseRecord, Novel } from "../db/types";
 import type { NovelData, NovelState, NovelStore } from "./novelStore";
 
 const DELAY_MS = 500;
@@ -68,6 +68,12 @@ export function createAutosave(store: NovelStore) {
     base = data && snapshotOf(data);
   }
 
+  // DB에 이미 기록된 소설 레코드를 스토어에 반영 (저장·updatedAt 갱신 없음)
+  function adoptNovel(novel: Novel) {
+    if (base) base = { ...base, novel };
+    store.setState({ novel });
+  }
+
   store.subscribe((s) => {
     if (!base || s.batching || !isDirty(base, s)) return;
     clearTimeout(timer);
@@ -81,7 +87,7 @@ export function createAutosave(store: NovelStore) {
     });
   }
 
-  return { flush, reset };
+  return { flush, reset, adoptNovel };
 }
 
 async function write(prev: Snapshot, next: Snapshot) {

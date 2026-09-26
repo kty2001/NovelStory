@@ -37,6 +37,7 @@ export class ExportFormatError extends Error {
   constructor(
     readonly reason: "format" | "newer",
     message: string,
+    readonly fileVersion?: number,
   ) {
     super(message);
   }
@@ -60,6 +61,7 @@ export function upgradeExport(
     throw new ExportFormatError(
       "newer",
       "더 새로운 버전의 파일. 앱을 새로고침해 최신 버전으로 업데이트",
+      data.schemaVersion,
     );
   }
   while (data.schemaVersion < SCHEMA_VERSION) {
