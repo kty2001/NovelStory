@@ -799,5 +799,96 @@
   </ol></div>
 </section>
 
+<!-- ================= B-9 ================= -->
+<section class="fw" id="b-9">
+  <h2>B-9 빈 보드 (새 소설 첫 진입)</h2>
+  <p class="desc">보드 요소가 0개일 때만 안내 카드 표시, 첫 요소를 놓으면 사라짐. 좌하단은 다른 상태(필터로 전부 숨김) 병기 (UC-01, <code>onboarding.md</code>)</p>
+  <div class="frame">
+    <div class="topbar">
+      <span class="btn text">← 서재</span>
+      <span class="ntitle">새 소설</span>
+      <div class="tabs"><span class="tab on">보드</span><span class="tab">사전</span></div>
+      <span class="spacer"></span>
+      <span class="save">✓ 저장됨</span>
+      <div class="search"><span>빠른 이동 — 문서 · 시점</span><span class="kbd">Ctrl K</span></div>
+      <span class="ibtn">?</span>
+      <span class="ibtn">⋯</span>
+    </div>
+
+    <div class="canvas">
+      <!-- 도구 모음 -->
+      <div class="toolbar float">
+        <span class="tool on">↖<small>V</small></span>
+        <span class="tool">✋<small>H</small></span>
+        <span class="sep"></span>
+        <span class="tool hl">▭<small>E</small></span>
+        <span class="tool hl">◐<small>C</small></span>
+        <span class="tool">▢<small>S</small></span>
+        <span class="tool">T<small>T</small></span>
+        <span class="tool">⬚<small>F</small></span>
+        <span class="tool">↗<small>L</small></span>
+        <span class="sep"></span>
+        <span class="tbtn">☰ 캐릭터별 정렬</span>
+        <span class="tbtn">스냅 <span class="toggle on"></span></span>
+        <span class="tbtn">필터 ▾</span>
+      </div>
+
+      <!-- 미정 영역 (빈 상태) -->
+      <div class="undated" style="left:470px;top:170px;width:210px;height:520px"><span class="zl">시점 미정</span></div>
+
+      <!-- 시간축: 0 눈금이 화면 중앙 근처 -->
+      <div class="axis" style="left:700px;top:440px;width:740px"></div>
+      <div class="tick" style="left:720px;top:435px"></div><div class="tl" style="left:720px;top:452px">0</div>
+      <div class="tick" style="left:810px;top:435px"></div><div class="tl" style="left:810px;top:452px">1</div>
+      <div class="tick" style="left:900px;top:435px"></div><div class="tl" style="left:900px;top:452px">2</div>
+      <div class="tick" style="left:990px;top:435px"></div><div class="tl" style="left:990px;top:452px">3</div>
+      <div class="tick" style="left:1080px;top:435px"></div><div class="tl" style="left:1080px;top:452px">4</div>
+      <div class="tick" style="left:1170px;top:435px"></div><div class="tl" style="left:1170px;top:452px">5</div>
+      <div class="tick" style="left:1260px;top:435px"></div><div class="tl" style="left:1260px;top:452px">6</div>
+      <div class="tick" style="left:1350px;top:435px"></div><div class="tl" style="left:1350px;top:452px">7</div>
+
+      <!-- 안내 카드 -->
+      <div class="float" style="position:absolute;z-index:10;left:760px;top:96px;width:540px;padding:18px 20px 8px">
+        <div style="font-size:18px;font-weight:700">시간축에 첫 사건을 올려 보세요</div>
+        <div class="cap" style="margin:2px 0 10px">위쪽엔 사건, 아래쪽엔 캐릭터 변화. 모든 내용은 자동 저장됩니다.</div>
+        <div class="step"><span class="n">1</span><div><b>사건 올리기</b> <span class="kbd">E</span><br /><span class="cap">도구 모음 "사건"을 시간축 위로 끌어 놓기. 놓은 자리 눈금에 맞춰짐</span></div></div>
+        <div class="step"><span class="n">2</span><div><b>캐릭터 기록</b> <span class="kbd">C</span><br /><span class="cap">"캐릭터 상태"를 축 아래에 놓고 등장 · 변화 · 퇴장 기록</span></div></div>
+        <div class="step"><span class="n">3</span><div><b>설정 정리</b> <span class="kbd">Alt 2</span><br /><span class="cap">사전 탭에서 캐릭터 · 장소 · 세계관 문서 작성. 블록과 문서는 자동 연결</span></div></div>
+        <div class="row cap" style="border-top:1px solid var(--hair);padding:10px 0 6px">시점을 모르면 왼쪽 "시점 미정"에 놓으세요<span class="spacer"></span><span class="btn text sm">단축키 보기 <span class="kbd">?</span></span></div>
+      </div>
+
+      <!-- 다른 상태: 필터로 전부 숨김 -->
+      <div style="position:absolute;left:24px;bottom:24px;z-index:10;width:400px;padding:12px;border:1.5px dashed var(--g5);border-radius:12px;background:#fff">
+        <div class="cap b" style="margin-bottom:8px">다른 상태 — 요소는 있으나 필터로 전부 숨김</div>
+        <div class="toast" style="position:static;display:inline-flex"><span>필터로 12개 숨김</span><span class="act">필터 해제</span></div>
+        <div class="cap" style="margin-top:8px">이때는 안내 카드 대신 이 알림. 도구 모음 필터 버튼에 숨김 수 배지 (B-5)</div>
+      </div>
+
+      <!-- 줌 · 미니맵 -->
+      <div class="zoom float"><span class="z">−</span><span class="z num">100%</span><span class="z">+</span><span class="z">⤢</span></div>
+      <div class="minimap float">
+        <i style="left:60px;top:40px;width:26px;height:60px;background:var(--g2)"></i>
+        <i style="left:90px;top:62px;width:104px;height:2px;background:#333"></i>
+        <span class="vp" style="left:40px;top:10px;width:120px;height:100px"></span>
+      </div>
+    </div>
+
+    <span class="m abs" style="left:1308px;top:152px">1</span>
+    <span class="m abs" style="left:474px;top:60px">2</span>
+    <span class="m abs" style="left:736px;top:534px">3</span>
+    <span class="m abs" style="left:446px;top:236px">4</span>
+    <span class="m abs" style="left:432px;top:722px">5</span>
+    <span class="m abs" style="left:1196px;top:726px">6</span>
+  </div>
+  <div class="notes"><ol>
+    <li><span class="m">1</span><span><b>안내 카드</b>: 보드 요소(<code>BoardItem</code>) 실제 개수 0일 때만 (필터 무관). 화면에 고정(줌·팬에 따라 움직이지 않음), 카드 밖 캔버스는 평소처럼 배치·팬. 첫 요소 배치(끌어 놓기 · 붙여넣기 · 사전 문서 끌기) 즉시 사라짐, 닫기 버튼 없음. 저장 상태 없음 (UC-01)</span></li>
+    <li><span class="m">2</span><span>안내 카드가 보이는 동안 도구 모음의 사건(<code>E</code>) · 캐릭터 상태(<code>C</code>) 버튼 약한 강조 테두리</span></li>
+    <li><span class="m">3</span><span>새 소설 첫 화면: 0 눈금이 화면 가로 중앙 근처, 눈금 라벨 없음(숫자만). 눈금 클릭으로 라벨 지정 (B-7, UC-14)</span></li>
+    <li><span class="m">4</span><span>빈 미정 영역: 점선 상자 + "시점 미정" 라벨만 표시 (UC-16)</span></li>
+    <li><span class="m">5</span><span><b>다른 상태</b>: 요소는 있으나 필터로 모두 숨겨짐 → 안내 카드 대신 "필터로 N개 숨김 · 필터 해제" 알림 (UC-23)</span></li>
+    <li><span class="m">6</span><span>줌 · 미니맵은 빈 보드에서도 표시 (미니맵은 시간축 · 미정 영역만)</span></li>
+  </ol></div>
+</section>
+
 </body>
 </html>

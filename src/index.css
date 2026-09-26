@@ -1,0 +1,133 @@
+@import "tailwindcss";
+
+/* ui_guide.md 토큰. 간격은 Tailwind 기본 4px 단위 사용 (xxs=1 · xs=2 · sm=3 · md=4 · lg=6 · xl=8 · xxl=12) */
+@theme {
+  /* 정의된 색 토큰 외 임의 색상 금지 → Tailwind 기본 색 제거 */
+  --color-*: initial;
+
+  /* 브랜드 / 블록 */
+  --color-primary: #0a0a0a;
+  --color-on-primary: #ffffff;
+  --color-brand-pink: #ff4d8b;
+  --color-brand-teal: #1a3a3a;
+  --color-brand-lavender: #b8a4ed;
+  --color-brand-peach: #ffb084;
+  --color-brand-ochre: #e8b94a;
+  --color-brand-mint: #a4d4c5;
+  --color-brand-coral: #ff6b5a;
+
+  /* 포스트잇 */
+  --color-sticky-yellow: #fff1b8;
+  --color-sticky-pink: #ffd6e5;
+  --color-sticky-mint: #d9efe8;
+  --color-sticky-lavender: #e6defa;
+  --color-sticky-peach: #ffe3d1;
+
+  /* 표면 */
+  --color-canvas: #fffaf0;
+  --color-surface-soft: #faf5e8;
+  --color-surface-card: #f5f0e0;
+  --color-surface-strong: #ebe6d6;
+  --color-surface-dark: #0a1a1a;
+  --color-hairline: #e5e5e5;
+
+  /* 텍스트 */
+  --color-ink: #0a0a0a;
+  --color-body-strong: #1a1a1a;
+  --color-body: #3a3a3a;
+  --color-muted: #6a6a6a;
+  --color-muted-soft: #9a9a9a;
+
+  /* 시맨틱 */
+  --color-success: #22c55e;
+  --color-warning: #f59e0b;
+  --color-error: #ef4444;
+
+  --font-sans:
+    "Pretendard Variable", Pretendard, -apple-system, BlinkMacSystemFont, system-ui, Roboto,
+    "Helvetica Neue", "Segoe UI", "Apple SD Gothic Neo", "Noto Sans KR", "Malgun Gothic", sans-serif;
+  --font-serif: "Noto Serif KR", "Nanum Myeongjo", "AppleMyungjo", "Batang", serif;
+
+  /* 모양 (pill·full은 rounded-full) */
+  --radius-xs: 6px;
+  --radius-sm: 8px;
+  --radius-md: 12px;
+  --radius-lg: 16px;
+
+  /* 글자 위계: text-<토큰> 하나로 크기·행간·자간·굵기 적용 */
+  --text-display: 1.875rem;
+  --text-display--line-height: 1.3;
+  --text-display--letter-spacing: -0.02em;
+  --text-display--font-weight: 700;
+  --text-title-lg: 1.5rem;
+  --text-title-lg--line-height: 1.35;
+  --text-title-lg--letter-spacing: -0.01em;
+  --text-title-lg--font-weight: 700;
+  --text-title-md: 1.125rem;
+  --text-title-md--line-height: 1.4;
+  --text-title-md--font-weight: 600;
+  --text-title-sm: 1rem;
+  --text-title-sm--line-height: 1.4;
+  --text-title-sm--font-weight: 600;
+  --text-body-md: 1rem;
+  --text-body-md--line-height: 1.6;
+  --text-body-md--font-weight: 400;
+  --text-body-sm: 0.875rem;
+  --text-body-sm--line-height: 1.6;
+  --text-body-sm--font-weight: 400;
+  --text-block-label: 0.875rem;
+  --text-block-label--line-height: 1.3;
+  --text-block-label--font-weight: 600;
+  --text-caption: 0.75rem;
+  --text-caption--line-height: 1.4;
+  --text-caption--font-weight: 500;
+  --text-button: 0.875rem;
+  --text-button--line-height: 1;
+  --text-button--font-weight: 600;
+  --text-prose: 1.125rem; /* font-serif와 함께 사용 */
+  --text-prose--line-height: 1.8;
+  --text-prose--font-weight: 400;
+
+  /* 그림자: 포스트잇 · 떠 있는 UI · 드래그 중에만 */
+  --shadow-sticky: 0 1px 3px rgb(0 0 0 / 0.12);
+  --shadow-float: 0 2px 8px rgb(0 0 0 / 0.08);
+  --shadow-drag: 0 4px 12px rgb(0 0 0 / 0.12);
+}
+
+@layer base {
+  html,
+  body,
+  #root {
+    height: 100%;
+  }
+
+  body {
+    background: var(--color-canvas);
+    color: var(--color-ink);
+    font-family: var(--font-sans);
+    word-break: keep-all;
+  }
+}
+
+/* 사전 본문 (Tiptap): preflight가 제목·목록 서식을 초기화하므로 다시 지정 (C1) */
+.tiptap {
+  @apply text-body-md outline-none;
+}
+.tiptap h1 {
+  @apply text-display;
+}
+.tiptap h2 {
+  @apply text-title-lg;
+}
+.tiptap h3 {
+  @apply text-title-md;
+}
+.tiptap ul {
+  @apply list-disc pl-6;
+}
+.tiptap ol {
+  @apply list-decimal pl-6;
+}
+.tiptap blockquote {
+  @apply border-l-3 border-hairline pl-4;
+}

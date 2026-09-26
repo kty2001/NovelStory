@@ -1,0 +1,8 @@
+README.md
+docs
+spikes
+dist
+.wrangler
+test-results
+playwright-report
+package-lock.json

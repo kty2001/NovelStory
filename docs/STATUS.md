@@ -1,7 +1,7 @@
 # 진행 상태 (Status)
 
 ## 현재 단계
-설계 산출물 진행 중 (유스케이스·데이터 모델·ERD·단축키·데스크톱 와이어프레임 완료) — 다음: 빈 상태·온보딩 → 태블릿·모바일 와이어프레임 → MVP 구현. 원격 실기기 확인은 보류(MVP 배포 전 태블릿 1회 필수)
+1단계(MVP) 기반 진행 중 — 프로젝트 셋업·품질 도구·토큰·라우팅·스토어·Dexie 자동 저장·데이터 유실 대책(A9) 완료 — 기반 끝, 다음: F0 서재. 태블릿·모바일 와이어프레임은 반응형 작업 전까지 병행. 원격 실기기 확인은 보류(MVP 배포 전 태블릿 1회 필수)
 
 ## 이력
 | 날짜 | 내용 |
@@ -18,6 +18,10 @@
 | 2026-09-25 | 사건 스토리 라인(메인·서브·사이드) 기능 추가: 기능 명세·UC-23·데이터 모델·ERD·UI 가이드 반영 |
 | 2026-09-25 | 데스크톱 와이어프레임([wireframe.md](./design/wireframe.md)) 작성: 서재 5 · 보드 8 · 사전 6 프레임, 로파이 HTML, MVP 유스케이스 대조 완료 |
 | 2026-09-25 | 기능 명칭 "위키" → "사전" 변경 (문서·와이어프레임 한글 표기) |
+| 2026-09-26 | 빈 상태·온보딩([onboarding.md](./design/onboarding.md)) 작성: 샘플 소설 제공, 빈 보드 안내 카드, L-2 갱신 · B-9 빈 보드 · W-7 빈 사전 프레임 추가 |
+| 2026-09-26 | 1단계 착수: 루트에 앱 셋업(Vite 8 + React 19 + TS 6 + Tailwind v4 + Cloudflare Vite 플러그인, `wrangler.jsonc` SPA), ESLint·Prettier·Vitest·Playwright 스모크 테스트 |
+| 2026-09-26 | 기반 구현: ui_guide 토큰·폰트(`@theme`, Tailwind 기본 색 제거), 라우팅(서재·작업공간·보드·사전), 소설 스토어(Zustand + zundo, 보드 데이터만 실행 취소·묶음 기록), Dexie 스키마 + 참조 비교 자동 저장(소프트 삭제), 내보내기 `schemaVersion`·변환 틀, Vitest 17건 |
+| 2026-09-26 | 데이터 유실 대책(A9): `requestPersistOnce()`(앱 전체 1회, 결과 `AppMeta` 기록), 백업 알림 판단(7일·미백업 3일·나중에 3일) + 작업공간 배너, `UiState` 저장 도우미 |
 
 ## 결정됨
 | 항목 | 결정 |
@@ -37,6 +41,8 @@
 | 보드 마우스 조작 | 빈 곳 드래그 = 박스 선택, 팬 = `Space`+드래그·가운데 버튼·`H`·터치 ([shortcuts.md](./design/shortcuts.md)) |
 | 사건 스토리 라인 | 사건당 1개, 기본 메인·서브·사이드 + 추가·수정, 배지·테두리·필터로 구분, 색 지정은 MVP 이후 (UC-23) |
 | 다크 모드 | MVP 제외 |
+| 온보딩 | 샘플 소설(빈 서재, 가져오기 경로 재사용) + 빈 보드 안내 카드(요소 0개일 때만), 투어 없음 ([onboarding.md](./design/onboarding.md)) |
+| `persist()` 요청 시점 | 첫 소설이 생기는 순간 1회 (새 소설 · 샘플 · 가져오기) |
 | 기술 | React Flow, dnd kit(core), Tiptap, Zustand + zundo, Dexie, React Router, Lucide, ESLint·Prettier·Vitest·Playwright |
 | 배포 | GitHub + Cloudflare Workers Builds (무료 티어) |
 

@@ -9,13 +9,13 @@ flowchart TB
         direction LR
         UC["유스케이스 ✓"]:::done --> DM["데이터 모델 · ERD ✓"]:::done
         DM --> SC["단축키 목록 ✓"]:::done
-        DM --> ON["빈 상태 · 온보딩"]
+        DM --> ON["빈 상태 · 온보딩 ✓"]:::done
         DM --> WF["와이어프레임"]
     end
 
     subgraph BASE["1단계 기반"]
         direction LR
-        SETUP["프로젝트 셋업<br/>품질 도구"] --> CORE["토큰 · 라우팅<br/>스토어 · Dexie · 자동 저장"]
+        SETUP["프로젝트 셋업<br/>품질 도구 ✓"]:::done --> CORE["토큰 · 라우팅<br/>스토어 · Dexie · 자동 저장 ✓"]:::done
     end
 
     SC --> SETUP
@@ -86,21 +86,23 @@ flowchart TB
   - [x] 데스크톱 (2026-09-25) — 6장 "기본값으로 정한 사항" 검토 필요
   - [ ] 태블릿 · 모바일
 - [x] 단축키 목록 ([shortcuts.md](./design/shortcuts.md)) — 6장 "기본값으로 정한 사항" 검토 필요
-- [ ] 빈 상태·온보딩 (첫 소설 생성 흐름, 샘플 소설 제공 여부)
+- [x] 빈 상태·온보딩 ([onboarding.md](./design/onboarding.md)) — 샘플 소설 제공(가져오기 재사용) + 빈 보드 안내 카드, L-2 갱신 · B-9 · W-7 추가 (2026-09-26). 5장 "기본값으로 정한 사항" 검토 필요
 
 ## 1단계 (MVP)
 ### 기반
 - [x] GitHub 원격 저장소 생성·연결 (`kty2001/NovelStory`)
-- [ ] 프로젝트 셋업: Vite + React + TypeScript + Tailwind v4 + Cloudflare Vite 플러그인
-- [ ] 품질 도구: ESLint + Prettier + Vitest + Playwright
-- [ ] ui_guide 토큰·폰트를 Tailwind `@theme`에 반영 (사전 본문 H1~H3 스타일 포함 — preflight 초기화 대응, C1)
-- [ ] 라우팅 (React Router), 상태 관리 (Zustand + zundo — 편집 1회·드래그 1회 = 1건, 되돌릴 때 현재 노드와 병합, C2)
-- [ ] Dexie 저장 계층 + 자동 저장 + 내보내기 `schemaVersion` ([data_model.md](./design/data_model.md) 6·7장)
-- [ ] 데이터 유실 대책: `navigator.storage.persist()` + 백업 알림 (A9)
+- [x] 프로젝트 셋업: Vite + React + TypeScript + Tailwind v4 + Cloudflare Vite 플러그인 (2026-09-26)
+- [x] 품질 도구: ESLint + Prettier + Vitest + Playwright (2026-09-26)
+- [x] ui_guide 토큰·폰트를 Tailwind `@theme`에 반영 (사전 본문 H1~H3 스타일 포함 — preflight 초기화 대응, C1) (2026-09-26)
+- [x] 라우팅 (React Router), 상태 관리 (Zustand + zundo — 편집 1회·드래그 1회 = 1건, 되돌릴 때 현재 노드와 병합, C2) (2026-09-26)
+- [x] Dexie 저장 계층 + 자동 저장 + 내보내기 `schemaVersion` ([data_model.md](./design/data_model.md) 6·7장) (2026-09-26)
+- [x] 데이터 유실 대책: `navigator.storage.persist()` + 백업 알림 (A9) (2026-09-26) — 요청 함수·배너 완료, 호출·내보내기 버튼은 F0에서 연결
 
 ### F0 서재
 - [ ] 소설 목록·생성·이름 변경·복제·삭제
-- [ ] 소설 단위 JSON 내보내기 / 가져오기
+- [ ] 소설 단위 JSON 내보내기 / 가져오기 (백업 알림 배너에 "지금 내보내기" 버튼 추가)
+- [ ] 빈 서재(L-2) + 샘플 소설: `public/samples/sample.whitenoard.json` 작성, 가져오기 경로로 추가, Vitest 가져오기 테스트 ([onboarding.md](./design/onboarding.md) 4장)
+- [ ] 첫 소설 생성 시 `persist()` 1회 요청 (`requestPersistOnce()` 호출)
 
 ### F1 화이트보드 타임라인
 - [ ] React Flow 캔버스 (줌·팬·미니맵·점 격자, `onlyRenderVisibleElements` 기본 on, 줌 0.5 미만 간략 표시 — C3)
@@ -115,6 +117,7 @@ flowchart TB
 - [ ] 연결선 (화살표·라벨·점선)
 - [ ] 다중 선택, 복사·붙여넣기, 실행 취소 / 다시 실행
 - [ ] 터치 조작 (핀치 줌, 길게 눌러 메뉴), 모바일 편집 제한 (A8)
+- [ ] 빈 보드 안내 카드 · 필터로 전부 숨김 알림 (B-9)
 
 ### F4 사전
 - [ ] 분류 트리 (기본 분류 + 사용자 분류, 계층, 드래그 정렬)
@@ -123,6 +126,7 @@ flowchart TB
 - [ ] `@` 링크 + 역링크
 - [ ] 표 보기, 전체 검색 (부분 일치)
 - [ ] 보드 연동: 블록 ↔ 문서 1:1, 문서 → 보드 드래그, 삭제 경고
+- [ ] 빈 분류 · 검색 0건 · 빠른 이동 0건 · 빈 역링크 안내 (W-7)
 
 ### 배포
 - [ ] 반응형 점검 (태블릿 / 모바일)

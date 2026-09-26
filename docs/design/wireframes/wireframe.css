@@ -222,6 +222,7 @@ a { color: inherit; }
 .tool small { font-size: 12px; color: var(--muted); }
 .tool.on { background: #333; color: #fff; }
 .tool.on small { color: #ddd; }
+.tool.hl { outline: 2px dashed #333; outline-offset: -2px; }
 .tbtn { display: flex; align-items: center; gap: 6px; height: 36px; padding: 0 10px; border-radius: 8px; font-size: 13px; font-weight: 600; white-space: nowrap; }
 .tbtn.on { background: #333; color: #fff; }
 .sep { width: 1px; height: 28px; background: var(--hair); margin: 0 4px; }
@@ -343,6 +344,13 @@ a { color: inherit; }
 .fmtbar { display: inline-flex; gap: 2px; padding: 4px; border: 1px solid var(--hair); border-radius: 8px; background: #fff; }
 .fmtbar span { min-width: 28px; height: 28px; display: flex; align-items: center; justify-content: center; font-size: 13px; font-weight: 600; color: var(--body); border-radius: 6px; }
 mark { background: var(--g3); color: var(--ink); padding: 0 2px; border-radius: 2px; }
+
+/* ---------- 빈 상태 (onboarding.md) ---------- */
+.empty { text-align: center; color: var(--muted); }
+.empty .et { font-size: 18px; font-weight: 700; color: var(--ink); margin-bottom: 6px; }
+.empty p { margin: 0 0 16px; font-size: 13px; }
+.step { display: flex; gap: 12px; align-items: flex-start; padding: 10px 0; border-top: 1px solid var(--hair); text-align: left; }
+.step .n { flex: none; width: 24px; height: 24px; border-radius: 50%; background: #333; color: #fff; display: flex; align-items: center; justify-content: center; font-size: 12px; font-weight: 700; }
 
 table.tbl { border-collapse: collapse; width: 100%; font-size: 13px; }
 table.tbl th { background: var(--g1); text-align: left; font-weight: 700; color: var(--body); height: 40px; padding: 0 12px; border-bottom: 1px solid var(--g4); white-space: nowrap; }

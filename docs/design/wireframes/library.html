@@ -113,7 +113,7 @@
 <!-- ================= L-2 ================= -->
 <section class="fw" id="l-2">
   <h2>L-2 빈 상태 (첫 실행)</h2>
-  <p class="desc">로컬 데이터가 없을 때. 온보딩·샘플 소설은 "빈 상태·온보딩" 설계에서 확정 (UC-01)</p>
+  <p class="desc">로컬 데이터가 없을 때. 새 소설 · 샘플 소설 · 가져오기 중 하나로 시작 (UC-01, <code>onboarding.md</code>)</p>
   <div class="frame">
     <div class="libhead"><div class="in">
       <span class="logo">WhiteNoard</span>
@@ -137,8 +137,13 @@
         <span class="btn primary">+ 새 소설</span>
         <span class="btn">⤓ JSON 가져오기</span>
       </div>
-      <div style="margin-top:28px;border:1.5px dashed var(--g5);border-radius:12px;padding:14px;color:var(--muted);font-size:13px">
-        샘플 소설 열어 보기 (자리표시 — 제공 여부는 온보딩 설계에서 결정)
+      <div class="row" style="margin-top:28px;gap:14px;text-align:left;border:1px solid var(--hair);border-radius:12px;padding:12px 14px;background:var(--g1)">
+        <div class="cover" style="width:48px;height:64px;flex:none;display:flex;align-items:center;justify-content:center;border-radius:6px;background:var(--g2);font-size:12px;font-weight:700;color:var(--body)">잿빛<br />왕관</div>
+        <div style="flex:1">
+          <div class="b">샘플 소설로 둘러보기</div>
+          <div class="cap">잿빛 왕관 (샘플) · 판타지 · 사건 8 · 사전 문서 14</div>
+        </div>
+        <span class="btn sm">열기 →</span>
       </div>
     </div>
 
@@ -148,8 +153,8 @@
   </div>
   <div class="notes"><ol>
     <li><span class="m">1</span><span><b>예외 상태</b>: IndexedDB 사용 불가 시에만 표시되는 경고 배너. 평소 빈 상태엔 없음 (UC-01)</span></li>
-    <li><span class="m">2</span><span>새 소설 · 가져오기는 헤더 버튼과 같은 동작. 첫 실행 시 <code>navigator.storage.persist()</code> 1회 요청 — 전용 UI 없음 (브라우저에 따라 권한 창), 거부돼도 막지 않음</span></li>
-    <li><span class="m">3</span><span>샘플 소설·온보딩 안내 자리. 확정 후 이 프레임 갱신</span></li>
+    <li><span class="m">2</span><span>새 소설 · 가져오기는 헤더 버튼과 같은 동작. 새 소설 → B-9 빈 보드(안내 카드). 첫 소설이 생기는 순간 <code>navigator.storage.persist()</code> 1회 요청 — 전용 UI 없음 (브라우저에 따라 권한 창), 거부돼도 막지 않음</span></li>
+    <li><span class="m">3</span><span><b>샘플 소설</b>: 앱에 포함된 <code>sample.whitenoard.json</code>을 가져오기(UC-05)와 같은 경로로 새 소설로 추가 → 보드로 이동. 일반 소설처럼 편집·삭제 자유. 소설이 1개 이상이면 이 카드 숨김. 로딩 중 진행 표시, 실패 시 L-5</span></li>
   </ol></div>
 </section>
 
