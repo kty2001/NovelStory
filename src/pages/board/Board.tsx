@@ -1,6 +1,7 @@
 import {
   useCallback,
   useEffect,
+  useLayoutEffect,
   useMemo,
   useRef,
   useState,
@@ -241,7 +242,8 @@ function Canvas({
   );
 
   // 도구 단축키 (텍스트 편집 · 한글 조합 중 무시, 한/영 무관하게 code 기준)
-  useEffect(() => {
+  // 화면에 보이기 전에 등록 (보드가 보이자마자 누른 키도 처리)
+  useLayoutEffect(() => {
     const onKey = (e: KeyboardEvent) => {
       if (e.isComposing || e.keyCode === 229 || isEditable(e.target)) return;
       if (e.ctrlKey || e.metaKey || e.altKey) return;
