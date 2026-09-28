@@ -2,7 +2,10 @@ import type {
   Board,
   BoardItem,
   EventItem,
+  FrameItem,
   StateItem,
+  StickyItem,
+  TextItem,
   StoryLine,
   WikiCategory,
   WikiDoc,
@@ -83,7 +86,11 @@ export function moveItems(places: Record<string, BoardItem["place"]>) {
 export function patchItems(ids: string[], patch: Partial<Pick<EventItem, "color">>) {
   store.setState(({ items }) => {
     const next = { ...items };
-    for (const id of ids) if (next[id]) next[id] = { ...next[id], ...patch } as BoardItem;
+    // 색은 사건 · 포스트잇만
+    for (const id of ids) {
+      const item = next[id];
+      if (item?.kind === "event" || item?.kind === "sticky") next[id] = { ...item, ...patch };
+    }
     return { items: next };
   });
 }
@@ -211,4 +218,112 @@ export function setLanes(patch: Partial<Board["stateLanes"]>) {
   store.setState(({ board }) =>
     board ? { board: { ...board, stateLanes: { ...board.stateLanes, ...patch } } } : {},
   );
+}
+
+// ── 포스트잇 · 텍스트 · 프레임 (UC-17 · 18) ──
+type FreeFields<T extends BoardItem> = Omit<T, "id" | "novelId" | "updatedAt" | "z" | "kind">;
+
+function addFree<T extends StickyItem | TextItem | FrameItem>(
+  kind: T["kind"],
+  fields: FreeFields<T>,
+  z?: number,
+): string | null {
+  const s = store.getState();
+  if (!s.novelId) return null;
+  const item = {
+    ...fields,
+    id: crypto.randomUUID(),
+    novelId: s.novelId,
+    updatedAt: now(),
+    kind,
+    z: z ?? nextZ(s.items),
+  } as T;
+  store.setState({ items: { ...s.items, [item.id]: item } });
+  return item.id;
+}
+
+export const addSticky = (x: number, y: number, w = 160, h = 160) =>
+  addFree<StickyItem>("sticky", {
+    place: { mode: "free", x, y },
+    w,
+    h,
+    text: "",
+    color: "sticky-yellow",
+  });
+
+export const addText = (x: number, y: number, w = 240) =>
+  addFree<TextItem>("text", { place: { mode: "free", x, y }, w, text: "" });
+
+// 프레임 + 안에 든 요소 소속 지정 (1건). 프레임은 다른 요소보다 아래 (z 최소 - 1)
+export function addFrame(
+  rect: { x: number; y: number; w: number; h: number },
+  childIds: string[] = [],
+  title = "프레임",
+): string | null {
+  const { items } = store.getState();
+  const z = Object.values(items).reduce((m, i) => Math.min(m, i.z), 1) - 1;
+  const id = addFree<FrameItem>(
+    "frame",
+    { place: { mode: "free", x: rect.x, y: rect.y }, w: rect.w, h: rect.h, title },
+    z,
+  );
+  if (!id) return null;
+  adopt(childIds, id);
+  return id;
+}
+
+// 직전 동작(요소 생성)에 이어 프레임 소속 지정 → 실행 취소 1건으로 묶음 (기록 일시 정지)
+export function adopt(ids: string[], frameId: string | undefined) {
+  if (!frameId || !ids.length) return;
+  store.temporal.getState().pause();
+  store.setState(({ items }) => {
+    const next = { ...items };
+    for (const id of ids) {
+      if (next[id] && next[id].kind !== "frame") next[id] = { ...next[id], parentFrameId: frameId };
+    }
+    return { items: next };
+  });
+  store.temporal.getState().resume();
+}
+
+// 여러 요소 필드 변경 (끌기 · 크기 조절 · 편집 1회 = 1건). undefined 값은 필드 제거
+export function updateItems(patches: Record<string, Partial<BoardItem>>) {
+  const { items } = store.getState();
+  const next = { ...items };
+  let changed = false;
+  for (const [id, patch] of Object.entries(patches)) {
+    const item = next[id];
+    if (!item) continue;
+    const merged = { ...item, ...patch } as Record<string, unknown>;
+    for (const [k, v] of Object.entries(patch)) if (v === undefined) delete merged[k];
+    if (JSON.stringify(merged) === JSON.stringify(item)) continue;
+    next[id] = merged as BoardItem;
+    changed = true;
+  }
+  if (changed) store.setState({ items: next });
+}
+
+// 삭제 (확인 없음, 실행 취소 가능 · UC-20): 프레임 자식은 그 자리에 남고(절대 좌표), 관련 사건 연결 · 연결선 정리
+export function deleteItems(ids: string[]) {
+  const gone = new Set(ids);
+  const { items, edges } = store.getState();
+  if (!ids.some((id) => items[id])) return;
+  const next: typeof items = {};
+  for (const item of Object.values(items)) {
+    if (gone.has(item.id)) continue;
+    let kept = item;
+    if (kept.parentFrameId && gone.has(kept.parentFrameId)) {
+      const { parentFrameId: _p, ...rest } = kept;
+      kept = rest as BoardItem;
+    }
+    if (kept.kind === "state" && kept.linkedEventItemId && gone.has(kept.linkedEventItemId)) {
+      const { linkedEventItemId: _l, ...rest } = kept;
+      kept = rest as BoardItem;
+    }
+    next[item.id] = kept;
+  }
+  const nextEdges = Object.fromEntries(
+    Object.entries(edges).filter(([, e]) => !gone.has(e.source) && !gone.has(e.target)),
+  );
+  store.setState({ items: next, edges: nextEdges });
 }

@@ -1,4 +1,4 @@
-import { useEffect, useRef, type PointerEvent as ReactPointerEvent } from "react";
+import { useRef, type PointerEvent as ReactPointerEvent } from "react";
 import { useReactFlow, type Node, type NodeProps } from "@xyflow/react";
 import type { EventItem } from "../../db/types";
 import { moveItems, renameDoc, sortedLines } from "../../store/boardActions";
@@ -7,6 +7,7 @@ import { useBoardUi } from "./boardContext";
 import { EVENT_W, spanPlace } from "./flow";
 import { lineBorder } from "./lines";
 import { snapTick, xToTick } from "./timeAxis";
+import { useFocusWhenVisible } from "./useFocusWhenVisible";
 
 // span = 기간 사건 (폭은 노드 width, 래퍼를 채움)
 export type EventNodeType = Node<{ span?: boolean }, "event">;
@@ -23,20 +24,7 @@ function TitleInput({
 }) {
   const done = useRef(false);
   const ref = useRef<HTMLInputElement>(null);
-  // React Flow는 크기를 잴 때까지 노드를 숨김 → 보일 때까지 몇 프레임 포커스 재시도
-  useEffect(() => {
-    let frame = 0;
-    let tries = 0;
-    const focus = () => {
-      const el = ref.current;
-      if (!el) return;
-      el.focus();
-      if (document.activeElement === el) el.select();
-      else if (tries++ < 20) frame = requestAnimationFrame(focus);
-    };
-    focus();
-    return () => cancelAnimationFrame(frame);
-  }, []);
+  useFocusWhenVisible(ref);
   const finish = (value: string) => {
     if (done.current) return;
     done.current = true;

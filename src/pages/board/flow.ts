@@ -104,6 +104,18 @@ export function timePlace(
   return t === null ? { mode: "undated", x, y } : { mode: "timed", t, y };
 }
 
+// 포스트잇 · 텍스트 기본 크기 (ui_guide `sticky-note` 160 × 160), 프레임 기본 크기 (클릭만 했을 때)
+export const STICKY_SIZE = 160;
+export const TEXT_W = 240;
+const TEXT_H = 40;
+export const FRAME_SIZE = { w: 400, h: 300 };
+
+// 포스트잇 · 텍스트 배치 위치: 포인터가 가운데
+export function freeRect(kind: "sticky" | "text", x: number, y: number) {
+  const [w, h] = kind === "sticky" ? [STICKY_SIZE, STICKY_SIZE] : [TEXT_W, TEXT_H];
+  return { x: x - w / 2, y: y - h / 2, w, h };
+}
+
 // 상태 블록: 왼쪽 끝 = 눈금 (ui_guide `state-block`, B-4 메모 6)
 export const STATE_W = 160;
 
@@ -154,7 +166,49 @@ export function itemNode(
     const x = p.mode === "timed" ? tickToX(p.t, scale) : p.x;
     return { ...base, type: "event", position: { x, y: p.y }, origin: [0.5, 0] };
   }
-  return null;
+  const { x, y } = item.place;
+  if (item.kind === "sticky") {
+    return { ...base, type: "sticky", position: { x, y }, width: item.w, height: item.h };
+  }
+  if (item.kind === "text") return { ...base, type: "text", position: { x, y }, width: item.w };
+  // 프레임은 자식보다 아래 (z 순서와 무관하게 맨 아래 층)
+  return { ...base, type: "frame", position: { x, y }, width: item.w, height: item.h, zIndex: 0 };
+}
+
+// 프레임 소속 (data_model 4.2): 노드 위치 = 절대 위치 − 프레임 위치, 배열은 프레임 먼저 (C7)
+export function withFrames(nodes: Node[], items: Collection<BoardItem>): Node[] {
+  const frames = new Map(nodes.filter((n) => n.type === "frame").map((n) => [n.id, n]));
+  const out: Node[] = [...frames.values()];
+  for (const n of nodes) {
+    if (n.type === "frame") continue;
+    const frame = frames.get(items[n.id]?.parentFrameId ?? "");
+    if (!frame) {
+      out.push(n);
+      continue;
+    }
+    out.push({
+      ...n,
+      parentId: frame.id,
+      position: { x: n.position.x - frame.position.x, y: n.position.y - frame.position.y },
+    });
+  }
+  return out;
+}
+
+// 점을 품은 프레임 (여럿이면 z가 큰 것)
+export function frameAt(
+  point: { x: number; y: number },
+  items: Collection<BoardItem>,
+  exclude?: string,
+): string | undefined {
+  let best: { id: string; z: number } | undefined;
+  for (const f of Object.values(items)) {
+    if (f.kind !== "frame" || f.id === exclude) continue;
+    const { x, y } = f.place;
+    const inside = point.x >= x && point.x <= x + f.w && point.y >= y && point.y <= y + f.h;
+    if (inside && (!best || f.z > best.z)) best = { id: f.id, z: f.z };
+  }
+  return best?.id;
 }
 
 // 드래그 종료 위치 → 새 place (data_model 4.1). 기간 사건은 왼쪽 끝 기준, 기간 길이(눈금 수) 유지
@@ -176,4 +230,53 @@ export function movedPlace(
 export function spanPlace(place: TimedPlace, start: number, end: number): TimedPlace {
   const [t, tEnd] = start <= end ? [start, end] : [end, start];
   return tEnd > t ? { mode: "timed", t, tEnd, y: place.y } : { mode: "timed", t, y: place.y };
+}
+
+// ── 끌기 종료 (data_model 4.2) ──
+// x, y = 노드 원점(origin) 기준 절대 좌표, ox = 가로 origin (사건 단일 시점 0.5)
+export type Dropped = { id: string; x: number; y: number; w: number; h: number; ox: number };
+
+// 프레임과 함께 움직인 자식: 자유 요소는 같은 만큼, 시간 블록은 새 x에서 눈금 재계산
+function shifted(c: BoardItem, dx: number, dy: number, scale: TimeScale, snap: boolean) {
+  if (c.place.mode === "free")
+    return { mode: "free" as const, x: c.place.x + dx, y: c.place.y + dy };
+  if (c.kind !== "event" && c.kind !== "state") return c.place;
+  const at = itemNode(c, scale)!.position;
+  return movedPlace(c, { x: at.x + dx, y: c.place.y + dy }, scale, snap);
+}
+
+// 끌어 놓은 요소들의 새 위치 · 프레임 소속 (중심점이 들어간 프레임, 프레임은 소속 불가 · C7).
+// keepStateY: 캐릭터별 정렬 중 상태 블록은 세로 위치 유지
+export function dropPatches(
+  dropped: Dropped[],
+  items: Collection<BoardItem>,
+  scale: TimeScale,
+  snap: boolean,
+  keepStateY = false,
+): Record<string, Partial<BoardItem>> {
+  const patches: Record<string, Partial<BoardItem>> = {};
+  const moving = new Set(dropped.map((d) => d.id));
+  for (const d of dropped) {
+    const item = items[d.id];
+    if (!item) continue;
+    if (item.kind === "frame") {
+      const dx = d.x - item.place.x;
+      const dy = d.y - item.place.y;
+      patches[d.id] = { place: { mode: "free", x: d.x, y: d.y } };
+      for (const c of Object.values(items)) {
+        if (c.parentFrameId === d.id && !moving.has(c.id)) {
+          patches[c.id] = { place: shifted(c, dx, dy, scale, snap) } as Partial<BoardItem>;
+        }
+      }
+      continue;
+    }
+    const timeBlock = item.kind === "event" || item.kind === "state";
+    const y = keepStateY && item.kind === "state" ? item.place.y : d.y;
+    const place = timeBlock
+      ? movedPlace(item, { x: d.x, y }, scale, snap)
+      : { mode: "free" as const, x: d.x, y: d.y };
+    const center = { x: d.x - d.w * d.ox + d.w / 2, y: d.y + d.h / 2 };
+    patches[d.id] = { place, parentFrameId: frameAt(center, items) } as Partial<BoardItem>;
+  }
+  return patches;
 }

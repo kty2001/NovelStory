@@ -1,14 +1,29 @@
 import { useStore, ViewportPortal } from "@xyflow/react";
 import type { TimeScale } from "../../db/types";
-import { EVENT_H, EVENT_W, timePlace } from "./flow";
+import { EVENT_H, EVENT_W, freeRect, timePlace } from "./flow";
 import { tickToX } from "./timeAxis";
 import type { PlaceTool } from "./tools";
 
 export type Preview = { tool: PlaceTool; x: number; y: number; snap: boolean };
 
-// 배치 미리보기 (B-1 메모 13): 반투명 블록 + 스냅될 눈금까지 세로 가이드 + 눈금 번호
+// 배치 미리보기 (B-1 메모 13): 반투명 요소 + (시간 블록이면) 스냅될 눈금까지 세로 가이드 + 눈금 번호
 export default function PlacePreview({ preview, scale }: { preview: Preview; scale: TimeScale }) {
   const zoom = useStore((s) => s.transform[2]);
+  const border = { borderWidth: 1.5 / zoom };
+
+  if (preview.tool === "sticky" || preview.tool === "text") {
+    const r = freeRect(preview.tool, preview.x, preview.y);
+    return (
+      <ViewportPortal>
+        <div
+          data-testid="place-preview"
+          className={`absolute rounded-xs border-dashed border-ink ${preview.tool === "sticky" ? "bg-sticky-yellow/70" : ""}`}
+          style={{ transform: `translate(${r.x}px, ${r.y}px)`, width: r.w, height: r.h, ...border }}
+        />
+      </ViewportPortal>
+    );
+  }
+
   const top = preview.y - EVENT_H / 2;
   const place = timePlace(preview.x, top, scale, preview.snap);
   const x = place.mode === "timed" ? tickToX(place.t, scale) : preview.x;
@@ -25,7 +40,7 @@ export default function PlacePreview({ preview, scale }: { preview: Preview; sca
           transform: `translate(${left}px, ${top}px)`,
           width: EVENT_W,
           height: EVENT_H,
-          borderWidth: 1.5 / zoom,
+          ...border,
         }}
       />
       {place.mode === "timed" && (
@@ -50,6 +65,25 @@ export default function PlacePreview({ preview, scale }: { preview: Preview; sca
           </div>
         </>
       )}
+    </ViewportPortal>
+  );
+}
+
+// 프레임 도구로 그리는 중인 영역
+export function FrameDraft({ rect }: { rect: { x: number; y: number; w: number; h: number } }) {
+  const zoom = useStore((s) => s.transform[2]);
+  return (
+    <ViewportPortal>
+      <div
+        data-testid="frame-draft"
+        className="absolute rounded-lg border-dashed border-brand-teal bg-brand-teal/5"
+        style={{
+          transform: `translate(${rect.x}px, ${rect.y}px)`,
+          width: rect.w,
+          height: rect.h,
+          borderWidth: 1.5 / zoom,
+        }}
+      />
     </ViewportPortal>
   );
 }

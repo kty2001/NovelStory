@@ -1,5 +1,7 @@
 import { beforeEach, describe, expect, it } from "vitest";
-import { doc, resetDb, seedNovel, sticky } from "../test/fixtures";
+import { db } from "../db/db";
+import type { EventItem } from "../db/types";
+import { doc, OLD, resetDb, seedNovel, sticky } from "../test/fixtures";
 import {
   beginBatch,
   endBatch,
@@ -84,5 +86,30 @@ describe("실행 취소", () => {
     moveS1(999);
     endBatch();
     expect(history().pastStates).toHaveLength(100);
+  });
+});
+
+describe("자동 생성 빈 사건 문서 정리 (소설 열 때)", () => {
+  const event = (id: string, docId: string): EventItem => ({
+    id,
+    novelId: "n1",
+    updatedAt: OLD,
+    kind: "event",
+    z: 1,
+    place: { mode: "timed", t: 1, y: -100 },
+    docId,
+    color: "brand-peach",
+  });
+
+  it("블록이 없고 비어 있는 자동 생성 문서만 소프트 삭제", async () => {
+    await db.wikiDocs.bulkPut([
+      { ...doc("empty", "n1"), autoCreated: true },
+      { ...doc("used", "n1"), autoCreated: true },
+      { ...doc("tagged", "n1"), autoCreated: true, tags: ["복선"] },
+    ]);
+    await db.boardItems.put(event("e1", "used"));
+    await loadNovel("n1");
+    expect(Object.keys(store.getState().docs).sort()).toEqual(["d1", "tagged", "used"]);
+    expect((await db.wikiDocs.get("empty"))?.deletedAt).toBeTruthy();
   });
 });

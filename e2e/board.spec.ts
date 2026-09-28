@@ -219,7 +219,7 @@ test.describe("도구 모음 · 배치", () => {
     await expect(toolButton(page, "선택")).toHaveAttribute("aria-pressed", "true");
     await page.keyboard.press("KeyH");
     await expect(toolButton(page, "손")).toHaveAttribute("aria-pressed", "true");
-    await expect(toolButton(page, "포스트잇")).toBeDisabled();
+    await expect(toolButton(page, "연결선")).toBeDisabled();
   });
 
   test("사건 도구를 끌어 놓으면 가까운 눈금에 스냅 · 선택 도구로 복귀", async ({ page }) => {
@@ -585,5 +585,141 @@ test.describe("캐릭터 상태 블록", () => {
     await page.getByRole("button", { name: "캐릭터별 정렬" }).click();
     await expect(heads).toHaveCount(0);
     await expect.poll(async () => Math.round((await kael.boundingBox())!.y - before)).toBe(0);
+  });
+});
+
+test.describe("포스트잇 · 텍스트 · 프레임", () => {
+  // 도구 키 → 클릭 배치 → (바로 편집) 내용 입력 → Esc
+  async function placeFree(page: Page, key: string, x: number, y: number, text: string) {
+    await expect(page.getByTestId("time-axis")).toBeVisible();
+    await page.keyboard.press(key);
+    await page.mouse.click(x, y);
+    const input = page.getByRole("textbox", {
+      name: key === "KeyS" ? "포스트잇 내용" : "텍스트 내용",
+    });
+    await expect(input).toBeFocused();
+    await input.fill(text);
+    await input.press("Escape");
+  }
+
+  test("포스트잇: 배치 즉시 편집 · 여러 줄 · 새로고침 유지 · 색 · 크기 조절", async ({ page }) => {
+    await placeFree(page, "KeyS", 900, 250, "복선 메모\n두 줄");
+    const sticky = page.getByTestId("sticky");
+    await expect(sticky).toHaveText("복선 메모\n두 줄", { useInnerText: true });
+
+    await sticky.click();
+    await page.getByRole("button", { name: "색: 분홍" }).click();
+    await expect(sticky).toHaveCSS("background-color", "rgb(255, 214, 229)");
+
+    const before = (await sticky.boundingBox())!;
+    const handle = page.locator(".react-flow__resize-control.handle.bottom.right");
+    await dragTo(page, handle, before.x + before.width + 60, before.y + before.height + 40);
+    await expect
+      .poll(async () => Math.round((await sticky.boundingBox())!.width))
+      .toBe(Math.round(before.width + 60));
+
+    await page.waitForTimeout(800);
+    await page.reload();
+    await expect(page.getByTestId("sticky")).toHaveText("복선 메모\n두 줄", { useInnerText: true });
+    expect(Math.round((await page.getByTestId("sticky").boundingBox())!.width)).toBe(
+      Math.round(before.width + 60),
+    );
+  });
+
+  test("텍스트: 배치 · 더블클릭 재편집", async ({ page }) => {
+    await placeFree(page, "KeyT", 900, 250, "1부 — 몰락");
+    const text = page.getByTestId("board-text");
+    await expect(text).toHaveText("1부 — 몰락");
+    await text.dblclick();
+    await page.getByRole("textbox", { name: "텍스트 내용" }).fill("1부");
+    await page.getByRole("textbox", { name: "텍스트 내용" }).press("Escape");
+    await expect(text).toHaveText("1부");
+  });
+
+  test("프레임: 영역 그리기 → 안의 요소 소속 · 제목 · 이동 시 함께 이동 · 삭제해도 요소 유지", async ({
+    page,
+  }) => {
+    await placeFree(page, "KeyS", 900, 220, "안");
+    await page.keyboard.press("KeyF");
+    await page.mouse.move(780, 120);
+    await page.mouse.down();
+    await page.mouse.move(1040, 330, { steps: 6 });
+    await page.mouse.up();
+    const title = page.getByRole("textbox", { name: "프레임 제목" });
+    await expect(title).toBeFocused();
+    await title.fill("1부");
+    await title.press("Enter");
+    await expect(page.getByTestId("frame-title")).toHaveText("1부");
+
+    // 프레임 빈 곳을 끌면 소속 포스트잇도 같이 이동
+    const sticky = page.getByTestId("sticky");
+    const s0 = (await sticky.boundingBox())!;
+    const frame = page.getByTestId("frame");
+    const f0 = (await frame.boundingBox())!;
+    await page.mouse.move(f0.x + 10, f0.y + f0.height - 10);
+    await page.mouse.down();
+    await page.mouse.move(f0.x - 90, f0.y + f0.height + 30, { steps: 8 });
+    await page.mouse.up();
+    const f1 = (await frame.boundingBox())!;
+    expect(f1.x).toBeLessThan(f0.x - 50);
+    await expect
+      .poll(async () => Math.round((await sticky.boundingBox())!.x - s0.x))
+      .toBe(Math.round(f1.x - f0.x));
+
+    // 프레임 선택 후 Delete → 프레임만 삭제
+    await page.getByTestId("frame-title").click();
+    await page.keyboard.press("Delete");
+    await expect(frame).toHaveCount(0);
+    await expect(sticky).toBeVisible();
+  });
+
+  test("요소를 프레임 안으로 끌면 소속, 프레임 이동 시 사건은 시점도 이동", async ({ page }) => {
+    const block = await placeEvent(page, 1, "습격");
+    await page.keyboard.press("KeyF");
+    const x3 = await tickX(page, 3);
+    const y = (await axisY(page)) - 200;
+    await page.mouse.click(x3, y); // 클릭만 하면 기본 크기 (400 × 300)
+    await page.getByRole("textbox", { name: "프레임 제목" }).press("Enter");
+
+    await dragTo(page, block, x3 + 100, y + 150); // 프레임 안으로 (스냅: 4 눈금)
+    const x4 = await tickX(page, 4);
+    await expect.poll(async () => Math.round((await center(block)).x - x4)).toBe(0);
+
+    // 프레임을 1 눈금(120px)만큼 오른쪽으로 → 사건도 5 눈금
+    const f = (await page.getByTestId("frame").boundingBox())!;
+    await page.mouse.move(f.x + 10, f.y + f.height - 10);
+    await page.mouse.down();
+    await page.mouse.move(f.x + 130, f.y + f.height - 10, { steps: 8 });
+    await page.mouse.up();
+    const x5 = await tickX(page, 5);
+    await expect.poll(async () => Math.round((await center(block)).x - x5)).toBe(0);
+  });
+
+  test("Ctrl+G 묶기 · Ctrl+Shift+G 풀기 · Delete 삭제", async ({ page }) => {
+    // 프레임 제목이 도구 모음에 가리지 않게 아래쪽에
+    await placeFree(page, "KeyS", 820, 320, "가");
+    await placeFree(page, "KeyS", 1060, 320, "나");
+    const stickies = page.getByTestId("sticky");
+    await stickies.first().click();
+    await stickies.last().click({ modifiers: ["Shift"] });
+    await page.keyboard.press("Control+KeyG");
+    await page.getByRole("textbox", { name: "프레임 제목" }).press("Enter");
+    const frame = page.getByTestId("frame");
+    await expect(frame).toHaveCount(1);
+    const fb = (await frame.boundingBox())!;
+    for (const s of await stickies.all()) {
+      const b = (await s.boundingBox())!;
+      expect(b.x).toBeGreaterThan(fb.x);
+      expect(b.x + b.width).toBeLessThan(fb.x + fb.width);
+    }
+
+    await page.getByTestId("frame-title").click();
+    await page.keyboard.press("Control+Shift+KeyG");
+    await expect(frame).toHaveCount(0);
+    await expect(stickies).toHaveCount(2);
+
+    await stickies.first().click();
+    await page.keyboard.press("Delete");
+    await expect(stickies).toHaveCount(1);
   });
 });

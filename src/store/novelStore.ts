@@ -82,6 +82,15 @@ export const adoptNovel = autosave.adoptNovel;
 const toCollection = <T extends BaseRecord>(rows: T[]): Collection<T> =>
   Object.fromEntries(rows.map((r) => [r.id, r]));
 
+// 자동 생성 후 제목 외 내용이 없는 문서 (속성값 · 본문 · 별칭 · 태그 · 라인 없음, data_model 5장)
+export const isEmptyAutoDoc = (d: WikiDoc) =>
+  !!d.autoCreated &&
+  !d.aliases.length &&
+  !d.tags.length &&
+  !d.lineId &&
+  !d.body &&
+  d.props.every((p) => !p.value);
+
 async function readNovel(novelId: string): Promise<NovelData | null> {
   const tables = [
     db.novels,
@@ -92,7 +101,7 @@ async function readNovel(novelId: string): Promise<NovelData | null> {
     db.wikiDocs,
     db.storyLines,
   ];
-  return db.transaction("r", tables, async () => {
+  return db.transaction("rw", tables, async () => {
     const novel = await db.novels.get(novelId);
     const board = await db.boards.get(novelId);
     if (!novel || novel.deletedAt || !board) return null;
@@ -103,13 +112,26 @@ async function readNovel(novelId: string): Promise<NovelData | null> {
         .filter((r) => !r.deletedAt)
         .toArray()
         .then(toCollection);
+    const items = await live(db.boardItems);
+    const docs = await live(db.wikiDocs);
+    // 블록과 함께 자동 생성된 뒤 비어 있는 사건 문서: 블록이 없으면 정리 (UC-20).
+    // 삭제 시점이 아니라 여기서 하는 이유: 같은 세션의 실행 취소로 블록을 되살릴 수 있어야 함
+    const used = new Set(Object.values(items).flatMap((i) => ("docId" in i ? [i.docId] : [])));
+    const orphans = Object.values(docs).filter((d) => isEmptyAutoDoc(d) && !used.has(d.id));
+    if (orphans.length) {
+      const at = new Date().toISOString();
+      for (const d of orphans) {
+        await db.wikiDocs.update(d.id, { deletedAt: at, updatedAt: at });
+        delete docs[d.id];
+      }
+    }
     return {
       novel,
       board,
-      items: await live(db.boardItems),
+      items,
       edges: await live(db.boardEdges),
       categories: await live(db.wikiCategories),
-      docs: await live(db.wikiDocs),
+      docs,
       lines: await live(db.storyLines),
     };
   });

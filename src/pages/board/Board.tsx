@@ -11,7 +11,6 @@ import {
   Background,
   BackgroundVariant,
   MiniMap,
-  Panel,
   ReactFlow,
   useReactFlow,
   useStore,
@@ -22,33 +21,48 @@ import {
   type Viewport,
   type XYPosition,
 } from "@xyflow/react";
-import { Maximize, Minus, Plus } from "lucide-react";
 import { db } from "../../db/db";
-import type { TimeScale, UiState } from "../../db/types";
+import type { BoardItem, TimeScale, UiState } from "../../db/types";
 import { patchUiState } from "../../db/uiState";
-import { addEvent, addState, moveItems, setLanes } from "../../store/boardActions";
+import {
+  addEvent,
+  addFrame,
+  addState,
+  addSticky,
+  addText,
+  adopt,
+  deleteItems,
+  setLanes,
+  updateItems,
+} from "../../store/boardActions";
 import { setTimeScale, useNovelStore } from "../../store/novelStore";
 import Axis from "./Axis";
-import { AxisTrack, MiniMapNode, UndatedZone } from "./DecorNodes";
 import BlockMenu from "./BlockMenu";
 import { BoardUiContext } from "./boardContext";
+import { AxisTrack, MiniMapNode, UndatedZone } from "./DecorNodes";
 import EventNode from "./EventNode";
 import FilterMenu from "./FilterMenu";
 import {
   decorNodes,
+  dropPatches,
   EVENT_H,
   EVENT_W,
+  FRAME_SIZE,
+  frameAt,
+  freeRect,
   itemNode,
   laneOrder,
-  movedPlace,
   STATE_W,
   timePlace,
+  withFrames,
+  type Dropped,
 } from "./flow";
+import { FrameNode, StickyNode, TextNode } from "./FreeNodes";
 import Lanes from "./Lanes";
 import Leaders, { type Rect } from "./Leaders";
 import LineEditDialog from "./LineEditDialog";
 import { NO_LINE } from "./lines";
-import PlacePreview, { type Preview } from "./PlacePreview";
+import PlacePreview, { FrameDraft, type Preview } from "./PlacePreview";
 import StateNode from "./StateNode";
 import StatePanel, { CharacterPicker } from "./StatePanel";
 import Toolbar from "./Toolbar";
@@ -61,18 +75,28 @@ import {
   type StateType,
   type Tool,
 } from "./tools";
+import ZoomControls from "./ZoomControls";
 
 // 스파이크 C4에서 라벨 겹침 없음을 확인한 줌 범위
 const MIN_ZOOM = 0.05;
 const MAX_ZOOM = 2;
 // 이 배율 미만이면 블록 간략 표시 (C3): 노드는 `.board-simple` 아래에서 제목만 표시
 const SIMPLE_ZOOM = 0.5;
-const ZOOM_MS = 200;
 const MULTI_SELECT_KEYS = ["Shift", "Control", "Meta"];
+// Ctrl+G 로 만드는 프레임의 여백 (제목 자리 포함)
+const GROUP_PAD = 24;
 // 연결선은 연결선 구현 시 스토어에서 변환
 const NO_EDGES: Edge[] = [];
 
-const nodeTypes = { undated: UndatedZone, axis: AxisTrack, event: EventNode, state: StateNode };
+const nodeTypes = {
+  undated: UndatedZone,
+  axis: AxisTrack,
+  event: EventNode,
+  state: StateNode,
+  sticky: StickyNode,
+  text: TextNode,
+  frame: FrameNode,
+};
 
 const STATE_COLOR = {
   appear: "var(--color-brand-mint)",
@@ -80,25 +104,39 @@ const STATE_COLOR = {
   exit: "var(--color-brand-teal)",
 } as const;
 
-// 구현된 도구만 활성 (나머지는 각 블록 구현 시 추가)
-const ENABLED_TOOLS: ReadonlySet<Tool> = new Set(["select", "hand", "event", "state"]);
+// 구현된 도구만 활성 (나머지는 각 항목 구현 시 추가)
+const ENABLED_TOOLS: ReadonlySet<Tool> = new Set([
+  "select",
+  "hand",
+  "event",
+  "state",
+  "sticky",
+  "text",
+  "frame",
+]);
 
-// React Flow가 알려 주는 노드 화면 상태 (크기 · 선택 · 드래그 중 위치). 데이터는 스토어가 원본
+// React Flow가 알려 주는 노드 화면 상태 (크기 · 선택 · 끌기/크기 조절 중 위치 · 크기). 데이터는 스토어가 원본
 type NodeUi = {
   measured?: { width: number; height: number };
   selected?: boolean;
   position?: XYPosition;
+  size?: { width: number; height: number };
 };
 
 function applyUi(prev: Record<string, NodeUi>, changes: NodeChange[]) {
   const next = { ...prev };
   for (const c of changes) {
-    if (c.type === "dimensions" && c.dimensions)
-      next[c.id] = { ...next[c.id], measured: c.dimensions };
-    else if (c.type === "select") next[c.id] = { ...next[c.id], selected: c.selected };
-    // 드래그 중 위치만 화면 상태로. 드래그가 끝나면 스토어 위치(스냅 결과)를 따름
-    else if (c.type === "position")
-      next[c.id] = { ...next[c.id], position: c.dragging ? c.position : undefined };
+    if (c.type === "dimensions" && c.dimensions) {
+      next[c.id] = {
+        ...next[c.id],
+        measured: c.dimensions,
+        ...(c.resizing ? { size: c.dimensions } : {}),
+      };
+    } else if (c.type === "select") next[c.id] = { ...next[c.id], selected: c.selected };
+    // 끌기 중 위치만 화면 상태로 (끝나면 스토어 위치 = 스냅 결과). dragging 없음 = 크기 조절 중 위치
+    else if (c.type === "position") {
+      next[c.id] = { ...next[c.id], position: c.dragging === false ? undefined : c.position };
+    }
   }
   return next;
 }
@@ -117,48 +155,19 @@ const overCanvas = (x: number, y: number) => {
   return !!el?.closest(".react-flow") && !el.closest(".react-flow__panel");
 };
 
-const zoomButton = "flex h-9 min-w-9 items-center justify-center rounded-sm text-button text-ink";
+const union = (rects: Rect[]) => {
+  const x = Math.min(...rects.map((r) => r.x));
+  const y = Math.min(...rects.map((r) => r.y));
+  const w = Math.max(...rects.map((r) => r.x + r.w)) - x;
+  const h = Math.max(...rects.map((r) => r.y + r.h)) - y;
+  return { x, y, w, h };
+};
 
-// 우하단 줌 컨트롤 (−, %, +, 화면 맞춤). 미니맵 왼쪽에 배치
-function ZoomControls() {
-  const { zoomIn, zoomOut, zoomTo, fitView } = useReactFlow();
-  const zoom = useStore((s) => s.transform[2]);
-  return (
-    <Panel
-      position="bottom-right"
-      className="!right-[216px] flex gap-0.5 rounded-md border border-hairline bg-canvas p-1 shadow-float max-md:!right-0"
-    >
-      <button
-        className={zoomButton}
-        aria-label="축소"
-        onClick={() => void zoomOut({ duration: ZOOM_MS })}
-      >
-        <Minus size={16} />
-      </button>
-      <button
-        className={`${zoomButton} px-1`}
-        aria-label="100%로 보기"
-        onClick={() => void zoomTo(1, { duration: ZOOM_MS })}
-      >
-        {Math.round(zoom * 100)}%
-      </button>
-      <button
-        className={zoomButton}
-        aria-label="확대"
-        onClick={() => void zoomIn({ duration: ZOOM_MS })}
-      >
-        <Plus size={16} />
-      </button>
-      <button
-        className={zoomButton}
-        aria-label="화면 맞춤"
-        onClick={() => void fitView({ duration: ZOOM_MS, maxZoom: 1 })}
-      >
-        <Maximize size={16} />
-      </button>
-    </Panel>
-  );
-}
+const minimapColor = (item: BoardItem | undefined) => {
+  if (item?.kind === "event" || item?.kind === "sticky") return `var(--color-${item.color})`;
+  if (item?.kind === "state") return STATE_COLOR[item.stateType];
+  return "var(--color-surface-strong)";
+};
 
 function Canvas({
   novelId,
@@ -175,6 +184,21 @@ function Canvas({
   const { screenToFlowPosition } = useReactFlow();
   const [filters, setFilters] = useState<Filters>(NO_FILTERS);
   const [linesOpen, setLinesOpen] = useState(false);
+  const [ui, setUi] = useState<Record<string, NodeUi>>({});
+  const [tool, setTool] = useState<Tool>("select");
+  const [stateType, setStateType] = useState<StateType>("appear");
+  const [preview, setPreview] = useState<Preview | null>(null);
+  const [editId, setEditId] = useState<string | null>(null);
+  // 상태 도구로 놓은 자리: 캐릭터를 고르면 블록 생성 (B-3 ①)
+  const [pending, setPending] = useState<{
+    place: ReturnType<typeof timePlace>;
+    client: XYPosition;
+    type: StateType;
+  } | null>(null);
+  // 프레임 도구로 그리는 중인 영역 (보드 좌표)
+  const [draft, setDraft] = useState<{ x0: number; y0: number; x1: number; y1: number } | null>(
+    null,
+  );
 
   // 필터는 소설별로 기억 (UiState.filters)
   useEffect(() => {
@@ -206,17 +230,6 @@ function Canvas({
     }
     return out;
   }, [items, docs, filters.hiddenLineIds]);
-  const [ui, setUi] = useState<Record<string, NodeUi>>({});
-  const [tool, setTool] = useState<Tool>("select");
-  const [stateType, setStateType] = useState<StateType>("appear");
-  const [preview, setPreview] = useState<Preview | null>(null);
-  const [editId, setEditId] = useState<string | null>(null);
-  // 상태 도구로 놓은 자리: 캐릭터를 고르면 블록 생성 (B-3 ①)
-  const [pending, setPending] = useState<{
-    place: ReturnType<typeof timePlace>;
-    client: XYPosition;
-    type: StateType;
-  } | null>(null);
 
   // 캐릭터별 정렬 (UC-13): 켜져 있으면 캐릭터 → 레인 번호
   const stateLanes = useNovelStore((s) => s.board?.stateLanes);
@@ -229,24 +242,14 @@ function Canvas({
     [stateLanes?.enabled, laneIds],
   );
 
-  const heightOf = useCallback((id: string) => ui[id]?.measured?.height ?? EVENT_H, [ui]);
-  // 블록 메뉴 대상: 선택된 (보이는) 사건 블록
-  const selectedEvents = useMemo(
-    () =>
-      Object.values(items)
-        .filter((i) => i.kind === "event" && ui[i.id]?.selected && !hiddenIds.has(i.id))
-        .map((i) => i.id),
-    [items, ui, hiddenIds],
-  );
-  const boardUi = useMemo(() => ({ editId, setEditId }), [editId]);
-
   const nodes = useMemo(() => {
+    const blocks = Object.values(items).flatMap((item) => {
+      const n = itemNode(item, timeScale, laneMap);
+      return n ? [hiddenIds.has(item.id) ? { ...n, hidden: true } : n] : [];
+    });
     const all: Node[] = [
-      ...decorNodes(timeScale, items, (item) => heightOf(item.id)),
-      ...Object.values(items).flatMap((item) => {
-        const n = itemNode(item, timeScale, laneMap);
-        return n ? [hiddenIds.has(item.id) ? { ...n, hidden: true } : n] : [];
-      }),
+      ...decorNodes(timeScale, items, (item) => ui[item.id]?.measured?.height ?? EVENT_H),
+      ...withFrames(blocks, items),
     ];
     return all.map((n) => {
       const u = ui[n.id];
@@ -256,31 +259,69 @@ function Canvas({
         measured: u.measured,
         selected: u.selected,
         position: u.position ?? n.position,
+        ...(u.size ?? {}),
       };
     });
-  }, [timeScale, items, ui, heightOf, hiddenIds, laneMap]);
+  }, [timeScale, items, ui, hiddenIds, laneMap]);
 
-  // 노드 사각형 (보드 좌표, 왼쪽 위 기준): 지시선 · 관련 사건 연결용
+  // 노드 사각형 (보드 절대 좌표, 왼쪽 위 기준): 지시선 · 연결 · 묶기 · 패널 위치용
   const rects = useMemo(() => {
+    const byId = new Map(nodes.map((n) => [n.id, n]));
     const out = new Map<string, Rect>();
     for (const n of nodes) {
       const w = n.measured?.width ?? n.width ?? (n.type === "state" ? STATE_W : EVENT_W);
       const h = n.measured?.height ?? n.height ?? EVENT_H;
       const ox = n.origin?.[0] ?? 0;
-      out.set(n.id, { x: n.position.x - w * ox, y: n.position.y, w, h });
+      const parent = n.parentId ? byId.get(n.parentId)?.position : undefined;
+      const x = n.position.x + (parent?.x ?? 0) - w * ox;
+      const y = n.position.y + (parent?.y ?? 0);
+      out.set(n.id, { x, y, w, h });
     }
     return out;
   }, [nodes]);
   const rectOf = useCallback((id: string) => rects.get(id), [rects]);
-  // 키 처리기에서 최신 선택 상태를 읽기 위한 참조
-  const uiRef = useRef(ui);
+
+  // 선택된 (보이는) 요소: 블록 메뉴 · 삭제 · 묶기 대상
+  const selectedIds = useMemo(
+    () => Object.keys(items).filter((id) => ui[id]?.selected && !hiddenIds.has(id)),
+    [items, ui, hiddenIds],
+  );
+  // 키 처리기에서 최신 값을 읽기 위한 참조
+  const latest = useRef({ selectedIds, rects });
   useEffect(() => {
-    uiRef.current = ui;
-  }, [ui]);
+    latest.current = { selectedIds, rects };
+  }, [selectedIds, rects]);
+
   const onNodesChange = useCallback(
     (changes: NodeChange[]) => setUi((u) => applyUi(u, changes)),
     [],
   );
+  const clearUi = useCallback((ids: string[], keys: (keyof NodeUi)[]) => {
+    setUi((u) => {
+      const next = { ...u };
+      for (const id of ids) {
+        const entry = { ...next[id] };
+        for (const k of keys) delete entry[k];
+        next[id] = entry;
+      }
+      return next;
+    });
+  }, []);
+
+  // 크기 조절 끝 (NodeResizer, 노드 좌표 = 프레임 자식이면 프레임 기준) → 절대 좌표로 기록 (1건)
+  const resized = useCallback(
+    (id: string, r: { x: number; y: number; width: number; height: number }) => {
+      const { items: cur } = useNovelStore.getState();
+      const frame = cur[cur[id]?.parentFrameId ?? ""];
+      const parent = frame?.kind === "frame" ? frame.place : undefined;
+      const x = r.x + (parent?.x ?? 0);
+      const y = r.y + (parent?.y ?? 0);
+      updateItems({ [id]: { place: { mode: "free", x, y }, w: r.width, h: r.height } });
+      clearUi([id], ["size", "position"]);
+    },
+    [clearUi],
+  );
+  const boardUi = useMemo(() => ({ editId, setEditId, resized }), [editId, resized]);
 
   // 도구 선택: C를 다시 누르면 상태 유형 순환
   const chooseTool = useCallback(
@@ -295,15 +336,25 @@ function Canvas({
     [tool],
   );
 
-  // 화면 좌표에 배치 → 선택 도구로 복귀
+  // 화면 좌표에 배치 → 선택 도구로 복귀. 프레임 안에 놓으면 그 프레임 소속
   const place = useCallback(
     (placeTool: PlaceTool, client: XYPosition, alt: boolean) => {
       const p = screenToFlowPosition(client);
       const snap = timeScale.snap && !alt;
       const at = timePlace(p.x, p.y - EVENT_H / 2, timeScale, snap);
-      // 사건: 배치 직후 제목 입력 (UC-10) / 상태: 캐릭터 선택 후 생성 (UC-12)
-      if (placeTool === "event") setEditId(addEvent(at));
-      if (placeTool === "state") setPending({ place: at, client, type: stateType });
+      const frame = frameAt(p, useNovelStore.getState().items);
+      let id: string | null = null;
+      // 사건: 배치 직후 제목 입력 (UC-10) / 상태: 캐릭터 선택 후 생성 (UC-12) / 포스트잇 · 텍스트: 바로 편집 (UC-17)
+      if (placeTool === "event") id = addEvent(at);
+      else if (placeTool === "state") setPending({ place: at, client, type: stateType });
+      else {
+        const r = freeRect(placeTool, p.x, p.y);
+        id = placeTool === "sticky" ? addSticky(r.x, r.y) : addText(r.x, r.y);
+      }
+      if (id) {
+        adopt([id], frame);
+        setEditId(id);
+      }
       setTool("select");
       setPreview(null);
     },
@@ -345,18 +396,88 @@ function Canvas({
     [place, showPreview],
   );
 
-  // 도구 단축키 (텍스트 편집 · 한글 조합 중 무시, 한/영 무관하게 code 기준)
+  // 프레임 도구 (UC-18): 빈 곳을 끌어 영역 그리기, 클릭만 하면 기본 크기. 안에 중심점이 든 요소는 소속
+  const startFrameDraw = (e: ReactPointerEvent) => {
+    if (tool !== "frame" || e.button !== 0) return;
+    if (!(e.target as Element).closest(".react-flow__pane")) return;
+    const s = screenToFlowPosition({ x: e.clientX, y: e.clientY });
+    setDraft({ x0: s.x, y0: s.y, x1: s.x, y1: s.y });
+    const onMove = (ev: PointerEvent) => {
+      const p = screenToFlowPosition({ x: ev.clientX, y: ev.clientY });
+      setDraft({ x0: s.x, y0: s.y, x1: p.x, y1: p.y });
+    };
+    const onUp = (ev: PointerEvent) => {
+      window.removeEventListener("pointermove", onMove);
+      window.removeEventListener("pointerup", onUp);
+      setDraft(null);
+      const p = screenToFlowPosition({ x: ev.clientX, y: ev.clientY });
+      const drawn = {
+        x: Math.min(s.x, p.x),
+        y: Math.min(s.y, p.y),
+        w: Math.abs(p.x - s.x),
+        h: Math.abs(p.y - s.y),
+      };
+      const rect = drawn.w < 20 || drawn.h < 20 ? { x: s.x, y: s.y, ...FRAME_SIZE } : drawn;
+      const cur = useNovelStore.getState().items;
+      const inside = Object.values(cur)
+        .filter((i) => i.kind !== "frame" && !i.parentFrameId)
+        .map((i) => i.id)
+        .filter((id) => {
+          const r = latest.current.rects.get(id);
+          if (!r) return false;
+          const cx = r.x + r.w / 2;
+          const cy = r.y + r.h / 2;
+          return cx >= rect.x && cx <= rect.x + rect.w && cy >= rect.y && cy <= rect.y + rect.h;
+        });
+      setEditId(addFrame(rect, inside));
+      setTool("select");
+    };
+    window.addEventListener("pointermove", onMove);
+    window.addEventListener("pointerup", onUp);
+  };
+
+  // 선택 요소를 감싸는 프레임 (Ctrl+G) / 선택 프레임 풀기 (Ctrl+Shift+G, 자식은 그 자리에)
+  const group = useCallback(() => {
+    const cur = useNovelStore.getState().items;
+    const ids = latest.current.selectedIds.filter((id) => cur[id]?.kind !== "frame");
+    const rs = ids.flatMap((id) => latest.current.rects.get(id) ?? []);
+    if (!rs.length) return;
+    const u = union(rs);
+    const rect = {
+      x: u.x - GROUP_PAD,
+      y: u.y - GROUP_PAD,
+      w: u.w + GROUP_PAD * 2,
+      h: u.h + GROUP_PAD * 2,
+    };
+    setEditId(addFrame(rect, ids));
+  }, []);
+  const ungroup = useCallback(() => {
+    const cur = useNovelStore.getState().items;
+    deleteItems(latest.current.selectedIds.filter((id) => cur[id]?.kind === "frame"));
+  }, []);
+
+  // 보드 단축키 (텍스트 편집 · 한글 조합 중 무시, 한/영 무관하게 code 기준)
   // 화면에 보이기 전에 등록 (보드가 보이자마자 누른 키도 처리)
   useLayoutEffect(() => {
     const onKey = (e: KeyboardEvent) => {
       if (e.isComposing || e.keyCode === 229 || isEditable(e.target)) return;
       if (e.target instanceof Element && e.target.closest("dialog")) return;
-      if (e.ctrlKey || e.metaKey || e.altKey) return;
-      // F2: 선택한 블록 하나의 제목 편집
+      const mod = e.ctrlKey || e.metaKey;
+      if (mod && e.code === "KeyG") {
+        e.preventDefault();
+        if (e.shiftKey) ungroup();
+        else group();
+        return;
+      }
+      if (mod || e.altKey) return;
+      if (e.key === "Delete" || e.key === "Backspace") {
+        e.preventDefault();
+        deleteItems(latest.current.selectedIds);
+        return;
+      }
+      // F2: 선택한 요소 하나 편집 (제목 · 내용)
       if (e.key === "F2") {
-        const ids = Object.keys(useNovelStore.getState().items).filter(
-          (id) => uiRef.current[id]?.selected,
-        );
+        const ids = latest.current.selectedIds;
         if (ids.length === 1) setEditId(ids[0]);
         return;
       }
@@ -370,37 +491,36 @@ function Canvas({
     };
     window.addEventListener("keydown", onKey);
     return () => window.removeEventListener("keydown", onKey);
-  }, [chooseTool]);
+  }, [chooseTool, group, ungroup]);
 
-  // 끌기 종료: 눈금 스냅(Alt = 해제) · 미정 영역 판정 후 스토어에 1건으로 기록
+  // 끌기 종료: 눈금 스냅(Alt = 해제) · 미정 영역 · 프레임 소속 판정 후 스토어에 1건으로 기록
   const onNodeDragStop = useCallback<OnNodeDrag>(
     (e, _node, dragged) => {
-      const current = useNovelStore.getState().items;
-      const snap = timeScale.snap && !e.altKey;
-      const places = Object.fromEntries(
-        dragged.flatMap((n) => {
-          const item = current[n.id];
-          if (item?.kind === "event" || item?.kind === "state") {
-            // 캐릭터별 정렬 중 상태 블록은 세로 위치 유지 (레인 순서는 레인 머리로 변경)
-            const keepY = item.kind === "state" && stateLanes?.enabled;
-            const pos = keepY ? { x: n.position.x, y: item.place.y } : n.position;
-            return [[n.id, movedPlace(item, pos, timeScale, snap)]];
-          }
-          return [];
-        }),
-      );
-      moveItems(places);
-      setUi((u) => {
-        const next = { ...u };
-        for (const n of dragged) next[n.id] = { ...next[n.id], position: undefined };
-        return next;
+      const byId = new Map(nodes.map((n) => [n.id, n]));
+      const dropped: Dropped[] = dragged.map((n) => {
+        const parent = n.parentId ? byId.get(n.parentId)?.position : undefined;
+        return {
+          id: n.id,
+          x: n.position.x + (parent?.x ?? 0),
+          y: n.position.y + (parent?.y ?? 0),
+          w: n.measured?.width ?? n.width ?? EVENT_W,
+          h: n.measured?.height ?? n.height ?? EVENT_H,
+          ox: n.origin?.[0] ?? 0,
+        };
       });
+      const snap = timeScale.snap && !e.altKey;
+      const cur = useNovelStore.getState().items;
+      updateItems(dropPatches(dropped, cur, timeScale, snap, !!stateLanes?.enabled));
+      clearUi(
+        dragged.map((n) => n.id),
+        ["position"],
+      );
     },
-    [timeScale, stateLanes?.enabled],
+    [nodes, timeScale, stateLanes?.enabled, clearUi],
   );
 
   const editState = editId && items[editId]?.kind === "state" ? editId : null;
-  const placing = isPlaceTool(tool);
+  const placing = isPlaceTool(tool) || tool === "frame";
   return (
     <BoardUiContext.Provider value={boardUi}>
       <ReactFlow
@@ -410,14 +530,15 @@ function Canvas({
         nodeTypes={nodeTypes}
         onNodesChange={onNodesChange}
         onNodeDragStop={onNodeDragStop}
+        onPointerDown={startFrameDraw}
         zoomOnDoubleClick={false}
         onPaneClick={(e) => {
-          if (placing) place(tool, { x: e.clientX, y: e.clientY }, e.altKey);
+          if (isPlaceTool(tool)) place(tool, { x: e.clientX, y: e.clientY }, e.altKey);
         }}
         onPaneMouseMove={(e) => {
-          if (placing) showPreview(tool, { x: e.clientX, y: e.clientY }, e.altKey);
+          if (isPlaceTool(tool)) showPreview(tool, { x: e.clientX, y: e.clientY }, e.altKey);
         }}
-        onPaneMouseLeave={() => placing && setPreview(null)}
+        onPaneMouseLeave={() => isPlaceTool(tool) && setPreview(null)}
         defaultViewport={viewport}
         minZoom={MIN_ZOOM}
         maxZoom={MAX_ZOOM}
@@ -442,12 +563,7 @@ function Canvas({
           bgColor="var(--color-canvas)"
           maskColor="rgb(10 10 10 / 0.04)"
           nodeComponent={MiniMapNode}
-          nodeColor={(n) => {
-            const item = items[n.id];
-            if (item?.kind === "event") return `var(--color-${item.color})`;
-            if (item?.kind === "state") return STATE_COLOR[item.stateType];
-            return "var(--color-surface-strong)";
-          }}
+          nodeColor={(n) => minimapColor(items[n.id])}
         />
         {stateLanes?.enabled && (
           <Lanes
@@ -477,16 +593,28 @@ function Canvas({
             at={pending.client}
             onCancel={() => setPending(null)}
             onPick={(docId) => {
-              setEditId(addState(pending.place, docId, pending.type));
+              const id = addState(pending.place, docId, pending.type);
+              if (id) adopt([id], frameAt(screenToFlowPosition(pending.client), items));
+              setEditId(id);
               setPending(null);
             }}
           />
         )}
-        {selectedEvents.length > 0 && !editId && (
-          <BlockMenu itemIds={selectedEvents} onEditLines={() => setLinesOpen(true)} />
+        {selectedIds.length > 0 && !editId && (
+          <BlockMenu itemIds={selectedIds} onEditLines={() => setLinesOpen(true)} />
         )}
         <Axis scale={timeScale} />
         {preview && <PlacePreview preview={preview} scale={timeScale} />}
+        {draft && (
+          <FrameDraft
+            rect={{
+              x: Math.min(draft.x0, draft.x1),
+              y: Math.min(draft.y0, draft.y1),
+              w: Math.abs(draft.x1 - draft.x0),
+              h: Math.abs(draft.y1 - draft.y0),
+            }}
+          />
+        )}
         <Toolbar
           tool={tool}
           stateType={stateType}
