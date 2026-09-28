@@ -105,7 +105,7 @@ flowchart TB
 - [x] 첫 소설 생성 시 `persist()` 1회 요청 (2026-09-26)
 
 ### F1 화이트보드 타임라인
-- [ ] React Flow 캔버스 (줌·팬·미니맵·점 격자, `onlyRenderVisibleElements` 기본 on, 줌 0.5 미만 간략 표시 — C3)
+- [x] React Flow 캔버스 (줌·팬·미니맵·점 격자, `onlyRenderVisibleElements` 기본 on, 줌 0.5 미만 간략 표시 — C3) (2026-09-28) — 줌 컨트롤·화면 위치 복원 포함. 간략 표시는 `.board-simple` 클래스만(블록 구현 시 적용), 줌 단축키(`+`·`-`·`Shift+0~2`)는 단축키 작업에서
 - [ ] 시간축: 정수 눈금 + 눈금 라벨 + x ↔ 눈금 변환 + 스냅 (스파이크 `timeAxis.ts` 이식)
 - [ ] 시간축 구간 접기 (A2)
 - [ ] 미정 영역 (A3)

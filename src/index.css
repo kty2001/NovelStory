@@ -1,4 +1,5 @@
 @import "tailwindcss";
+@import "@xyflow/react/dist/style.css";
 
 /* ui_guide.md 토큰. 간격은 Tailwind 기본 4px 단위 사용 (xxs=1 · xs=2 · sm=3 · md=4 · lg=6 · xl=8 · xxl=12) */
 @theme {
