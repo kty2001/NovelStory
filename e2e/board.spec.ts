@@ -26,6 +26,18 @@ test("캔버스 · 점 격자 · 미니맵 · 줌 컨트롤 표시", async ({ pa
   await expect(page.getByRole("button", { name: "100%로 보기" })).toHaveText("100%");
 });
 
+test("빈 보드: 미니맵에 시간축 · 미정 영역, 화면 맞춤은 둘을 기준으로", async ({ page }) => {
+  const minimap = page.locator(".react-flow__minimap");
+  await expect(minimap.locator("line.minimap-axis")).toHaveCount(1);
+  await expect(minimap.locator("rect.minimap-undated")).toHaveCount(1);
+
+  const zoomLabel = page.getByRole("button", { name: "100%로 보기" });
+  await page.getByRole("button", { name: "화면 맞춤" }).click();
+  await expect(zoomLabel).not.toHaveText("100%");
+  await expect(page.getByTestId("undated-zone")).toBeInViewport();
+  await expect(page.getByTestId("time-axis")).toBeInViewport();
+});
+
 test("줌 0.5 미만 간략 표시 · 100% 복귀", async ({ page }) => {
   const flow = page.locator(".react-flow");
   const zoomLabel = page.getByRole("button", { name: "100%로 보기" });
