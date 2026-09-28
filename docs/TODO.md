@@ -10,7 +10,7 @@ flowchart TB
         UC["유스케이스 ✓"]:::done --> DM["데이터 모델 · ERD ✓"]:::done
         DM --> SC["단축키 목록 ✓"]:::done
         DM --> ON["빈 상태 · 온보딩 ✓"]:::done
-        DM --> WF["와이어프레임"]
+        DM --> WF["와이어프레임 (데스크톱) ✓"]:::done
     end
 
     subgraph BASE["1단계 기반"]
@@ -26,14 +26,13 @@ flowchart TB
     CORE --> F4["F4 사전<br/>분류 · 문서 · 링크"]
     F1 --> LINK["보드 ↔ 사전 연동"]
     F4 --> LINK
-    F0 --> QA["반응형 점검<br/>+ 실제 태블릿 확인"]
+    F0 --> QA["데스크톱 점검"]
     LINK --> QA
-    REMOTE["원격 실기기 확인<br/>(보류)"]:::hold -.-> QA
     QA --> DEPLOY["Workers Builds<br/>main 자동 배포"]
 
     classDef done fill:#a4d4c5,stroke:#0a0a0a,color:#0a0a0a
-    classDef hold fill:#f5f0e0,stroke:#9a9384,color:#55503f,stroke-dasharray:4 3
 ```
+MVP는 데스크톱 전용. 태블릿·모바일은 "MVP 이후 > 태블릿 · 모바일"
 
 ## 기획
 - [x] 기능 명세 초안 ([features_spec.md](./design/features_spec.md))
@@ -49,7 +48,7 @@ flowchart TB
 - [x] A5 소설당 보드 개수 → 1개 + 프레임으로 구분
 - [x] A6 서술 순서 단위 → 사건 1개를 여러 회차 슬롯에 배치 허용(부분 공개)
 - [x] A7 MVP 범위 → F0 서재 + F1 보드 + F4 사전 + F6 로컬 저장. F2·F3·F5·도형·정렬 보조선은 MVP 이후
-- [x] A8 모바일 지원 수준 → 보기 + 간단 편집(사전·메모 편집, 보드 이동·확대, 블록 내용 수정), 보드 배치 편집은 태블릿 이상
+- [x] A8 모바일 지원 수준 → 보기 + 간단 편집(사전·메모 편집, 보드 이동·확대, 블록 내용 수정), 보드 배치 편집은 태블릿 이상 → **MVP 이후로 연기** (2026-09-28, 확인 기기 없음)
 - [x] A9 로컬 데이터 유실 대책 → `navigator.storage.persist()` + 주기적 JSON 백업 알림. **로그인·유저별 DB(2단계) 도입 전까지** 적용
 - [x] A10 서비스명 → WhiteNoard (`whitenoard.<계정>.workers.dev`), 커스텀 도메인은 추후
 - [x] A11 다크 모드 → MVP 제외
@@ -71,12 +70,12 @@ flowchart TB
 - [x] C7 프레임: 채택 (중첩 금지, 삭제 시 자식 유지)
 - [x] C8 IndexedDB 용량: 대안 적용 (업로드 시 1600px WebP 리사이즈를 Web Worker에서 처리)
 
-### 원격 실기기 확인 (보류 — 설계·구현과 병행 가능, MVP 배포 전까지)
+### 원격 실기기 확인 (MVP 이후 — 태블릿·모바일 개발 때)
 - [ ] 스파이크 앱 배포: 별도 Worker `whitenoard-spike`
 - [ ] 원격 테스트 준비: Samsung Developer 계정(Remote Test Lab), Android Studio 에뮬레이터, iOS 체험 서비스(BrowserStack / LambdaTest)
 - [ ] C1 삼성 키보드 · iOS Safari 한글 입력·`@` 멘션
 - [ ] C3 Galaxy A 실측 → 권장 요소 수 상한 결정
-- [ ] C5 실제 태블릿 1회 확인 (**MVP 배포 전 필수**)
+- [ ] C5 실제 태블릿 1회 확인
 
 ## 설계 산출물 (구현 직전)
 - [x] 유스케이스 ([usecase.md](./design/usecase.md))
@@ -84,7 +83,7 @@ flowchart TB
 - [x] ERD 다이어그램 ([erd.md](./design/erd.md))
 - 와이어프레임 (서재 / 보드 / 사전) ([wireframe.md](./design/wireframe.md))
   - [x] 데스크톱 (2026-09-25) — 6장 "기본값으로 정한 사항" 검토 필요
-  - [ ] 태블릿 · 모바일
+  - 태블릿 · 모바일 → MVP 이후
 - [x] 단축키 목록 ([shortcuts.md](./design/shortcuts.md)) — 6장 "기본값으로 정한 사항" 검토 필요
 - [x] 빈 상태·온보딩 ([onboarding.md](./design/onboarding.md)) — 샘플 소설 제공(가져오기 재사용) + 빈 보드 안내 카드, L-2 갱신 · B-9 · W-7 추가 (2026-09-26). 5장 "기본값으로 정한 사항" 검토 필요
 
@@ -117,7 +116,6 @@ flowchart TB
 - [ ] 포스트잇 · 텍스트 · 프레임 (프레임 삭제는 자체 처리, `deleteKeyCode={null}` — C7)
 - [ ] 연결선 (화살표·라벨·점선)
 - [ ] 다중 선택, 복사·붙여넣기, 실행 취소 / 다시 실행
-- [ ] 터치 조작 (핀치 줌, 길게 눌러 메뉴), 모바일 편집 제한 (A8)
 - [ ] 빈 보드 안내 카드 · 필터로 전부 숨김 알림 (B-9)
 
 ### F4 사전
@@ -130,7 +128,7 @@ flowchart TB
 - [ ] 빈 분류 · 검색 0건 · 빠른 이동 0건 · 빈 역링크 안내 (W-7)
 
 ### 배포
-- [ ] 반응형 점검 (태블릿 / 모바일)
+- [ ] 데스크톱 점검 (Chrome · Edge)
 - [ ] Cloudflare Workers Builds에 GitHub 저장소 연결 → main 자동 배포
 
 ## MVP 이후
@@ -141,6 +139,13 @@ flowchart TB
 - [ ] 정렬 보조선 (직접 구현)
 - [ ] 스토리 라인 색 지정 (배지·테두리에 색 적용)
 - [ ] 사전 초성 검색 (es-hangul)
+
+### 태블릿 · 모바일 (기기 확보 후)
+2026-09-28 MVP에서 제외 (확인 기기 없음). 지원 수준은 A8, 기기별 동작은 설계 문서(usecase·ui_guide 등) 그대로
+- [ ] 와이어프레임 태블릿 · 모바일
+- [ ] 반응형 레이아웃 (태블릿 / 모바일)
+- [ ] 터치 조작 (핀치 줌, 길게 눌러 메뉴), 모바일 편집 제한 (A8)
+- [ ] 원격 실기기 확인 (C1·C3·C5, 위 "기술 스파이크" 절)
 
 ## 2단계
 - [ ] 인증 방식 결정
