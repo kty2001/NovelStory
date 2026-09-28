@@ -11,9 +11,11 @@ import type {
   Novel,
   NovelScoped,
   StoryLine,
+  TimeScale,
   WikiCategory,
   WikiDoc,
 } from "../db/types";
+import { insertTick } from "../pages/board/timeAxis";
 import { createAutosave } from "./autosave";
 
 export type Collection<T> = Record<string, T>;
@@ -160,6 +162,22 @@ export function endBatch() {
     pastStates: [...pastStates, start].slice(-HISTORY_LIMIT),
     futureStates: [],
   }));
+}
+
+// 시간축 설정 변경 (라벨·접힌 구간 등). 보드 기록 대상 → 실행 취소·자동 저장 적용
+export function setTimeScale(patch: Partial<TimeScale>) {
+  useNovelStore.setState(({ board }) =>
+    board ? { board: { ...board, timeScale: { ...board.timeScale, ...patch } } } : {},
+  );
+}
+
+// at 앞에 눈금 삽입: 블록·라벨·접힌 구간을 한 번에 이동 (실행 취소 1건)
+export function insertTickAt(at: number) {
+  useNovelStore.setState(({ board, items }) => {
+    if (!board) return {};
+    const r = insertTick(at, board.timeScale, items);
+    return { board: { ...board, timeScale: r.timeScale }, items: r.items };
+  });
 }
 
 export const undo = () => useNovelStore.temporal.getState().undo();

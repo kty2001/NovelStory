@@ -147,7 +147,7 @@ export type BoardEdge = NovelScoped & {
 // ── 로컬 전용 (동기화·내보내기 제외) ──
 export type UiState = {
   novelId: string;
-  viewport: { x: number; y: number; zoom: number };
+  viewport?: { x: number; y: number; zoom: number }; // 보드를 처음 열기 전에는 없음
   lastTab: "board" | "wiki";
   wikiPanelDocId?: string;
   backupSnoozedUntil?: ISODate;

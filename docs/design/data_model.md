@@ -205,7 +205,7 @@ type BoardEdge = NovelScoped & {
 // ── 로컬 전용 (동기화·내보내기 제외) ──
 type UiState = {
   novelId: string;                // 기본 키
-  viewport: { x: number; y: number; zoom: number };
+  viewport?: { x: number; y: number; zoom: number }; // 보드를 처음 열기 전에는 없음 → 0 눈금이 화면 중앙
   lastTab: 'board' | 'wiki';
   wikiPanelDocId?: string;
   backupSnoozedUntil?: ISODate;   // 백업 알림 "나중에"

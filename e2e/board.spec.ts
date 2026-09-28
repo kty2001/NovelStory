@@ -1,4 +1,15 @@
-import { expect, test } from "@playwright/test";
+import { expect, test, type Page } from "@playwright/test";
+import { cdp, keyDuringComposition, setComposition } from "./helpers/ime";
+
+const tick = (page: Page, t: number) => page.locator(`.tick-label[data-tick="${t}"]`);
+const labelInput = (page: Page, t: number) => page.getByRole("textbox", { name: `눈금 ${t} 라벨` });
+
+async function setLabel(page: Page, t: number, text: string) {
+  await tick(page, t).click();
+  await labelInput(page, t).fill(text);
+  await labelInput(page, t).press("Enter");
+  await expect(tick(page, t)).toHaveText(text);
+}
 
 test.beforeEach(async ({ page }) => {
   await page.goto("/");
@@ -42,4 +53,64 @@ test("휠 줌 후 새로고침해도 화면 위치 유지", async ({ page }) => 
   await page.waitForTimeout(300); // onMoveEnd → UiState 기록
   await page.reload();
   await expect(zoomLabel).toHaveText(zoomed!);
+});
+
+test.describe("시간축", () => {
+  test("처음 열면 0 눈금이 화면 가로 중앙", async ({ page }) => {
+    await expect(page.getByTestId("time-axis")).toBeVisible();
+    const board = (await page.getByTestId("board").boundingBox())!;
+    const zero = (await tick(page, 0).boundingBox())!;
+    expect(Math.abs(zero.x + zero.width / 2 - (board.x + board.width / 2))).toBeLessThan(4);
+    await expect(tick(page, 1)).toHaveText("1");
+  });
+
+  test("라벨 편집: Enter 확정 · 굵게 · 새로고침 유지 · Esc 취소 · 비우면 숫자", async ({
+    page,
+  }) => {
+    await setLabel(page, 1, "1년차 봄");
+    await expect(tick(page, 1)).toHaveCSS("font-weight", "600");
+
+    await tick(page, 2).click();
+    await labelInput(page, 2).fill("취소될 라벨");
+    await labelInput(page, 2).press("Escape");
+    await expect(tick(page, 2)).toHaveText("2");
+
+    await page.waitForTimeout(800); // 자동 저장 500ms
+    await page.reload();
+    await expect(tick(page, 1)).toHaveText("1년차 봄");
+
+    await tick(page, 1).click();
+    await labelInput(page, 1).fill("");
+    await labelInput(page, 1).press("Enter");
+    await expect(tick(page, 1)).toHaveText("1");
+    await expect(tick(page, 1)).toHaveCSS("font-weight", "500");
+  });
+
+  test("한글 조합 중 Enter는 라벨을 확정하지 않음", async ({ page }) => {
+    const s = await cdp(page);
+    await tick(page, 3).click();
+    for (const step of ["ㅎ", "하", "한"]) await setComposition(s, step);
+    await keyDuringComposition(s, "Enter");
+    await expect(labelInput(page, 3)).toBeVisible();
+    await s.send("Input.insertText", { text: "한" });
+    await labelInput(page, 3).press("Enter");
+    await expect(tick(page, 3)).toHaveText("한");
+  });
+
+  test("우클릭 메뉴: 앞에 눈금 삽입 · 라벨 지우기", async ({ page }) => {
+    await setLabel(page, 1, "봄");
+    await tick(page, 1).click({ button: "right" });
+    await page.getByRole("menuitem", { name: "앞에 눈금 삽입" }).click();
+    await expect(tick(page, 1)).toHaveText("1");
+    await expect(tick(page, 2)).toHaveText("봄");
+
+    await tick(page, 1).click({ button: "right" });
+    await expect(page.getByRole("menuitem", { name: "라벨 지우기" })).toBeDisabled();
+    await page.keyboard.press("Escape");
+    await expect(page.getByRole("menu")).toBeHidden();
+
+    await tick(page, 2).click({ button: "right" });
+    await page.getByRole("menuitem", { name: "라벨 지우기" }).click();
+    await expect(tick(page, 2)).toHaveText("2");
+  });
 });

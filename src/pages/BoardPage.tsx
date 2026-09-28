@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useParams } from "react-router";
 import {
   Background,
@@ -16,6 +16,8 @@ import {
 import { Maximize, Minus, Plus } from "lucide-react";
 import { db } from "../db/db";
 import { patchUiState } from "../db/uiState";
+import { useNovelStore } from "../store/novelStore";
+import Axis from "./board/Axis";
 
 // 스파이크 C4에서 라벨 겹침 없음을 확인한 줌 범위
 const MIN_ZOOM = 0.05;
@@ -72,6 +74,7 @@ function ZoomControls() {
 
 function Board({ novelId, viewport }: { novelId: string; viewport: Viewport }) {
   const simple = useStore((s) => s.transform[2] < SIMPLE_ZOOM);
+  const timeScale = useNovelStore((s) => s.board?.timeScale);
   return (
     <ReactFlow
       className={simple ? "board-simple" : undefined}
@@ -99,34 +102,41 @@ function Board({ novelId, viewport }: { novelId: string; viewport: Viewport }) {
         bgColor="var(--color-canvas)"
         maskColor="rgb(10 10 10 / 0.04)"
       />
+      {timeScale && <Axis scale={timeScale} />}
       <ZoomControls />
     </ReactFlow>
   );
 }
 
-// 보드: 마지막으로 보던 화면 위치(UiState.viewport)를 불러온 뒤 캔버스 표시
+// 보드: 마지막으로 보던 화면 위치(UiState.viewport)를 불러온 뒤 캔버스 표시.
+// 처음 열면 0 눈금이 화면 가로 중앙, 시간축이 세로 중앙 (onboarding.md)
 export default function BoardPage() {
   const { novelId } = useParams();
   const [ui, setUi] = useState<{ novelId: string; viewport: Viewport } | null>(null);
+  const wrapper = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     if (!novelId) return;
     let alive = true;
     void db.uiState.get(novelId).then((saved) => {
-      if (alive) setUi({ novelId, viewport: saved?.viewport ?? { x: 0, y: 0, zoom: 1 } });
+      if (!alive) return;
+      const el = wrapper.current;
+      const center = { x: (el?.clientWidth ?? 0) / 2, y: (el?.clientHeight ?? 0) / 2, zoom: 1 };
+      setUi({ novelId, viewport: saved?.viewport ?? center });
     });
     return () => {
       alive = false;
     };
   }, [novelId]);
 
-  // 다른 소설의 화면 위치로 초기화되지 않도록 소설 ID 일치 확인
-  if (!novelId || ui?.novelId !== novelId) return null;
   return (
-    <div className="h-full" data-testid="board">
-      <ReactFlowProvider key={novelId}>
-        <Board novelId={novelId} viewport={ui.viewport} />
-      </ReactFlowProvider>
+    <div ref={wrapper} className="h-full" data-testid="board">
+      {/* 다른 소설의 화면 위치로 초기화되지 않도록 소설 ID 일치 확인 */}
+      {novelId && ui?.novelId === novelId && (
+        <ReactFlowProvider key={novelId}>
+          <Board novelId={novelId} viewport={ui.viewport} />
+        </ReactFlowProvider>
+      )}
     </div>
   );
 }

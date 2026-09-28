@@ -1,6 +1,50 @@
-import { useEffect, useRef, useState, type ReactNode } from "react";
+import { useCallback, useRef, useState, type ReactNode } from "react";
+import { useDismiss } from "./useDismiss";
 
-export type MenuItem = { label: string; icon?: ReactNode; onSelect: () => void; danger?: boolean };
+export type MenuItem = {
+  label: string;
+  icon?: ReactNode;
+  onSelect: () => void;
+  danger?: boolean;
+  disabled?: boolean;
+};
+
+// 메뉴 목록: ⋯ 드롭다운과 우클릭 메뉴 공용. 위치는 className으로 지정
+export function MenuList({
+  items,
+  onClose,
+  className = "",
+}: {
+  items: MenuItem[];
+  onClose: () => void;
+  className?: string;
+}) {
+  return (
+    <ul
+      role="menu"
+      className={`z-20 min-w-40 rounded-md border border-hairline bg-canvas py-1 shadow-float ${className}`}
+    >
+      {items.map((item) => (
+        <li key={item.label}>
+          <button
+            type="button"
+            role="menuitem"
+            disabled={item.disabled}
+            className={`flex w-full items-center gap-2 px-3 py-2 text-left text-body-sm hover:bg-surface-card disabled:text-muted-soft disabled:hover:bg-transparent ${item.danger ? "text-error" : "text-ink"}`}
+            onClick={(e) => {
+              e.stopPropagation();
+              onClose();
+              item.onSelect();
+            }}
+          >
+            {item.icon}
+            {item.label}
+          </button>
+        </li>
+      ))}
+    </ul>
+  );
+}
 
 // ⋯ 드롭다운: 바깥 클릭·Esc로 닫힘
 export default function Menu({
@@ -14,22 +58,8 @@ export default function Menu({
 }) {
   const [open, setOpen] = useState(false);
   const ref = useRef<HTMLDivElement>(null);
-
-  useEffect(() => {
-    if (!open) return;
-    const onDown = (e: PointerEvent) => {
-      if (!ref.current?.contains(e.target as Node)) setOpen(false);
-    };
-    const onKey = (e: KeyboardEvent) => {
-      if (e.key === "Escape") setOpen(false);
-    };
-    document.addEventListener("pointerdown", onDown);
-    document.addEventListener("keydown", onKey);
-    return () => {
-      document.removeEventListener("pointerdown", onDown);
-      document.removeEventListener("keydown", onKey);
-    };
-  }, [open]);
+  const close = useCallback(() => setOpen(false), []);
+  useDismiss(ref, open, close);
 
   return (
     <div ref={ref} className="relative">
@@ -46,30 +76,7 @@ export default function Menu({
       >
         {trigger}
       </button>
-      {open && (
-        <ul
-          role="menu"
-          className="absolute right-0 z-20 mt-1 min-w-40 rounded-md border border-hairline bg-canvas py-1 shadow-float"
-        >
-          {items.map((item) => (
-            <li key={item.label}>
-              <button
-                type="button"
-                role="menuitem"
-                className={`flex w-full items-center gap-2 px-3 py-2 text-left text-body-sm hover:bg-surface-card ${item.danger ? "text-error" : "text-ink"}`}
-                onClick={(e) => {
-                  e.stopPropagation();
-                  setOpen(false);
-                  item.onSelect();
-                }}
-              >
-                {item.icon}
-                {item.label}
-              </button>
-            </li>
-          ))}
-        </ul>
-      )}
+      {open && <MenuList items={items} onClose={close} className="absolute right-0 mt-1" />}
     </div>
   );
 }
