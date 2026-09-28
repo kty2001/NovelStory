@@ -236,8 +236,9 @@ export function spanPlace(place: TimedPlace, start: number, end: number): TimedP
 // x, y = 노드 원점(origin) 기준 절대 좌표, ox = 가로 origin (사건 단일 시점 0.5)
 export type Dropped = { id: string; x: number; y: number; w: number; h: number; ox: number };
 
-// 프레임과 함께 움직인 자식: 자유 요소는 같은 만큼, 시간 블록은 새 x에서 눈금 재계산
-function shifted(c: BoardItem, dx: number, dy: number, scale: TimeScale, snap: boolean) {
+// 요소를 (dx, dy)만큼 옮긴 위치: 자유 요소는 같은 만큼, 시간 블록은 새 x에서 눈금 재계산
+// (프레임과 함께 이동 · 붙여넣기)
+export function shifted(c: BoardItem, dx: number, dy: number, scale: TimeScale, snap: boolean) {
   if (c.place.mode === "free")
     return { mode: "free" as const, x: c.place.x + dx, y: c.place.y + dy };
   if (c.kind !== "event" && c.kind !== "state") return c.place;

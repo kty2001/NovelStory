@@ -375,3 +375,13 @@ export function deleteEdges(ids: string[]) {
       : {},
   );
 }
+
+// ── 붙여넣기 · 복제 (UC-20): 요소 · 연결선 · 복제한 사건 문서를 한 번에 (실행 취소 1건) ──
+export function insertRecords(r: { items: BoardItem[]; edges: BoardEdge[]; docs: WikiDoc[] }) {
+  if (!r.items.length) return;
+  store.setState(({ items, edges, docs }) => ({
+    items: { ...items, ...Object.fromEntries(r.items.map((i) => [i.id, i])) },
+    edges: { ...edges, ...Object.fromEntries(r.edges.map((e) => [e.id, e])) },
+    docs: { ...docs, ...Object.fromEntries(r.docs.map((d) => [d.id, d])) },
+  }));
+}

@@ -795,11 +795,7 @@ test.describe("연결선", () => {
     await page.keyboard.press("Delete");
     await expect(edges(page)).toHaveCount(0);
 
-    await page.keyboard.press("Control+KeyZ"); // 실행 취소는 8번 항목, 여기선 다시 연결
-    const b = page.getByTestId("event-block").filter({ hasText: "결과" });
-    await a.hover();
-    const handle = portOf(page, "원인", "right");
-    await dragTo(page, handle, (await center(b)).x, (await center(b)).y);
+    await page.keyboard.press("Control+KeyZ"); // 실행 취소로 되살림
     await expect(edges(page)).toHaveCount(1);
     await a.click();
     await page.keyboard.press("Delete");
@@ -814,5 +810,110 @@ test.describe("연결선", () => {
     await page.getByRole("button", { name: "필터" }).click();
     await page.getByRole("dialog", { name: "필터" }).getByRole("checkbox").first().uncheck();
     await expect(edges(page)).toHaveCount(0);
+  });
+});
+
+test.describe("선택 · 복사 · 실행 취소", () => {
+  async function sticky(page: Page, x: number, y: number, text: string) {
+    await expect(page.getByTestId("time-axis")).toBeVisible();
+    await page.keyboard.press("KeyS");
+    await page.mouse.click(x, y);
+    const input = page.getByRole("textbox", { name: "포스트잇 내용" });
+    await input.fill(text);
+    await input.press("Escape");
+    return page.getByTestId("sticky").filter({ hasText: text });
+  }
+  const selected = (page: Page) => page.locator(".react-flow__node.selected");
+
+  test("실행 취소 · 다시 실행: 끌기 1회 = 1건, 배치도 되돌림", async ({ page }) => {
+    const block = await placeEvent(page, 1, "습격");
+    const x1 = await tickX(page, 1);
+    const x3 = await tickX(page, 3);
+    await dragTo(page, block, x3 + 10, (await center(block)).y);
+    await expect.poll(async () => Math.round((await center(block)).x - x3)).toBe(0);
+
+    await page.keyboard.press("Control+KeyZ");
+    await expect.poll(async () => Math.round((await center(block)).x - x1)).toBe(0);
+    await page.keyboard.press("Control+Shift+KeyZ");
+    await expect.poll(async () => Math.round((await center(block)).x - x3)).toBe(0);
+
+    await page.keyboard.press("Control+KeyZ");
+    await page.keyboard.press("Control+KeyZ");
+    await expect(page.getByTestId("event-block")).toHaveCount(0);
+    await page.keyboard.press("Control+KeyY");
+    await expect(page.getByTestId("event-block")).toHaveText("습격");
+  });
+
+  test("텍스트 편집 중 Ctrl+Z는 텍스트에만 적용", async ({ page }) => {
+    const s = await sticky(page, 900, 250, "메모");
+    await s.dblclick();
+    const input = page.getByRole("textbox", { name: "포스트잇 내용" });
+    await input.press("End");
+    await input.pressSequentially("추가");
+    await input.press("Control+KeyZ");
+    await input.press("Escape");
+    await expect(page.getByTestId("sticky")).toHaveCount(1);
+  });
+
+  test("복사 · 붙여넣기: 마우스 위치 · 사건 문서도 복제(1:1)", async ({ page }) => {
+    const block = await placeEvent(page, 1, "원본");
+    await block.click();
+    await page.keyboard.press("Control+KeyC");
+    const x3 = await tickX(page, 3);
+    await page.mouse.move(x3 + 5, (await center(block)).y + 60);
+    await page.keyboard.press("Control+KeyV");
+    const blocks = page.getByTestId("event-block");
+    await expect(blocks).toHaveCount(2);
+    const copy = blocks.nth(1);
+    await expect(copy).toHaveText("원본");
+    await expect.poll(async () => Math.round((await center(copy)).x - x3)).toBe(0);
+    await expect(selected(page)).toHaveCount(1); // 붙여넣은 요소만 선택
+
+    await copy.dblclick();
+    await page.getByRole("textbox", { name: "사건 제목" }).fill("사본");
+    await page.getByRole("textbox", { name: "사건 제목" }).press("Enter");
+    await expect(blocks.filter({ hasText: "원본" })).toHaveCount(1);
+    await expect(blocks.filter({ hasText: "사본" })).toHaveCount(1);
+  });
+
+  test("Ctrl+D 복제(+24px) · Ctrl+X 잘라내기 → Ctrl+V", async ({ page }) => {
+    const s = await sticky(page, 900, 250, "가");
+    const b0 = (await s.boundingBox())!;
+    await s.click();
+    await page.keyboard.press("Control+KeyD");
+    const all = page.getByTestId("sticky");
+    await expect(all).toHaveCount(2);
+    const b1 = (await all.nth(1).boundingBox())!;
+    expect(Math.round(b1.x - b0.x)).toBe(24);
+    expect(Math.round(b1.y - b0.y)).toBe(24);
+
+    await page.keyboard.press("Control+KeyX");
+    await expect(all).toHaveCount(1);
+    await page.mouse.move(600, 650);
+    await page.keyboard.press("Control+KeyV");
+    await expect(all).toHaveCount(2);
+  });
+
+  test("박스 선택 · Ctrl+A · Tab 순서 선택 · Delete", async ({ page }) => {
+    await sticky(page, 860, 250, "왼쪽");
+    await sticky(page, 1100, 250, "오른쪽");
+    await placeEvent(page, 1, "사건", 60);
+
+    // 빈 곳에서 끌어 포스트잇 둘만 감싸기
+    await page.mouse.move(760, 140);
+    await page.mouse.down();
+    await page.mouse.move(1200, 350, { steps: 8 });
+    await page.mouse.up();
+    await expect(selected(page)).toHaveCount(2);
+
+    await page.keyboard.press("Tab");
+    await expect(selected(page)).toHaveCount(1);
+    await page.keyboard.press("Control+KeyA");
+    await expect(selected(page)).toHaveCount(3);
+    await page.keyboard.press("Delete");
+    await expect(page.getByTestId("sticky")).toHaveCount(0);
+    await expect(page.getByTestId("event-block")).toHaveCount(0);
+    await page.keyboard.press("Control+KeyZ");
+    await expect(page.getByTestId("sticky")).toHaveCount(2);
   });
 });

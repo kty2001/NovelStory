@@ -33,6 +33,8 @@ import {
   addEvent,
   addFrame,
   addState,
+  insertRecords,
+  nextZ,
   addSticky,
   addText,
   adopt,
@@ -40,7 +42,8 @@ import {
   setLanes,
   updateItems,
 } from "../../store/boardActions";
-import { setTimeScale, useNovelStore } from "../../store/novelStore";
+import { redo, setTimeScale, undo, useNovelStore } from "../../store/novelStore";
+import { copyClip, pasteRecords, type Clip } from "./clipboard";
 import Axis from "./Axis";
 import BlockMenu from "./BlockMenu";
 import { BoardUiContext } from "./boardContext";
@@ -514,6 +517,77 @@ function Canvas({
     deleteItems(latest.current.selectedIds.filter((id) => cur[id]?.kind === "frame"));
   }, []);
 
+  // 선택 바꾸기 (전체 선택 · 붙여넣은 요소 선택 · Tab 이동). 연결선 선택은 해제
+  const select = useCallback((ids: string[]) => {
+    const on = new Set(ids);
+    setUi((u) => {
+      const next = { ...u };
+      for (const id of new Set([...Object.keys(u), ...ids])) {
+        if (!!next[id]?.selected !== on.has(id)) next[id] = { ...next[id], selected: on.has(id) };
+      }
+      return next;
+    });
+    setEdgeSel({});
+  }, []);
+
+  // 복사 · 붙여넣기 · 복제 (UC-20). 붙여넣기 위치 = 마우스 위치, 캔버스 밖이면 원본 +24px (반복할수록 더 밀림)
+  const clip = useRef<Clip | null>(null);
+  const pasteCount = useRef(0);
+  const pointer = useRef<XYPosition | null>(null);
+  const copySelection = useCallback((): Clip | null => {
+    const { items: cur, edges: es, docs: ds } = useNovelStore.getState();
+    const ids = latest.current.selectedIds;
+    const rs = ids.flatMap((id) => latest.current.rects.get(id) ?? []);
+    if (!rs.length) return null;
+    const u = union(rs);
+    return copyClip(ids, cur, es, ds, { x: u.x + u.w / 2, y: u.y + u.h / 2 });
+  }, []);
+  const paste = useCallback(
+    (source: Clip, atMouse: boolean) => {
+      const { items: cur, novelId: nid } = useNovelStore.getState();
+      if (!nid) return;
+      let dx: number;
+      let dy: number;
+      if (atMouse && pointer.current) {
+        const p = screenToFlowPosition(pointer.current);
+        [dx, dy] = [p.x - source.center.x, p.y - source.center.y];
+      } else {
+        dx = dy = 24 * (atMouse ? ++pasteCount.current : 1);
+      }
+      const r = pasteRecords(source, dx, dy, {
+        novelId: nid,
+        scale: timeScale,
+        snap: timeScale.snap,
+        zStart: nextZ(cur),
+        now: new Date().toISOString(),
+        newId: () => crypto.randomUUID(),
+      });
+      insertRecords(r);
+      select(r.items.map((i) => i.id));
+    },
+    [screenToFlowPosition, timeScale, select],
+  );
+
+  // Tab / Shift+Tab: 화면 위치 순(왼쪽 → 오른쪽, 위 → 아래)으로 다음 · 이전 요소 선택
+  const cycleSelection = useCallback(
+    (back: boolean) => {
+      const { rects: rs, selectedIds: sel } = latest.current;
+      const order = Object.keys(useNovelStore.getState().items)
+        .filter((id) => rs.has(id) && !hiddenIds.has(id))
+        .sort((a, b) => rs.get(a)!.x - rs.get(b)!.x || rs.get(a)!.y - rs.get(b)!.y);
+      if (!order.length) return;
+      const at = sel.length ? order.indexOf(sel[0]) : -1;
+      const next =
+        at < 0
+          ? back
+            ? order.length - 1
+            : 0
+          : (at + (back ? -1 : 1) + order.length) % order.length;
+      select([order[next]]);
+    },
+    [hiddenIds, select],
+  );
+
   // 보드 단축키 (텍스트 편집 · 한글 조합 중 무시, 한/영 무관하게 code 기준)
   // 화면에 보이기 전에 등록 (보드가 보이자마자 누른 키도 처리)
   useLayoutEffect(() => {
@@ -525,6 +599,43 @@ function Canvas({
         e.preventDefault();
         if (e.shiftKey) ungroup();
         else group();
+        return;
+      }
+      // 실행 취소 · 다시 실행 (보드 단위 기록, 드래그 · 편집 1회 = 1건 · C2)
+      if (mod && (e.code === "KeyZ" || e.code === "KeyY")) {
+        e.preventDefault();
+        if (e.code === "KeyY" || e.shiftKey) redo();
+        else undo();
+        return;
+      }
+      if (mod && e.code === "KeyA") {
+        e.preventDefault(); // 페이지 글자 선택 대신 보드 전체 선택
+        select(Object.keys(useNovelStore.getState().items).filter((id) => !hiddenIds.has(id)));
+        return;
+      }
+      if (mod && (e.code === "KeyC" || e.code === "KeyX")) {
+        const copied = copySelection();
+        if (!copied) return;
+        e.preventDefault();
+        clip.current = copied;
+        pasteCount.current = 0;
+        if (e.code === "KeyX") deleteItems(latest.current.selectedIds);
+        return;
+      }
+      if (mod && e.code === "KeyV" && clip.current) {
+        e.preventDefault();
+        paste(clip.current, true);
+        return;
+      }
+      if (mod && e.code === "KeyD") {
+        e.preventDefault(); // 북마크 대신 복제 (원본 +24px)
+        const copied = copySelection();
+        if (copied) paste(copied, false);
+        return;
+      }
+      if (e.key === "Tab" && !mod && !e.altKey) {
+        e.preventDefault();
+        cycleSelection(e.shiftKey);
         return;
       }
       if (mod || e.altKey) return;
@@ -550,7 +661,7 @@ function Canvas({
     };
     window.addEventListener("keydown", onKey);
     return () => window.removeEventListener("keydown", onKey);
-  }, [chooseTool, group, ungroup]);
+  }, [chooseTool, group, ungroup, select, copySelection, paste, cycleSelection, hiddenIds]);
 
   // 끌기 종료: 눈금 스냅(Alt = 해제) · 미정 영역 · 프레임 소속 판정 후 스토어에 1건으로 기록
   const onNodeDragStop = useCallback<OnNodeDrag>(
@@ -596,6 +707,9 @@ function Canvas({
         onEdgeDoubleClick={(_, edge) => setEditId(edge.id)}
         onNodeDragStop={onNodeDragStop}
         onPointerDown={startFrameDraw}
+        // 붙여넣기 위치용 마우스 위치 (캔버스 밖이면 없음)
+        onPointerMove={(e) => (pointer.current = { x: e.clientX, y: e.clientY })}
+        onPointerLeave={() => (pointer.current = null)}
         zoomOnDoubleClick={false}
         onPaneClick={(e) => {
           if (isPlaceTool(tool)) place(tool, { x: e.clientX, y: e.clientY }, e.altKey);
