@@ -85,7 +85,6 @@ export default function Toolbar({
         </div>
       ))}
       <Sep />
-      {children}
       <button
         type="button"
         aria-pressed={snap}
@@ -96,6 +95,7 @@ export default function Toolbar({
         <Magnet size={16} />
         스냅
       </button>
+      {children}
     </Panel>
   );
 }

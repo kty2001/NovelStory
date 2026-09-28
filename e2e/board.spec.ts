@@ -397,3 +397,97 @@ test.describe("사건 블록", () => {
     );
   });
 });
+
+test.describe("스토리 라인", () => {
+  const lineButton = (page: Page) => page.getByRole("button", { name: /^라인:/ });
+
+  async function setLine(page: Page, block: import("@playwright/test").Locator, line: string) {
+    await block.click();
+    await lineButton(page).click();
+    await page.getByRole("menuitem", { name: line, exact: true }).click();
+  }
+
+  test("블록 메뉴로 지정 → 배지 · 라인별 테두리 (메인 굵은 실선 / 사이드 점선)", async ({
+    page,
+  }) => {
+    const block = await placeEvent(page, 2, "왕도 습격");
+    await setLine(page, block, "메인");
+    await expect(block).toHaveAttribute("data-line", "메인");
+    await expect(block.locator(".line-badge")).toHaveText("메인");
+    await expect(block).toHaveCSS("border-top-width", "2px");
+    await expect(block).toHaveCSS("border-top-style", "solid");
+
+    await setLine(page, block, "사이드");
+    await expect(block).toHaveCSS("border-top-style", "dashed");
+
+    await setLine(page, block, "미지정");
+    await expect(block).toHaveAttribute("data-line", "");
+    await expect(block).toHaveCSS("border-top-width", "0px");
+  });
+
+  test("여러 블록 선택(Shift+클릭) 후 한꺼번에 지정", async ({ page }) => {
+    const a = await placeEvent(page, 1, "가");
+    const b = await placeEvent(page, 3, "나");
+    await a.click();
+    await b.click({ modifiers: ["Shift"] });
+    await expect(lineButton(page)).toHaveText("라인: 미지정");
+    await lineButton(page).click();
+    await page.getByRole("menuitem", { name: "서브", exact: true }).click();
+    await expect(a).toHaveAttribute("data-line", "서브");
+    await expect(b).toHaveAttribute("data-line", "서브");
+  });
+
+  test("필터: 라인 숨김 · 개수 배지 · 새로고침 유지 · 모두 표시", async ({ page }) => {
+    const main = await placeEvent(page, 1, "핵심");
+    await setLine(page, main, "메인");
+    const other = await placeEvent(page, 3, "곁가지");
+
+    await page.getByRole("button", { name: "필터" }).click();
+    const filter = page.getByRole("dialog", { name: "필터" });
+    await filter.getByRole("checkbox").first().uncheck(); // 메인
+    await expect(main).toBeHidden();
+    await expect(other).toBeVisible();
+    await expect(page.getByTestId("filter-count")).toHaveText("1");
+
+    await page.waitForTimeout(800); // 자동 저장 500ms
+    await page.reload();
+    await expect(page.getByTestId("event-block").filter({ hasText: "곁가지" })).toBeVisible();
+    await expect(page.getByTestId("event-block").filter({ hasText: "핵심" })).toBeHidden();
+
+    await page.getByRole("button", { name: "필터" }).click();
+    await page.getByRole("button", { name: "모두 표시" }).click();
+    await expect(page.getByTestId("event-block").filter({ hasText: "핵심" })).toBeVisible();
+  });
+
+  test("라인 편집: 이름 변경 · 추가 · 끌어서 순서 변경 · 사용 중인 라인 삭제 확인", async ({
+    page,
+  }) => {
+    const block = await placeEvent(page, 2, "회상 장면");
+    await setLine(page, block, "사이드");
+    await block.click();
+    await lineButton(page).click();
+    await page.getByRole("menuitem", { name: "라인 편집…" }).click();
+    const dialog = page.getByRole("dialog", { name: "스토리 라인 편집" });
+
+    const third = dialog.getByRole("textbox", { name: "라인 3 이름" });
+    await third.fill("회상");
+    await third.press("Enter");
+    await expect(block).toHaveAttribute("data-line", "회상");
+
+    await dialog.getByRole("button", { name: "라인 추가" }).click();
+    await expect(dialog.getByTestId("line-row")).toHaveCount(4);
+
+    // 회상(3번째)을 맨 위로 → 메인 자리(굵은 실선)
+    await dialog.getByLabel("회상 순서 변경").dragTo(dialog.getByTestId("line-row").first());
+    await expect(dialog.getByRole("textbox", { name: "라인 1 이름" })).toHaveValue("회상");
+    await expect(block).toHaveCSS("border-top-width", "2px");
+
+    await dialog.getByRole("button", { name: "회상 삭제" }).click();
+    await expect(dialog.getByRole("alert")).toHaveText(/사건 1개가 미지정이 됩니다/);
+    await dialog.getByRole("alert").getByRole("button", { name: "삭제" }).click();
+    await expect(dialog.getByTestId("line-row")).toHaveCount(3);
+    await expect(block).toHaveAttribute("data-line", "");
+    await dialog.getByRole("button", { name: "완료" }).click();
+    await expect(dialog).toBeHidden();
+  });
+});

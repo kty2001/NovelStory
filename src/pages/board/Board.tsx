@@ -23,16 +23,21 @@ import {
   type XYPosition,
 } from "@xyflow/react";
 import { Maximize, Minus, Plus } from "lucide-react";
-import type { TimeScale } from "../../db/types";
+import { db } from "../../db/db";
+import type { TimeScale, UiState } from "../../db/types";
 import { patchUiState } from "../../db/uiState";
 import { addEvent, moveItems } from "../../store/boardActions";
 import { setTimeScale, useNovelStore } from "../../store/novelStore";
 import Axis from "./Axis";
 import { AxisTrack, MiniMapNode, UndatedZone } from "./DecorNodes";
+import BlockMenu from "./BlockMenu";
 import { BoardUiContext } from "./boardContext";
 import EventNode from "./EventNode";
+import FilterMenu from "./FilterMenu";
 import { decorNodes, EVENT_H, itemNode, movedPlace, timePlace } from "./flow";
 import Leaders from "./Leaders";
+import LineEditDialog from "./LineEditDialog";
+import { NO_LINE } from "./lines";
 import PlacePreview, { type Preview } from "./PlacePreview";
 import Toolbar from "./Toolbar";
 import {
@@ -51,6 +56,7 @@ const MAX_ZOOM = 2;
 // 이 배율 미만이면 블록 간략 표시 (C3): 노드는 `.board-simple` 아래에서 제목만 표시
 const SIMPLE_ZOOM = 0.5;
 const ZOOM_MS = 200;
+const MULTI_SELECT_KEYS = ["Shift", "Control", "Meta"];
 // 연결선은 연결선 구현 시 스토어에서 변환
 const NO_EDGES: Edge[] = [];
 
@@ -78,6 +84,14 @@ function applyUi(prev: Record<string, NodeUi>, changes: NodeChange[]) {
   }
   return next;
 }
+
+type Filters = NonNullable<UiState["filters"]>;
+const NO_FILTERS: Filters = {
+  hiddenDocIds: [],
+  hiddenTags: [],
+  hiddenCategoryIds: [],
+  hiddenLineIds: [],
+};
 
 // 도구 모음을 끌어 캔버스 위에서 놓았는지 (도구 모음 · 미니맵 등 패널 위는 제외)
 const overCanvas = (x: number, y: number) => {
@@ -139,7 +153,41 @@ function Canvas({
 }) {
   const simple = useStore((s) => s.transform[2] < SIMPLE_ZOOM);
   const items = useNovelStore((s) => s.items);
+  const docs = useNovelStore((s) => s.docs);
   const { screenToFlowPosition } = useReactFlow();
+  const [filters, setFilters] = useState<Filters>(NO_FILTERS);
+  const [linesOpen, setLinesOpen] = useState(false);
+
+  // 필터는 소설별로 기억 (UiState.filters)
+  useEffect(() => {
+    let alive = true;
+    void db.uiState.get(novelId).then((s) => {
+      if (alive && s?.filters) setFilters({ ...NO_FILTERS, ...s.filters });
+    });
+    return () => {
+      alive = false;
+    };
+  }, [novelId]);
+  const changeFilters = useCallback(
+    (patch: Partial<Filters>) =>
+      setFilters((f) => {
+        const next = { ...f, ...patch };
+        void patchUiState(novelId, { filters: next });
+        return next;
+      }),
+    [novelId],
+  );
+
+  // 필터로 숨긴 블록 (스토리 라인: 사건 문서의 lineId, 미지정 = NO_LINE)
+  const hiddenIds = useMemo(() => {
+    const lines = new Set(filters.hiddenLineIds);
+    const out = new Set<string>();
+    if (!lines.size) return out;
+    for (const item of Object.values(items)) {
+      if (item.kind === "event" && lines.has(docs[item.docId]?.lineId ?? NO_LINE)) out.add(item.id);
+    }
+    return out;
+  }, [items, docs, filters.hiddenLineIds]);
   const [ui, setUi] = useState<Record<string, NodeUi>>({});
   const [tool, setTool] = useState<Tool>("select");
   const [stateType, setStateType] = useState<StateType>("appear");
@@ -147,16 +195,23 @@ function Canvas({
   const [editId, setEditId] = useState<string | null>(null);
 
   const heightOf = useCallback((id: string) => ui[id]?.measured?.height ?? EVENT_H, [ui]);
-  const selectionSize = useMemo(
-    () => Object.keys(items).filter((id) => ui[id]?.selected).length,
-    [items, ui],
+  // 블록 메뉴 대상: 선택된 (보이는) 사건 블록
+  const selectedEvents = useMemo(
+    () =>
+      Object.values(items)
+        .filter((i) => i.kind === "event" && ui[i.id]?.selected && !hiddenIds.has(i.id))
+        .map((i) => i.id),
+    [items, ui, hiddenIds],
   );
-  const boardUi = useMemo(() => ({ editId, setEditId, selectionSize }), [editId, selectionSize]);
+  const boardUi = useMemo(() => ({ editId, setEditId }), [editId]);
 
   const nodes = useMemo(() => {
     const all: Node[] = [
       ...decorNodes(timeScale, items, (item) => heightOf(item.id)),
-      ...Object.values(items).flatMap((item) => itemNode(item, timeScale) ?? []),
+      ...Object.values(items).flatMap((item) => {
+        const n = itemNode(item, timeScale);
+        return n ? [hiddenIds.has(item.id) ? { ...n, hidden: true } : n] : [];
+      }),
     ];
     return all.map((n) => {
       const u = ui[n.id];
@@ -168,7 +223,7 @@ function Canvas({
         position: u.position ?? n.position,
       };
     });
-  }, [timeScale, items, ui, heightOf]);
+  }, [timeScale, items, ui, heightOf, hiddenIds]);
   // 키 처리기에서 최신 선택 상태를 읽기 위한 참조
   const uiRef = useRef(ui);
   useEffect(() => {
@@ -246,6 +301,7 @@ function Canvas({
   useLayoutEffect(() => {
     const onKey = (e: KeyboardEvent) => {
       if (e.isComposing || e.keyCode === 229 || isEditable(e.target)) return;
+      if (e.target instanceof Element && e.target.closest("dialog")) return;
       if (e.ctrlKey || e.metaKey || e.altKey) return;
       // F2: 선택한 블록 하나의 제목 편집
       if (e.key === "F2") {
@@ -314,6 +370,8 @@ function Canvas({
         maxZoom={MAX_ZOOM}
         // 빈 곳 드래그 = 박스 선택, 팬 = Space+드래그 · 가운데 버튼 · 손 도구 (shortcuts.md 2.4)
         selectionOnDrag={tool === "select"}
+        // Shift · Ctrl(⌘)+클릭 = 선택 추가·해제 (UC-20)
+        multiSelectionKeyCode={MULTI_SELECT_KEYS}
         panOnDrag={tool === "hand" ? true : [1]}
         panActivationKeyCode="Space"
         // 삭제는 보드에서 직접 처리 (프레임 자식 유지, C7)
@@ -338,7 +396,10 @@ function Canvas({
               : "var(--color-surface-strong)";
           }}
         />
-        <Leaders items={items} scale={timeScale} heightOf={heightOf} />
+        <Leaders items={items} hiddenIds={hiddenIds} scale={timeScale} heightOf={heightOf} />
+        {selectedEvents.length > 0 && !editId && (
+          <BlockMenu itemIds={selectedEvents} onEditLines={() => setLinesOpen(true)} />
+        )}
         <Axis scale={timeScale} />
         {preview && <PlacePreview preview={preview} scale={timeScale} />}
         <Toolbar
@@ -349,8 +410,21 @@ function Canvas({
           onTool={chooseTool}
           onDragStart={startToolDrag}
           onSnap={() => setTimeScale({ snap: !timeScale.snap })}
-        />
+        >
+          <FilterMenu
+            hiddenLineIds={filters.hiddenLineIds}
+            onChange={(hiddenLineIds) => changeFilters({ hiddenLineIds })}
+            onEditLines={() => setLinesOpen(true)}
+          />
+        </Toolbar>
         <ZoomControls />
+        <LineEditDialog
+          open={linesOpen}
+          onClose={() => setLinesOpen(false)}
+          onDeleted={(id) =>
+            changeFilters({ hiddenLineIds: filters.hiddenLineIds.filter((k) => k !== id) })
+          }
+        />
       </ReactFlow>
     </BoardUiContext.Provider>
   );

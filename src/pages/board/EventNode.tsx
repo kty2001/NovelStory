@@ -1,24 +1,15 @@
 import { useEffect, useRef, type PointerEvent as ReactPointerEvent } from "react";
-import { NodeToolbar, Position, useReactFlow, type Node, type NodeProps } from "@xyflow/react";
-import type { ColorToken, EventItem } from "../../db/types";
-import { moveItems, patchItems, renameDoc } from "../../store/boardActions";
+import { useReactFlow, type Node, type NodeProps } from "@xyflow/react";
+import type { EventItem } from "../../db/types";
+import { moveItems, renameDoc, sortedLines } from "../../store/boardActions";
 import { beginBatch, endBatch, useNovelStore } from "../../store/novelStore";
 import { useBoardUi } from "./boardContext";
 import { EVENT_W, spanPlace } from "./flow";
+import { lineBorder } from "./lines";
 import { snapTick, xToTick } from "./timeAxis";
 
 // span = 기간 사건 (폭은 노드 width, 래퍼를 채움)
 export type EventNodeType = Node<{ span?: boolean }, "event">;
-
-// 블록 메뉴 색 (ui_guide 브랜드 색 중 잉크 글자가 읽히는 것)
-const COLORS: { token: ColorToken; label: string }[] = [
-  { token: "brand-peach", label: "피치" },
-  { token: "brand-pink", label: "핑크" },
-  { token: "brand-coral", label: "코랄" },
-  { token: "brand-ochre", label: "오커" },
-  { token: "brand-mint", label: "민트" },
-  { token: "brand-lavender", label: "라벤더" },
-];
 
 // 제목 인라인 편집: Enter · Esc · 바깥 클릭 = 확정 (C6). 한글 조합 중 Enter 무시. 비우면 원래 제목
 function TitleInput({
@@ -116,7 +107,12 @@ function Handle({
 export default function EventNode({ id, data, selected }: NodeProps<EventNodeType>) {
   const item = useNovelStore((s) => s.items[id]) as EventItem | undefined;
   const doc = useNovelStore((s) => (item ? s.docs[item.docId] : undefined));
-  const { editId, setEditId, selectionSize } = useBoardUi();
+  // 스토리 라인: 순서(테두리 모양) · 이름(배지). 미지정 = -1
+  const lineIndex = useNovelStore((s) =>
+    doc?.lineId ? sortedLines(s.lines).findIndex((l) => l.id === doc.lineId) : -1,
+  );
+  const lineName = useNovelStore((s) => (doc?.lineId ? s.lines[doc.lineId]?.name : undefined));
+  const { editId, setEditId } = useBoardUi();
   const resize = useSpanResize(id);
   if (item?.kind !== "event") return null;
   const editing = editId === id;
@@ -124,40 +120,26 @@ export default function EventNode({ id, data, selected }: NodeProps<EventNodeTyp
 
   return (
     <>
-      <NodeToolbar
-        // 블록 메뉴는 이 블록 하나만 선택됐을 때
-        isVisible={selected && selectionSize === 1 && !editing}
-        position={Position.Top}
-        offset={12}
-      >
-        <div
-          role="toolbar"
-          aria-label="블록 메뉴"
-          className="flex items-center gap-1 rounded-md border border-hairline bg-canvas p-1 shadow-float"
-        >
-          {COLORS.map((c) => (
-            <button
-              key={c.token}
-              type="button"
-              aria-label={`색: ${c.label}`}
-              aria-pressed={item.color === c.token}
-              className={`size-6 rounded-full ${item.color === c.token ? "ring-2 ring-ink ring-offset-1" : ""}`}
-              style={{ background: `var(--color-${c.token})` }}
-              onClick={() => patchItems([id], { color: c.token })}
-            />
-          ))}
-        </div>
-      </NodeToolbar>
       <div
         data-testid="event-block"
         className={`relative rounded-md px-3 py-2 text-block-label break-keep text-ink ${selected ? "outline-2 outline-offset-2 outline-brand-teal" : ""}`}
-        style={{ width: data.span ? "100%" : EVENT_W, background: `var(--color-${item.color})` }}
+        data-line={lineName ?? ""}
+        style={{
+          width: data.span ? "100%" : EVENT_W,
+          background: `var(--color-${item.color})`,
+          ...lineBorder(lineIndex < 0 ? undefined : lineIndex),
+        }}
         onDoubleClick={() => setEditId(id)}
       >
         {editing && doc ? (
           <TitleInput docId={doc.id} initial={doc.title} onDone={() => setEditId(null)} />
         ) : (
           <p className="line-clamp-2">{doc?.title}</p>
+        )}
+        {lineName && !editing && (
+          <span className="line-badge mt-1 inline-block rounded-full bg-canvas/70 px-2 text-caption text-ink">
+            {lineName}
+          </span>
         )}
         {selected && timed && !editing && (
           <>
