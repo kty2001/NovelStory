@@ -4,6 +4,7 @@ import type { FrameItem, StickyItem, TextItem } from "../../db/types";
 import { updateItems } from "../../store/boardActions";
 import { useNovelStore } from "../../store/novelStore";
 import { useBoardUi } from "./boardContext";
+import Ports from "./Ports";
 import { useFocusWhenVisible } from "./useFocusWhenVisible";
 
 const isComposing = (e: React.KeyboardEvent) => e.nativeEvent.isComposing || e.keyCode === 229;
@@ -67,6 +68,7 @@ export function StickyNode({ id, selected }: NodeProps) {
   return (
     <>
       <Resizer id={id} visible={selected && !editing} min={[80, 80]} />
+      <Ports />
       <div
         data-testid="sticky"
         className={`h-full w-full rounded-xs p-3 text-body-sm break-keep text-ink shadow-sticky ${selected ? "outline-2 outline-offset-2 outline-brand-teal" : ""}`}
@@ -98,27 +100,30 @@ export function TextNode({ id, selected }: NodeProps) {
   if (item?.kind !== "text") return null;
   const editing = editId === id;
   return (
-    <div
-      data-testid="board-text"
-      className={`min-h-8 w-full rounded-xs text-title-md break-keep text-ink ${selected ? "outline-2 outline-offset-2 outline-brand-teal" : ""}`}
-      onDoubleClick={() => setEditId(id)}
-    >
-      {editing ? (
-        <InlineText
-          label="텍스트 내용"
-          initial={item.text}
-          className="field-sizing-content min-h-8 w-full resize-none"
-          onDone={(text) => {
-            updateItems({ [id]: { text } });
-            setEditId(null);
-          }}
-        />
-      ) : (
-        <p className={`whitespace-pre-wrap ${item.text ? "" : "text-muted-soft"}`}>
-          {item.text || "텍스트"}
-        </p>
-      )}
-    </div>
+    <>
+      <Ports />
+      <div
+        data-testid="board-text"
+        className={`min-h-8 w-full rounded-xs text-title-md break-keep text-ink ${selected ? "outline-2 outline-offset-2 outline-brand-teal" : ""}`}
+        onDoubleClick={() => setEditId(id)}
+      >
+        {editing ? (
+          <InlineText
+            label="텍스트 내용"
+            initial={item.text}
+            className="field-sizing-content min-h-8 w-full resize-none"
+            onDone={(text) => {
+              updateItems({ [id]: { text } });
+              setEditId(null);
+            }}
+          />
+        ) : (
+          <p className={`whitespace-pre-wrap ${item.text ? "" : "text-muted-soft"}`}>
+            {item.text || "텍스트"}
+          </p>
+        )}
+      </div>
+    </>
   );
 }
 

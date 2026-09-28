@@ -1,5 +1,6 @@
 import type {
   Board,
+  BoardEdge,
   BoardItem,
   EventItem,
   FrameItem,
@@ -304,10 +305,11 @@ export function updateItems(patches: Record<string, Partial<BoardItem>>) {
 }
 
 // 삭제 (확인 없음, 실행 취소 가능 · UC-20): 프레임 자식은 그 자리에 남고(절대 좌표), 관련 사건 연결 · 연결선 정리
-export function deleteItems(ids: string[]) {
+export function deleteItems(ids: string[], edgeIds: string[] = []) {
   const gone = new Set(ids);
+  const goneEdges = new Set(edgeIds);
   const { items, edges } = store.getState();
-  if (!ids.some((id) => items[id])) return;
+  if (!ids.some((id) => items[id]) && !edgeIds.some((id) => edges[id])) return;
   const next: typeof items = {};
   for (const item of Object.values(items)) {
     if (gone.has(item.id)) continue;
@@ -323,7 +325,53 @@ export function deleteItems(ids: string[]) {
     next[item.id] = kept;
   }
   const nextEdges = Object.fromEntries(
-    Object.entries(edges).filter(([, e]) => !gone.has(e.source) && !gone.has(e.target)),
+    Object.entries(edges).filter(
+      ([id, e]) => !goneEdges.has(id) && !gone.has(e.source) && !gone.has(e.target),
+    ),
   );
   store.setState({ items: next, edges: nextEdges });
+}
+
+// ── 연결선 (UC-19) ──
+export function addEdge(
+  source: string,
+  target: string,
+  sourceHandle?: string,
+  targetHandle?: string,
+): string | null {
+  const { novelId, edges, items } = store.getState();
+  if (!novelId || source === target || !items[source] || !items[target]) return null;
+  const edge: BoardEdge = {
+    id: crypto.randomUUID(),
+    novelId,
+    updatedAt: now(),
+    source,
+    target,
+    ...(sourceHandle ? { sourceHandle } : {}),
+    ...(targetHandle ? { targetHandle } : {}),
+    dashed: false,
+  };
+  store.setState({ edges: { ...edges, [edge.id]: edge } });
+  return edge.id;
+}
+
+// 라벨 · 실선/점선 (편집 1회 = 1건). 빈 라벨은 필드 제거
+export function updateEdge(id: string, patch: Partial<Pick<BoardEdge, "label" | "dashed">>) {
+  store.setState(({ edges }) => {
+    const edge = edges[id];
+    if (!edge) return {};
+    const next = { ...edge, ...patch };
+    if ("label" in patch && !patch.label) delete next.label;
+    if (JSON.stringify(next) === JSON.stringify(edge)) return {};
+    return { edges: { ...edges, [id]: next } };
+  });
+}
+
+export function deleteEdges(ids: string[]) {
+  const gone = new Set(ids);
+  store.setState(({ edges }) =>
+    ids.some((id) => edges[id])
+      ? { edges: Object.fromEntries(Object.entries(edges).filter(([id]) => !gone.has(id))) }
+      : {},
+  );
 }

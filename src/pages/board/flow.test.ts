@@ -6,6 +6,7 @@ import {
   decorNodes,
   dropPatches,
   EVENT_W,
+  facingSides,
   movedPlace,
   spanPlace,
   UNDATED_GAP,
@@ -171,5 +172,15 @@ describe("끌기 종료: 위치 · 프레임 소속", () => {
       true,
     );
     expect(p.st.place).toEqual({ mode: "timed", t: 3, y: 60 });
+  });
+});
+
+describe("연결선 면 자동 선택", () => {
+  const box = (x: number, y: number) => ({ x, y, w: 100, h: 50 });
+  it("가로 차이가 크면 좌우, 세로 차이가 크면 위아래", () => {
+    expect(facingSides(box(0, 0), box(300, 40))).toEqual(["right", "left"]);
+    expect(facingSides(box(300, 0), box(0, 40))).toEqual(["left", "right"]);
+    expect(facingSides(box(0, 0), box(20, 200))).toEqual(["bottom", "top"]);
+    expect(facingSides(box(0, 200), box(20, 0))).toEqual(["top", "bottom"]);
   });
 });

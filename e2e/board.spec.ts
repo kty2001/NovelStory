@@ -209,9 +209,7 @@ async function dragTool(
 }
 
 test.describe("도구 모음 · 배치", () => {
-  test("도구 단축키(한/영 무관 code 기준) · Esc로 선택 복귀 · 미구현 도구 비활성", async ({
-    page,
-  }) => {
+  test("도구 단축키(한/영 무관 code 기준) · Esc로 선택 복귀", async ({ page }) => {
     await expect(toolButton(page, "선택")).toHaveAttribute("aria-pressed", "true");
     await page.keyboard.press("KeyE");
     await expect(toolButton(page, "사건")).toHaveAttribute("aria-pressed", "true");
@@ -219,7 +217,8 @@ test.describe("도구 모음 · 배치", () => {
     await expect(toolButton(page, "선택")).toHaveAttribute("aria-pressed", "true");
     await page.keyboard.press("KeyH");
     await expect(toolButton(page, "손")).toHaveAttribute("aria-pressed", "true");
-    await expect(toolButton(page, "연결선")).toBeDisabled();
+    await page.keyboard.press("KeyL");
+    await expect(toolButton(page, "연결선")).toHaveAttribute("aria-pressed", "true");
   });
 
   test("사건 도구를 끌어 놓으면 가까운 눈금에 스냅 · 선택 도구로 복귀", async ({ page }) => {
@@ -721,5 +720,99 @@ test.describe("포스트잇 · 텍스트 · 프레임", () => {
     await stickies.first().click();
     await page.keyboard.press("Delete");
     await expect(stickies).toHaveCount(1);
+  });
+});
+
+test.describe("연결선", () => {
+  const edges = (page: Page) => page.locator(".react-flow__edge");
+  // 제목이 title인 사건 블록의 side 면 핸들
+  const portOf = (page: Page, title: string, side: string) =>
+    page
+      .locator(".react-flow__node")
+      .filter({ has: page.getByTestId("event-block").filter({ hasText: title }) })
+      .locator(`[data-handleid="${side}"]`);
+
+  // 두 사건을 같은 높이에 놓고 A 오른쪽 핸들 → B 로 끌기
+  async function connectEvents(page: Page) {
+    const a = await placeEvent(page, 1, "원인");
+    const b = await placeEvent(page, 4, "결과");
+    await a.hover();
+    const handle = portOf(page, "원인", "right");
+    await dragTo(page, handle, (await center(b)).x, (await center(b)).y);
+    await expect(edges(page)).toHaveCount(1);
+    return { a, b };
+  }
+
+  async function selectEdge(page: Page) {
+    const box = (await edges(page).first().boundingBox())!;
+    await page.mouse.click(box.x + box.width / 2, box.y + box.height / 2);
+    await expect(edges(page).first()).toHaveClass(/selected/);
+  }
+
+  test("핸들에서 끌어 연결 · 화살표 · 새로고침 유지", async ({ page }) => {
+    await connectEvents(page);
+    await expect(edges(page).first().locator("path").first()).toHaveAttribute("marker-end", /url/);
+    await page.waitForTimeout(800);
+    await page.reload();
+    await expect(edges(page)).toHaveCount(1);
+  });
+
+  test("연결선 도구(L): 요소에서 요소로 끌기 → 1회 후 선택 도구", async ({ page }) => {
+    const a = await placeEvent(page, 1, "복선");
+    const b = await placeEvent(page, 4, "회수");
+    await page.keyboard.press("KeyL");
+    await expect(toolButton(page, "연결선")).toHaveAttribute("aria-pressed", "true");
+    const cb = await center(b);
+    await dragTo(page, a, cb.x, cb.y);
+    await expect(edges(page)).toHaveCount(1);
+    await expect(toolButton(page, "선택")).toHaveAttribute("aria-pressed", "true");
+  });
+
+  test("라벨 · 점선: Enter로 편집, 더블클릭으로 다시 편집", async ({ page }) => {
+    await connectEvents(page);
+    await selectEdge(page);
+    await page.keyboard.press("Enter");
+    const input = page.getByRole("textbox", { name: "연결선 라벨" });
+    await input.fill("원인→결과");
+    await page.getByRole("button", { name: "점선" }).click();
+    await input.press("Enter");
+    await expect(page.getByTestId("edge-label")).toHaveText("원인→결과");
+    await expect(edges(page).first().locator("path.react-flow__edge-path")).toHaveCSS(
+      "stroke-dasharray",
+      "6px, 5px",
+    );
+
+    await page.getByTestId("edge-label").dblclick();
+    await expect(input).toHaveValue("원인→결과");
+    await input.fill("");
+    await input.press("Escape");
+    await expect(page.getByTestId("edge-label")).toHaveCount(0);
+  });
+
+  test("Delete: 선택한 연결선 삭제, 블록을 지우면 이어진 선도 삭제", async ({ page }) => {
+    const { a } = await connectEvents(page);
+    await selectEdge(page);
+    await page.keyboard.press("Delete");
+    await expect(edges(page)).toHaveCount(0);
+
+    await page.keyboard.press("Control+KeyZ"); // 실행 취소는 8번 항목, 여기선 다시 연결
+    const b = page.getByTestId("event-block").filter({ hasText: "결과" });
+    await a.hover();
+    const handle = portOf(page, "원인", "right");
+    await dragTo(page, handle, (await center(b)).x, (await center(b)).y);
+    await expect(edges(page)).toHaveCount(1);
+    await a.click();
+    await page.keyboard.press("Delete");
+    await expect(edges(page)).toHaveCount(0);
+  });
+
+  test("필터로 숨긴 사건에 이어진 선도 숨김", async ({ page }) => {
+    const { a } = await connectEvents(page);
+    await a.click();
+    await page.getByRole("button", { name: /^라인:/ }).click();
+    await page.getByRole("menuitem", { name: "메인", exact: true }).click();
+    await page.getByRole("button", { name: "필터" }).click();
+    await page.getByRole("dialog", { name: "필터" }).getByRole("checkbox").first().uncheck();
+    await expect(edges(page)).toHaveCount(0);
   });
 });

@@ -10,11 +10,15 @@ import {
 import {
   Background,
   BackgroundVariant,
+  ConnectionMode,
+  MarkerType,
   MiniMap,
   ReactFlow,
   useReactFlow,
   useStore,
+  type Connection,
   type Edge,
+  type EdgeChange,
   type Node,
   type NodeChange,
   type OnNodeDrag,
@@ -25,6 +29,7 @@ import { db } from "../../db/db";
 import type { BoardItem, TimeScale, UiState } from "../../db/types";
 import { patchUiState } from "../../db/uiState";
 import {
+  addEdge,
   addEvent,
   addFrame,
   addState,
@@ -40,13 +45,17 @@ import Axis from "./Axis";
 import BlockMenu from "./BlockMenu";
 import { BoardUiContext } from "./boardContext";
 import { AxisTrack, MiniMapNode, UndatedZone } from "./DecorNodes";
+import EdgeView from "./EdgeView";
 import EventNode from "./EventNode";
 import FilterMenu from "./FilterMenu";
 import {
   decorNodes,
   dropPatches,
+  EDGE_COLOR,
+  EDGE_SELECTED,
   EVENT_H,
   EVENT_W,
+  facingSides,
   FRAME_SIZE,
   frameAt,
   freeRect,
@@ -85,8 +94,8 @@ const SIMPLE_ZOOM = 0.5;
 const MULTI_SELECT_KEYS = ["Shift", "Control", "Meta"];
 // Ctrl+G 로 만드는 프레임의 여백 (제목 자리 포함)
 const GROUP_PAD = 24;
-// 연결선은 연결선 구현 시 스토어에서 변환
-const NO_EDGES: Edge[] = [];
+
+const edgeTypes = { board: EdgeView };
 
 const nodeTypes = {
   undated: UndatedZone,
@@ -113,6 +122,7 @@ const ENABLED_TOOLS: ReadonlySet<Tool> = new Set([
   "sticky",
   "text",
   "frame",
+  "line",
 ]);
 
 // React Flow가 알려 주는 노드 화면 상태 (크기 · 선택 · 끌기/크기 조절 중 위치 · 크기). 데이터는 스토어가 원본
@@ -287,10 +297,46 @@ function Canvas({
     [items, ui, hiddenIds],
   );
   // 키 처리기에서 최신 값을 읽기 위한 참조
-  const latest = useRef({ selectedIds, rects });
+  // 연결선 (UC-19): 선택 상태만 화면 상태, 나머지는 스토어. 숨긴 블록에 이어진 선도 숨김
+  const storeEdges = useNovelStore((s) => s.edges);
+  const [edgeSel, setEdgeSel] = useState<Record<string, boolean>>({});
+  const edges = useMemo<Edge[]>(
+    () =>
+      Object.values(storeEdges).map((e) => ({
+        id: e.id,
+        type: "board",
+        source: e.source,
+        target: e.target,
+        sourceHandle: e.sourceHandle ?? null,
+        targetHandle: e.targetHandle ?? null,
+        selected: !!edgeSel[e.id],
+        hidden: hiddenIds.has(e.source) || hiddenIds.has(e.target),
+        markerEnd: {
+          type: MarkerType.ArrowClosed,
+          color: edgeSel[e.id] ? EDGE_SELECTED : EDGE_COLOR,
+          width: 16,
+          height: 16,
+        },
+      })),
+    [storeEdges, edgeSel, hiddenIds],
+  );
+  const selectedEdgeIds = useMemo(
+    () => Object.keys(storeEdges).filter((id) => edgeSel[id]),
+    [storeEdges, edgeSel],
+  );
+  const onEdgesChange = useCallback((changes: EdgeChange[]) => {
+    setEdgeSel((sel) => {
+      const next = { ...sel };
+      for (const c of changes) if (c.type === "select") next[c.id] = c.selected;
+      return next;
+    });
+  }, []);
+
+  // 키 처리기에서 최신 값을 읽기 위한 참조
+  const latest = useRef({ selectedIds, selectedEdgeIds, rects });
   useEffect(() => {
-    latest.current = { selectedIds, rects };
-  }, [selectedIds, rects]);
+    latest.current = { selectedIds, selectedEdgeIds, rects };
+  }, [selectedIds, selectedEdgeIds, rects]);
 
   const onNodesChange = useCallback(
     (changes: NodeChange[]) => setUi((u) => applyUi(u, changes)),
@@ -321,7 +367,19 @@ function Canvas({
     },
     [clearUi],
   );
-  const boardUi = useMemo(() => ({ editId, setEditId, resized }), [editId, resized]);
+  const boardUi = useMemo(() => ({ editId, setEditId, resized, tool }), [editId, resized, tool]);
+
+  // 핸들 · 연결선 도구로 잇기. 연결선 도구(요소 전체 = 핸들)면 마주 보는 면을 골라 저장, 1회 후 선택 도구
+  const onConnect = useCallback((c: Connection) => {
+    let { sourceHandle, targetHandle } = c;
+    if (sourceHandle === "any" || targetHandle === "any") {
+      const a = latest.current.rects.get(c.source);
+      const b = latest.current.rects.get(c.target);
+      if (a && b) [sourceHandle, targetHandle] = facingSides(a, b);
+    }
+    addEdge(c.source, c.target, sourceHandle ?? undefined, targetHandle ?? undefined);
+    setTool("select");
+  }, []);
 
   // 도구 선택: C를 다시 누르면 상태 유형 순환
   const chooseTool = useCallback(
@@ -472,13 +530,14 @@ function Canvas({
       if (mod || e.altKey) return;
       if (e.key === "Delete" || e.key === "Backspace") {
         e.preventDefault();
-        deleteItems(latest.current.selectedIds);
+        deleteItems(latest.current.selectedIds, latest.current.selectedEdgeIds);
         return;
       }
-      // F2: 선택한 요소 하나 편집 (제목 · 내용)
-      if (e.key === "F2") {
-        const ids = latest.current.selectedIds;
-        if (ids.length === 1) setEditId(ids[0]);
+      // F2: 선택한 요소 하나 편집 (제목 · 내용) / 연결선 하나는 Enter로도 라벨 편집
+      const { selectedIds: ids, selectedEdgeIds: edgeIds } = latest.current;
+      if (e.key === "F2" || (e.key === "Enter" && !ids.length)) {
+        if (ids.length === 1 && !edgeIds.length) setEditId(ids[0]);
+        else if (edgeIds.length === 1 && !ids.length) setEditId(edgeIds[0]);
         return;
       }
       if (e.key === "Escape") {
@@ -524,11 +583,17 @@ function Canvas({
   return (
     <BoardUiContext.Provider value={boardUi}>
       <ReactFlow
-        className={`${simple ? "board-simple" : ""} ${placing ? "tool-place" : ""}`}
+        className={`${simple ? "board-simple" : ""} ${placing ? "tool-place" : ""} ${tool === "line" ? "tool-line" : ""}`}
         nodes={nodes}
-        edges={NO_EDGES}
+        edges={edges}
         nodeTypes={nodeTypes}
+        edgeTypes={edgeTypes}
         onNodesChange={onNodesChange}
+        onEdgesChange={onEdgesChange}
+        onConnect={onConnect}
+        // 핸들 종류 구분 없이 아무 면끼리 연결
+        connectionMode={ConnectionMode.Loose}
+        onEdgeDoubleClick={(_, edge) => setEditId(edge.id)}
         onNodeDragStop={onNodeDragStop}
         onPointerDown={startFrameDraw}
         zoomOnDoubleClick={false}

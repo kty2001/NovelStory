@@ -280,3 +280,21 @@ export function dropPatches(
   }
   return patches;
 }
+
+// ── 연결선 ──
+// 화살촉 마커 색은 url(#id)에 들어가므로 CSS 변수 대신 토큰 값
+export const EDGE_COLOR = "#3a3a3a"; // {colors.body}
+export const EDGE_SELECTED = "#1a3a3a"; // {colors.brand-teal}
+
+export type Side = "top" | "right" | "bottom" | "left";
+
+// 두 사각형이 마주 보는 면 (연결선 도구로 이을 때 핸들 자동 선택)
+export function facingSides(
+  a: { x: number; y: number; w: number; h: number },
+  b: { x: number; y: number; w: number; h: number },
+): [Side, Side] {
+  const dx = b.x + b.w / 2 - (a.x + a.w / 2);
+  const dy = b.y + b.h / 2 - (a.y + a.h / 2);
+  if (Math.abs(dx) >= Math.abs(dy)) return dx >= 0 ? ["right", "left"] : ["left", "right"];
+  return dy >= 0 ? ["bottom", "top"] : ["top", "bottom"];
+}

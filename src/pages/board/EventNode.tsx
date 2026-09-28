@@ -6,6 +6,7 @@ import { beginBatch, endBatch, useNovelStore } from "../../store/novelStore";
 import { useBoardUi } from "./boardContext";
 import { EVENT_W, spanPlace } from "./flow";
 import { lineBorder } from "./lines";
+import Ports from "./Ports";
 import { snapTick, xToTick } from "./timeAxis";
 import { useFocusWhenVisible } from "./useFocusWhenVisible";
 
@@ -108,6 +109,7 @@ export default function EventNode({ id, data, selected }: NodeProps<EventNodeTyp
 
   return (
     <>
+      <Ports />
       <div
         data-testid="event-block"
         className={`relative rounded-md px-3 py-2 text-block-label break-keep text-ink ${selected ? "outline-2 outline-offset-2 outline-brand-teal" : ""}`}

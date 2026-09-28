@@ -3,6 +3,7 @@ import type { PropChange, StateItem } from "../../db/types";
 import { useNovelStore } from "../../store/novelStore";
 import { useBoardUi } from "./boardContext";
 import { STATE_W } from "./flow";
+import Ports from "./Ports";
 import { afterExit } from "./stateCalc";
 import { STATE_LABEL } from "./tools";
 
@@ -30,28 +31,31 @@ export default function StateNode({ id, selected }: NodeProps) {
     : item.note;
 
   return (
-    <div
-      data-testid="state-block"
-      data-type={item.stateType}
-      className={`rounded-sm px-2.5 py-1.5 break-keep ${selected ? "outline-2 outline-offset-2 outline-brand-teal" : ""}`}
-      style={{ width: STATE_W, background: look.bg, color: look.fg }}
-      onDoubleClick={() => setEditId(id)}
-    >
-      <p className="flex items-center gap-1 text-block-label">
-        <span aria-hidden>{look.mark}</span>
-        <span className="truncate">{name ?? "캐릭터"}</span>
-        <span className="text-caption opacity-80">{STATE_LABEL[item.stateType]}</span>
-        {warn && (
-          <span
-            title="퇴장 이후 블록 (부활 · 재등장이면 무시)"
-            aria-label="퇴장 이후"
-            className="ml-auto"
-          >
-            ⚠
-          </span>
-        )}
-      </p>
-      {summary && <p className="state-detail truncate text-caption opacity-90">{summary}</p>}
-    </div>
+    <>
+      <Ports />
+      <div
+        data-testid="state-block"
+        data-type={item.stateType}
+        className={`rounded-sm px-2.5 py-1.5 break-keep ${selected ? "outline-2 outline-offset-2 outline-brand-teal" : ""}`}
+        style={{ width: STATE_W, background: look.bg, color: look.fg }}
+        onDoubleClick={() => setEditId(id)}
+      >
+        <p className="flex items-center gap-1 text-block-label">
+          <span aria-hidden>{look.mark}</span>
+          <span className="truncate">{name ?? "캐릭터"}</span>
+          <span className="text-caption opacity-80">{STATE_LABEL[item.stateType]}</span>
+          {warn && (
+            <span
+              title="퇴장 이후 블록 (부활 · 재등장이면 무시)"
+              aria-label="퇴장 이후"
+              className="ml-auto"
+            >
+              ⚠
+            </span>
+          )}
+        </p>
+        {summary && <p className="state-detail truncate text-caption opacity-90">{summary}</p>}
+      </div>
+    </>
   );
 }
