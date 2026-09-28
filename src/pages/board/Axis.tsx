@@ -1,11 +1,19 @@
-import { useCallback, useMemo, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState, type ReactNode } from "react";
 import { useStore, useViewport, ViewportPortal } from "@xyflow/react";
-import { Eraser, Pencil, Plus } from "lucide-react";
+import { ArrowRightToLine, Eraser, Pencil, Plus } from "lucide-react";
 import { MenuList, type MenuItem } from "../../components/Menu";
 import { useDismiss } from "../../components/useDismiss";
 import type { TimeScale } from "../../db/types";
 import { insertTickAt, setTimeScale, useNovelStore } from "../../store/novelStore";
-import { dropOverlaps, pickStep, tickToX, xToTick, type Label } from "./timeAxis";
+import {
+  dropOverlaps,
+  normalizeCollapsed,
+  pickStep,
+  tickToX,
+  xToTick,
+  type Collapsed,
+  type Label,
+} from "./timeAxis";
 
 // 라벨 사이 최소 간격(화면 px). 줌이 작으면 1·2·5 배수로 눈금을 건너뜀
 const MIN_GAP_PX = 56;
@@ -33,16 +41,21 @@ function useTickLabels(scale: TimeScale, editing: number | null) {
     const left = xToTick(Math.max(0, -vx / zoom), scale) ?? 0;
     const right = xToTick(Math.max(0, (width - vx) / zoom), scale) ?? 0;
     const step = pickStep(scale.pxPerTick, zoom, MIN_GAP_PX);
-    const hidden = (t: number) => scale.collapsed.some((c) => t > c.from && t < c.to);
+    const inside = (t: number) => scale.collapsed.find((c) => t > c.from && t < c.to);
     const out = new Map<number, TickLabel>();
     const add = (t: number, priority: number) => {
-      if (t < 0 || hidden(t) || (out.get(t)?.priority ?? -1) >= priority) return;
+      if (t < 0 || inside(t) || (out.get(t)?.priority ?? -1) >= priority) return;
       const named = scale.tickLabels[t] !== undefined;
       const text = scale.tickLabels[t] ?? String(t);
       const x = tickToX(t, scale) * zoom + vx;
       out.set(t, { key: `t${t}`, tick: t, named, x, width: measure(text, named), text, priority });
     };
-    for (let t = Math.floor(left / step) * step; t <= Math.ceil(right) + step; t += step) add(t, 0);
+    for (let t = Math.floor(left / step) * step; t <= Math.ceil(right) + step; t += step) {
+      const c = inside(t);
+      if (c)
+        t = Math.ceil(c.to / step) * step - step; // 접힌 구간은 건너뜀 (긴 공백도 반복 없이)
+      else add(t, 0);
+    }
     for (const t of Object.keys(scale.tickLabels).map(Number)) {
       if (t >= left - 1 && t <= right + 1) add(t, 1);
     }
@@ -91,7 +104,19 @@ function LabelInput({
   );
 }
 
-// 시간축: 축 선 · 눈금 · 라벨 (UC-14). 보드 좌표 x = tickToX(t), 축 y = 0
+// 화면 크기 고정 요소: 보드 좌표 (x, 0)에 두고 1/zoom 역배율
+function Fixed({ x, zoom, children }: { x: number; zoom: number; children: ReactNode }) {
+  return (
+    <div className="absolute" style={{ transform: `translate(${x}px, 0px)` }}>
+      <div style={{ transform: `scale(${1 / zoom})`, transformOrigin: "0 0" }}>{children}</div>
+    </div>
+  );
+}
+
+// 구간 선택 중 유지되는 요소 (눈금 라벨 · 접기 버튼). 그 밖을 누르면 선택 취소
+const KEEP_RANGE = "data-keep-range";
+
+// 시간축: 축 선 · 눈금 · 라벨 (UC-14) · 구간 접기 (UC-15). 보드 좌표 x = tickToX(t), 축 y = 0
 export default function Axis({ scale }: { scale: TimeScale }) {
   const { x: vx, zoom } = useViewport();
   const width = useStore((s) => s.width);
@@ -101,6 +126,37 @@ export default function Axis({ scale }: { scale: TimeScale }) {
   const closeMenu = useCallback(() => setMenu(null), []);
   useDismiss(menuRef, menu !== null, closeMenu);
   const labels = useTickLabels(scale, editing);
+  // 구간 선택: Shift+클릭 또는 메뉴 "여기부터 구간 선택" → 다른 눈금 클릭
+  const [range, setRange] = useState<{ from: number; to: number | null } | null>(null);
+
+  useEffect(() => {
+    if (!range) return;
+    const onDown = (e: PointerEvent) => {
+      if (!(e.target as Element).closest(`[${KEEP_RANGE}]`)) setRange(null);
+    };
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key === "Escape") setRange(null);
+    };
+    document.addEventListener("pointerdown", onDown);
+    document.addEventListener("keydown", onKey);
+    return () => {
+      document.removeEventListener("pointerdown", onDown);
+      document.removeEventListener("keydown", onKey);
+    };
+  }, [range]);
+
+  const clickTick = (t: number, shift: boolean) => {
+    if (range) setRange({ from: range.from, to: t === range.from ? null : t });
+    else if (shift) setRange({ from: t, to: null });
+    else setEditing(t);
+  };
+  const [a, b] = range ? [range.from, range.to ?? range.from].sort((p, q) => p - q) : [0, 0];
+  const collapse = () => {
+    setTimeScale({ collapsed: normalizeCollapsed([...scale.collapsed, { from: a, to: b }]) });
+    setRange(null);
+  };
+  const expand = (c: Collapsed) =>
+    setTimeScale({ collapsed: scale.collapsed.filter((x) => x.from !== c.from || x.to !== c.to) });
 
   const axisLeft = Math.max(0, -vx / zoom);
   const axisRight = (width - vx) / zoom;
@@ -118,6 +174,11 @@ export default function Axis({ scale }: { scale: TimeScale }) {
         setTimeScale({ tickLabels });
       },
     },
+    {
+      label: "여기부터 구간 선택",
+      icon: <ArrowRightToLine size={14} />,
+      onSelect: () => setRange({ from: t, to: null }),
+    },
   ];
 
   return (
@@ -134,39 +195,86 @@ export default function Axis({ scale }: { scale: TimeScale }) {
             }}
           />
         )}
-        {labels.map((l) => (
-          <div
-            key={l.key}
-            className="absolute"
-            style={{ transform: `translate(${(l.x - vx) / zoom}px, 0px)` }}
-          >
-            {/* 화면 크기 고정: 1/zoom 역배율 */}
-            <div style={{ transform: `scale(${1 / zoom})`, transformOrigin: "0 0" }}>
-              <div className="absolute -top-1.5 h-3 w-px -translate-x-1/2 bg-ink" />
-              {editing === l.tick ? (
-                <LabelInput
-                  tick={l.tick}
-                  initial={scale.tickLabels[l.tick] ?? ""}
-                  onDone={() => setEditing(null)}
-                />
-              ) : (
+        {/* 접힌 구간: 축 위 막대 + ≈ 칩 (클릭 = 펼치기) */}
+        {scale.collapsed.map((c) => {
+          const x = tickToX(c.from, scale);
+          return (
+            <div key={`c${c.from}`}>
+              <div
+                className="absolute bg-surface-strong"
+                style={{
+                  transform: `translate(${x}px, ${-5 / zoom}px)`,
+                  width: scale.collapsedPx,
+                  height: 10 / zoom,
+                }}
+              />
+              <Fixed x={x + scale.collapsedPx / 2} zoom={zoom}>
                 <button
                   type="button"
-                  data-tick={l.tick}
-                  className={`nodrag nopan tick-label absolute top-2 -translate-x-1/2 rounded-xs px-1.5 text-caption whitespace-nowrap tabular-nums hover:bg-surface-card ${l.named ? "font-semibold text-ink" : "text-muted"}`}
-                  // ViewportPortal 내용은 포인터 이벤트를 받지 않음 → 라벨만 허용
+                  aria-label={`구간 ${c.from}~${c.to} 펼치기`}
+                  className="nodrag nopan absolute -top-8 -translate-x-1/2 rounded-full bg-surface-strong px-2 py-0.5 text-caption whitespace-nowrap text-ink tabular-nums hover:bg-hairline"
                   style={{ pointerEvents: "all" }}
-                  onClick={() => setEditing(l.tick)}
-                  onContextMenu={(e) => {
-                    e.preventDefault();
-                    setMenu({ tick: l.tick, x: e.clientX, y: e.clientY });
-                  }}
+                  onClick={() => expand(c)}
                 >
-                  {l.text}
+                  ≈ {c.from}~{c.to}
                 </button>
-              )}
+              </Fixed>
             </div>
-          </div>
+          );
+        })}
+        {/* 선택 중인 구간 + 접기 버튼 */}
+        {range && (
+          <div
+            data-testid="tick-range"
+            className="absolute rounded-xs bg-ink/8"
+            style={{
+              transform: `translate(${tickToX(a, scale) - 4 / zoom}px, ${-15 / zoom}px)`,
+              width: tickToX(b, scale) - tickToX(a, scale) + 8 / zoom,
+              height: 30 / zoom,
+              border: `${1.5 / zoom}px solid var(--color-ink)`,
+            }}
+          />
+        )}
+        {range && range.to !== null && (
+          <Fixed x={(tickToX(a, scale) + tickToX(b, scale)) / 2} zoom={zoom}>
+            <button
+              type="button"
+              {...{ [KEEP_RANGE]: "" }}
+              className="nodrag nopan absolute -top-14 h-8 -translate-x-1/2 rounded-md bg-primary px-3 text-button whitespace-nowrap text-on-primary"
+              style={{ pointerEvents: "all" }}
+              onClick={collapse}
+            >
+              ≈ 구간 {a}~{b} 접기
+            </button>
+          </Fixed>
+        )}
+        {labels.map((l) => (
+          <Fixed key={l.key} x={(l.x - vx) / zoom} zoom={zoom}>
+            <div className="absolute -top-1.5 h-3 w-px -translate-x-1/2 bg-ink" />
+            {editing === l.tick ? (
+              <LabelInput
+                tick={l.tick}
+                initial={scale.tickLabels[l.tick] ?? ""}
+                onDone={() => setEditing(null)}
+              />
+            ) : (
+              <button
+                type="button"
+                data-tick={l.tick}
+                {...{ [KEEP_RANGE]: "" }}
+                className={`nodrag nopan tick-label absolute top-2 -translate-x-1/2 rounded-xs px-1.5 text-caption whitespace-nowrap tabular-nums hover:bg-surface-card ${l.named ? "font-semibold text-ink" : "text-muted"}`}
+                // ViewportPortal 내용은 포인터 이벤트를 받지 않음 → 라벨만 허용
+                style={{ pointerEvents: "all" }}
+                onClick={(e) => clickTick(l.tick, e.shiftKey)}
+                onContextMenu={(e) => {
+                  e.preventDefault();
+                  setMenu({ tick: l.tick, x: e.clientX, y: e.clientY });
+                }}
+              >
+                {l.text}
+              </button>
+            )}
+          </Fixed>
         ))}
       </ViewportPortal>
       {menu && (

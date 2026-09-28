@@ -114,3 +114,43 @@ test.describe("시간축", () => {
     await expect(tick(page, 2)).toHaveText("2");
   });
 });
+
+test.describe("구간 접기", () => {
+  test("Shift+클릭 두 눈금 → 접기 → 칩 · 구간 안 라벨 숨김 · 새로고침 유지 · 칩 클릭 펼치기", async ({
+    page,
+  }) => {
+    await tick(page, 1).click({ modifiers: ["Shift"] });
+    await tick(page, 4).click();
+    await expect(page.getByTestId("tick-range")).toBeVisible();
+    await page.getByRole("button", { name: "≈ 구간 1~4 접기" }).click();
+
+    const chip = page.getByRole("button", { name: "구간 1~4 펼치기" });
+    await expect(chip).toHaveText("≈ 1~4");
+    await expect(tick(page, 2)).toHaveCount(0);
+    await expect(tick(page, 4)).toBeVisible();
+    // 접힌 폭(40px)만큼 4 눈금이 1 눈금 가까이
+    const x1 = (await tick(page, 1).boundingBox())!.x;
+    const x4 = (await tick(page, 4).boundingBox())!.x;
+    expect(x4 - x1).toBeLessThan(80);
+
+    await page.waitForTimeout(800); // 자동 저장
+    await page.reload();
+    await expect(chip).toBeVisible();
+
+    await chip.click();
+    await expect(chip).toBeHidden();
+    await expect(tick(page, 2)).toBeVisible();
+  });
+
+  test("메뉴 '여기부터 구간 선택' · Esc로 선택 취소", async ({ page }) => {
+    await tick(page, 2).click({ button: "right" });
+    await page.getByRole("menuitem", { name: "여기부터 구간 선택" }).click();
+    await tick(page, 0).click();
+    await expect(page.getByRole("button", { name: "≈ 구간 0~2 접기" })).toBeVisible();
+    await page.keyboard.press("Escape");
+    await expect(page.getByTestId("tick-range")).toBeHidden();
+    // 선택이 끝나면 클릭은 다시 라벨 편집
+    await tick(page, 0).click();
+    await expect(labelInput(page, 0)).toBeVisible();
+  });
+});
