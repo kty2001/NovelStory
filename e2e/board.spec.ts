@@ -177,3 +177,121 @@ test("미정 영역: 0 눈금 왼쪽 점선 상자 · 시간축과 세로 중앙
   expect(z.x + z.width).toBeLessThan(zero.x);
   expect(Math.abs(z.y + z.height / 2 - (axis.y + axis.height / 2))).toBeLessThan(4);
 });
+
+// 눈금 t의 화면 x (라벨 가운데), 시간축 화면 y
+async function tickX(page: Page, t: number) {
+  const b = (await tick(page, t).boundingBox())!;
+  return b.x + b.width / 2;
+}
+async function axisY(page: Page) {
+  const b = (await page.getByTestId("time-axis").boundingBox())!;
+  return b.y + b.height / 2;
+}
+const toolButton = (page: Page, name: string | RegExp) =>
+  page.getByRole("button", { name, exact: typeof name === "string" });
+
+// 도구 모음 버튼을 끌어 (x, y)에 놓기
+async function dragTool(
+  page: Page,
+  name: string,
+  x: number,
+  y: number,
+  opts: { alt?: boolean } = {},
+) {
+  const b = (await toolButton(page, name).boundingBox())!;
+  await page.mouse.move(b.x + b.width / 2, b.y + b.height / 2);
+  await page.mouse.down();
+  await page.mouse.move(x, y, { steps: 8 });
+  if (opts.alt) await page.keyboard.down("Alt");
+  await page.mouse.move(x + 1, y, { steps: 2 });
+  await page.mouse.up();
+  if (opts.alt) await page.keyboard.up("Alt");
+}
+
+test.describe("도구 모음 · 배치", () => {
+  test("도구 단축키(한/영 무관 code 기준) · Esc로 선택 복귀 · 미구현 도구 비활성", async ({
+    page,
+  }) => {
+    await expect(toolButton(page, "선택")).toHaveAttribute("aria-pressed", "true");
+    await page.keyboard.press("KeyE");
+    await expect(toolButton(page, "사건")).toHaveAttribute("aria-pressed", "true");
+    await page.keyboard.press("Escape");
+    await expect(toolButton(page, "선택")).toHaveAttribute("aria-pressed", "true");
+    await page.keyboard.press("KeyH");
+    await expect(toolButton(page, "손")).toHaveAttribute("aria-pressed", "true");
+    await expect(toolButton(page, "포스트잇")).toBeDisabled();
+  });
+
+  test("사건 도구를 끌어 놓으면 가까운 눈금에 스냅 · 선택 도구로 복귀", async ({ page }) => {
+    const x2 = await tickX(page, 2);
+    const y = (await axisY(page)) - 90;
+    const b = (await toolButton(page, "사건").boundingBox())!;
+    await page.mouse.move(b.x + b.width / 2, b.y + b.height / 2);
+    await page.mouse.down();
+    await page.mouse.move(x2 + 30, y, { steps: 8 });
+    await expect(page.getByTestId("place-tick")).toHaveText("2");
+    await page.mouse.up();
+
+    const block = page.getByTestId("event-block");
+    await expect(block).toHaveText("새 사건");
+    const bb = (await block.boundingBox())!;
+    expect(bb.width).toBeCloseTo(160, 0); // 단일 시점 사건 고정 폭
+    expect(Math.abs(bb.x + bb.width / 2 - x2)).toBeLessThan(2);
+    await expect(page.getByTestId("place-preview")).toBeHidden();
+    await expect(toolButton(page, "선택")).toHaveAttribute("aria-pressed", "true");
+
+    await page.waitForTimeout(800); // 자동 저장
+    await page.reload();
+    await expect(page.getByTestId("event-block")).toHaveText("새 사건");
+  });
+
+  test("도구 선택 후 클릭 배치 · 미정 영역에 놓으면 시점 없음", async ({ page }) => {
+    await toolButton(page, "사건").click();
+    const x3 = await tickX(page, 3);
+    const y = (await axisY(page)) - 90;
+    await page.mouse.move(x3 - 20, y);
+    await expect(page.getByTestId("place-tick")).toHaveText("3");
+    await page.mouse.click(x3 - 20, y);
+    const bb = (await page.getByTestId("event-block").boundingBox())!;
+    expect(Math.abs(bb.x + bb.width / 2 - x3)).toBeLessThan(2);
+
+    const zone = (await page.getByTestId("undated-zone").boundingBox())!;
+    await dragTool(page, "사건", zone.x + zone.width / 2, zone.y + 120);
+    await expect(page.getByTestId("event-block")).toHaveCount(2);
+    const undated = (await page.getByTestId("event-block").nth(1).boundingBox())!;
+    expect(Math.abs(undated.x + undated.width / 2 - (zone.x + zone.width / 2))).toBeLessThan(2);
+  });
+
+  test("스냅 끄기 · Alt 누른 채 끌면 눈금 사이에 배치", async ({ page }) => {
+    const x2 = await tickX(page, 2);
+    const x3 = await tickX(page, 3);
+    const y = (await axisY(page)) - 90;
+    const mid = (x2 + x3) / 2;
+
+    await dragTool(page, "사건", mid, y, { alt: true });
+    const a = (await page.getByTestId("event-block").boundingBox())!;
+    expect(Math.abs(a.x + a.width / 2 - (mid + 1))).toBeLessThan(2);
+
+    await page.getByRole("button", { name: "스냅" }).click();
+    await expect(page.getByRole("button", { name: "스냅" })).toHaveAttribute(
+      "aria-pressed",
+      "false",
+    );
+    await dragTool(page, "사건", mid, y - 100);
+    const b = (await page.getByTestId("event-block").nth(1).boundingBox())!;
+    expect(Math.abs(b.x + b.width / 2 - (mid + 1))).toBeLessThan(2);
+  });
+
+  test("손 도구: 빈 곳 드래그 = 화면 이동", async ({ page }) => {
+    await expect(page.getByTestId("time-axis")).toBeVisible(); // 보드 로드 후 키 입력
+    await page.keyboard.press("KeyH");
+    await expect(toolButton(page, "손")).toHaveAttribute("aria-pressed", "true");
+    const before = await tickX(page, 0);
+    const y = (await axisY(page)) - 200;
+    await page.mouse.move(before + 300, y);
+    await page.mouse.down();
+    await page.mouse.move(before + 400, y, { steps: 5 });
+    await page.mouse.up();
+    expect(await tickX(page, 0)).toBeCloseTo(before + 100, 0);
+  });
+});

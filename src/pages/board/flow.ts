@@ -1,7 +1,7 @@
 import type { Node } from "@xyflow/react";
-import type { BoardItem, TimeScale } from "../../db/types";
+import type { BoardItem, TimedPlace, TimeScale, UndatedPlace } from "../../db/types";
 import type { Collection } from "../../store/novelStore";
-import { tickToX } from "./timeAxis";
+import { snapTick, tickToX, xToTick } from "./timeAxis";
 
 // 보드 좌표 ↔ React Flow 노드 변환 (data_model.md 4.2)
 
@@ -80,4 +80,36 @@ export function decorNodes(
       data: {},
     },
   ];
+}
+
+// ── 블록 ──
+export const EVENT_W = 160; // 단일 시점 사건 폭 (가운데 = 눈금)
+export const EVENT_H = 56; // 배치 미리보기 높이 (실제 높이는 내용에 따름)
+
+// 시간 블록 위치: x → 눈금 (snap이면 정수 눈금). x < 0 이면 미정 영역
+export function timePlace(
+  x: number,
+  y: number,
+  scale: TimeScale,
+  snap: boolean,
+): TimedPlace | UndatedPlace {
+  const t = snap ? snapTick(x, scale) : xToTick(x, scale);
+  return t === null ? { mode: "undated", x, y } : { mode: "timed", t, y };
+}
+
+export function itemNode(item: BoardItem, scale: TimeScale): Node | null {
+  const base = { id: item.id, zIndex: item.z, data: {} };
+  if (item.kind === "event") {
+    const p = item.place;
+    // 기간 사건: 왼쪽 끝 = 시작 눈금, 폭 = 기간
+    if (p.mode === "timed" && p.tEnd !== undefined && p.tEnd > p.t) {
+      const x = tickToX(p.t, scale);
+      const width = tickToX(p.tEnd, scale) - x;
+      return { ...base, type: "event", position: { x, y: p.y }, width, data: { span: true } };
+    }
+    // 단일 시점 · 미정: 가운데 = 눈금 (origin 0.5)
+    const x = p.mode === "timed" ? tickToX(p.t, scale) : p.x;
+    return { ...base, type: "event", position: { x, y: p.y }, origin: [0.5, 0] };
+  }
+  return null;
 }

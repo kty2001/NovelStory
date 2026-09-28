@@ -1,4 +1,10 @@
-import { useMemo } from "react";
+import {
+  useCallback,
+  useEffect,
+  useMemo,
+  useState,
+  type PointerEvent as ReactPointerEvent,
+} from "react";
 import {
   Background,
   BackgroundVariant,
@@ -8,15 +14,31 @@ import {
   useReactFlow,
   useStore,
   type Edge,
+  type Node,
+  type NodeChange,
   type Viewport,
+  type XYPosition,
 } from "@xyflow/react";
 import { Maximize, Minus, Plus } from "lucide-react";
 import type { TimeScale } from "../../db/types";
 import { patchUiState } from "../../db/uiState";
-import { useNovelStore } from "../../store/novelStore";
+import { addEvent } from "../../store/boardActions";
+import { setTimeScale, useNovelStore } from "../../store/novelStore";
 import Axis from "./Axis";
 import { AxisTrack, MiniMapNode, UndatedZone } from "./DecorNodes";
-import { decorNodes } from "./flow";
+import EventNode from "./EventNode";
+import { decorNodes, EVENT_H, itemNode, timePlace } from "./flow";
+import PlacePreview, { type Preview } from "./PlacePreview";
+import Toolbar from "./Toolbar";
+import {
+  isEditable,
+  isPlaceTool,
+  STATE_CYCLE,
+  TOOL_BY_CODE,
+  type PlaceTool,
+  type StateType,
+  type Tool,
+} from "./tools";
 
 // 스파이크 C4에서 라벨 겹침 없음을 확인한 줌 범위
 const MIN_ZOOM = 0.05;
@@ -27,7 +49,35 @@ const ZOOM_MS = 200;
 // 연결선은 연결선 구현 시 스토어에서 변환
 const NO_EDGES: Edge[] = [];
 
-const nodeTypes = { undated: UndatedZone, axis: AxisTrack };
+const nodeTypes = { undated: UndatedZone, axis: AxisTrack, event: EventNode };
+
+// 구현된 도구만 활성 (나머지는 각 블록 구현 시 추가)
+const ENABLED_TOOLS: ReadonlySet<Tool> = new Set(["select", "hand", "event"]);
+
+// React Flow가 알려 주는 노드 화면 상태 (크기 · 선택 · 드래그 중 위치). 데이터는 스토어가 원본
+type NodeUi = {
+  measured?: { width: number; height: number };
+  selected?: boolean;
+  position?: XYPosition;
+};
+
+function applyUi(prev: Record<string, NodeUi>, changes: NodeChange[]) {
+  const next = { ...prev };
+  for (const c of changes) {
+    if (c.type === "dimensions" && c.dimensions)
+      next[c.id] = { ...next[c.id], measured: c.dimensions };
+    else if (c.type === "select") next[c.id] = { ...next[c.id], selected: c.selected };
+    else if (c.type === "position" && c.position)
+      next[c.id] = { ...next[c.id], position: c.position };
+  }
+  return next;
+}
+
+// 도구 모음을 끌어 캔버스 위에서 놓았는지 (도구 모음 · 미니맵 등 패널 위는 제외)
+const overCanvas = (x: number, y: number) => {
+  const el = document.elementFromPoint(x, y);
+  return !!el?.closest(".react-flow") && !el.closest(".react-flow__panel");
+};
 
 const zoomButton = "flex h-9 min-w-9 items-center justify-center rounded-sm text-button text-ink";
 
@@ -83,19 +133,133 @@ function Canvas({
 }) {
   const simple = useStore((s) => s.transform[2] < SIMPLE_ZOOM);
   const items = useNovelStore((s) => s.items);
-  const nodes = useMemo(() => decorNodes(timeScale, items), [timeScale, items]);
+  const { screenToFlowPosition } = useReactFlow();
+  const [ui, setUi] = useState<Record<string, NodeUi>>({});
+  const [tool, setTool] = useState<Tool>("select");
+  const [stateType, setStateType] = useState<StateType>("appear");
+  const [preview, setPreview] = useState<Preview | null>(null);
+
+  const nodes = useMemo(() => {
+    const heightOf = (id: string) => ui[id]?.measured?.height ?? EVENT_H;
+    const all: Node[] = [
+      ...decorNodes(timeScale, items, (item) => heightOf(item.id)),
+      ...Object.values(items).flatMap((item) => itemNode(item, timeScale) ?? []),
+    ];
+    return all.map((n) => {
+      const u = ui[n.id];
+      if (!u) return n;
+      return {
+        ...n,
+        measured: u.measured,
+        selected: u.selected,
+        position: u.position ?? n.position,
+      };
+    });
+  }, [timeScale, items, ui]);
+  const onNodesChange = useCallback(
+    (changes: NodeChange[]) => setUi((u) => applyUi(u, changes)),
+    [],
+  );
+
+  // 도구 선택: C를 다시 누르면 상태 유형 순환
+  const chooseTool = useCallback(
+    (next: Tool) => {
+      if (!ENABLED_TOOLS.has(next)) return;
+      if (next === "state" && tool === "state") {
+        setStateType((t) => STATE_CYCLE[(STATE_CYCLE.indexOf(t) + 1) % STATE_CYCLE.length]);
+      }
+      setTool(next);
+      setPreview(null);
+    },
+    [tool],
+  );
+
+  // 화면 좌표에 배치 → 선택 도구로 복귀
+  const place = useCallback(
+    (placeTool: PlaceTool, client: XYPosition, alt: boolean) => {
+      const p = screenToFlowPosition(client);
+      const snap = timeScale.snap && !alt;
+      if (placeTool === "event") addEvent(timePlace(p.x, p.y - EVENT_H / 2, timeScale, snap));
+      setTool("select");
+      setPreview(null);
+    },
+    [screenToFlowPosition, timeScale],
+  );
+
+  const showPreview = useCallback(
+    (placeTool: PlaceTool, client: XYPosition, alt: boolean) => {
+      const p = screenToFlowPosition(client);
+      setPreview({ tool: placeTool, x: p.x, y: p.y, snap: timeScale.snap && !alt });
+    },
+    [screenToFlowPosition, timeScale.snap],
+  );
+
+  // 도구 모음에서 끌어 놓기 (Pointer Events). 4px 미만 이동은 클릭(도구 선택)으로 처리
+  const startToolDrag = useCallback(
+    (dragTool: Tool, e: ReactPointerEvent) => {
+      if (!isPlaceTool(dragTool) || !ENABLED_TOOLS.has(dragTool)) return;
+      const start = { x: e.clientX, y: e.clientY };
+      let moved = false;
+      const onMove = (ev: PointerEvent) => {
+        if (!moved && Math.hypot(ev.clientX - start.x, ev.clientY - start.y) < 4) return;
+        moved = true;
+        const at = { x: ev.clientX, y: ev.clientY };
+        if (overCanvas(at.x, at.y)) showPreview(dragTool, at, ev.altKey);
+        else setPreview(null);
+      };
+      const onUp = (ev: PointerEvent) => {
+        window.removeEventListener("pointermove", onMove);
+        window.removeEventListener("pointerup", onUp);
+        if (!moved) return;
+        if (overCanvas(ev.clientX, ev.clientY))
+          place(dragTool, { x: ev.clientX, y: ev.clientY }, ev.altKey);
+        else setPreview(null);
+      };
+      window.addEventListener("pointermove", onMove);
+      window.addEventListener("pointerup", onUp);
+    },
+    [place, showPreview],
+  );
+
+  // 도구 단축키 (텍스트 편집 · 한글 조합 중 무시, 한/영 무관하게 code 기준)
+  useEffect(() => {
+    const onKey = (e: KeyboardEvent) => {
+      if (e.isComposing || e.keyCode === 229 || isEditable(e.target)) return;
+      if (e.ctrlKey || e.metaKey || e.altKey) return;
+      if (e.key === "Escape") {
+        setTool("select");
+        setPreview(null);
+        return;
+      }
+      const next = TOOL_BY_CODE[e.code];
+      if (next) chooseTool(next);
+    };
+    window.addEventListener("keydown", onKey);
+    return () => window.removeEventListener("keydown", onKey);
+  }, [chooseTool]);
+
+  const placing = isPlaceTool(tool);
   return (
     <ReactFlow
-      className={simple ? "board-simple" : undefined}
+      className={`${simple ? "board-simple" : ""} ${placing ? "tool-place" : ""}`}
       nodes={nodes}
       edges={NO_EDGES}
       nodeTypes={nodeTypes}
+      onNodesChange={onNodesChange}
+      nodesDraggable={false}
+      onPaneClick={(e) => {
+        if (placing) place(tool, { x: e.clientX, y: e.clientY }, e.altKey);
+      }}
+      onPaneMouseMove={(e) => {
+        if (placing) showPreview(tool, { x: e.clientX, y: e.clientY }, e.altKey);
+      }}
+      onPaneMouseLeave={() => placing && setPreview(null)}
       defaultViewport={viewport}
       minZoom={MIN_ZOOM}
       maxZoom={MAX_ZOOM}
-      // 빈 곳 드래그 = 박스 선택, 팬 = Space+드래그 · 가운데 버튼 (shortcuts.md 2.4)
-      selectionOnDrag
-      panOnDrag={[1]}
+      // 빈 곳 드래그 = 박스 선택, 팬 = Space+드래그 · 가운데 버튼 · 손 도구 (shortcuts.md 2.4)
+      selectionOnDrag={tool === "select"}
+      panOnDrag={tool === "hand" ? true : [1]}
       panActivationKeyCode="Space"
       // 삭제는 보드에서 직접 처리 (프레임 자식 유지, C7)
       deleteKeyCode={null}
@@ -114,6 +278,16 @@ function Canvas({
         nodeComponent={MiniMapNode}
       />
       <Axis scale={timeScale} />
+      {preview && <PlacePreview preview={preview} scale={timeScale} />}
+      <Toolbar
+        tool={tool}
+        stateType={stateType}
+        enabled={ENABLED_TOOLS}
+        snap={timeScale.snap}
+        onTool={chooseTool}
+        onDragStart={startToolDrag}
+        onSnap={() => setTimeScale({ snap: !timeScale.snap })}
+      />
       <ZoomControls />
     </ReactFlow>
   );

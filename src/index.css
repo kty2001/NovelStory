@@ -132,3 +132,8 @@
 .tiptap blockquote {
   @apply border-l-3 border-hairline pl-4;
 }
+
+/* 보드: 배치 도구 선택 중 */
+.tool-place .react-flow__pane {
+  cursor: crosshair;
+}
