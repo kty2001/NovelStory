@@ -154,3 +154,14 @@ test.describe("구간 접기", () => {
     await expect(labelInput(page, 0)).toBeVisible();
   });
 });
+
+test("미정 영역: 0 눈금 왼쪽 점선 상자 · 시간축과 세로 중앙 정렬", async ({ page }) => {
+  const zone = page.getByTestId("undated-zone");
+  await expect(zone).toContainText("시점 미정");
+  await expect(zone).toHaveCSS("border-style", "dashed");
+  const z = (await zone.boundingBox())!;
+  const zero = (await tick(page, 0).boundingBox())!;
+  const axis = (await page.getByTestId("time-axis").boundingBox())!;
+  expect(z.x + z.width).toBeLessThan(zero.x);
+  expect(Math.abs(z.y + z.height / 2 - (axis.y + axis.height / 2))).toBeLessThan(4);
+});

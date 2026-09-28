@@ -18,6 +18,7 @@ import { db } from "../db/db";
 import { patchUiState } from "../db/uiState";
 import { useNovelStore } from "../store/novelStore";
 import Axis from "./board/Axis";
+import UndatedZone from "./board/UndatedZone";
 
 // 스파이크 C4에서 라벨 겹침 없음을 확인한 줌 범위
 const MIN_ZOOM = 0.05;
@@ -102,6 +103,7 @@ function Board({ novelId, viewport }: { novelId: string; viewport: Viewport }) {
         bgColor="var(--color-canvas)"
         maskColor="rgb(10 10 10 / 0.04)"
       />
+      <UndatedZone />
       {timeScale && <Axis scale={timeScale} />}
       <ZoomControls />
     </ReactFlow>
