@@ -36,9 +36,9 @@ const Sep = () => <span className="mx-1 h-6 w-px bg-hairline" />;
 export default function Toolbar({
   tool,
   stateType,
-  enabled,
   snap,
   lanes,
+  hint = false,
   onTool,
   onDragStart,
   onSnap,
@@ -47,9 +47,9 @@ export default function Toolbar({
 }: {
   tool: Tool;
   stateType: StateType;
-  enabled: ReadonlySet<Tool>;
   snap: boolean;
   lanes: boolean;
+  hint?: boolean;
   onTool: (tool: Tool) => void;
   onDragStart: (tool: Tool, e: ReactPointerEvent) => void;
   onSnap: () => void;
@@ -73,9 +73,12 @@ export default function Toolbar({
                 type="button"
                 aria-label={label}
                 aria-pressed={on}
-                title={enabled.has(d.tool) ? `${label} (${d.key})` : `${d.label} (준비 중)`}
-                disabled={!enabled.has(d.tool)}
-                className={`flex size-10 touch-none items-center justify-center rounded-md disabled:opacity-30 ${on ? "bg-primary text-on-primary" : "text-ink hover:bg-surface-card"}`}
+                title={`${label} (${d.key})`}
+                // 빈 보드 안내 중엔 사건 · 캐릭터 상태 버튼 약한 강조 (B-9 메모 2)
+                data-hint={
+                  hint && !on && (d.tool === "event" || d.tool === "state") ? "" : undefined
+                }
+                className={`flex size-10 touch-none items-center justify-center rounded-md data-hint:ring-2 data-hint:ring-brand-teal/40 ${on ? "bg-primary text-on-primary" : "text-ink hover:bg-surface-card"}`}
                 onClick={() => onTool(d.tool)}
                 onPointerDown={(e) => {
                   if (e.button === 0 && isPlaceTool(d.tool)) onDragStart(d.tool, e);

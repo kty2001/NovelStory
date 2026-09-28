@@ -917,3 +917,41 @@ test.describe("선택 · 복사 · 실행 취소", () => {
     await expect(page.getByTestId("sticky")).toHaveCount(2);
   });
 });
+
+test.describe("빈 보드 안내", () => {
+  test("요소 0개일 때만 안내 카드 · 사건/상태 도구 강조 · 첫 배치 즉시 사라짐 · 되돌리면 다시", async ({
+    page,
+  }) => {
+    const guide = page.getByRole("region", { name: "보드 시작 안내" });
+    await expect(guide).toContainText("시간축에 첫 사건을 올려 보세요");
+    await expect(toolButton(page, "사건")).toHaveAttribute("data-hint", "");
+    await expect(toolButton(page, "포스트잇")).not.toHaveAttribute("data-hint", "");
+
+    // 카드 위를 클릭해도 아래 캔버스에 배치됨 (포인터 통과)
+    const box = (await guide.boundingBox())!;
+    await page.keyboard.press("KeyS");
+    await page.mouse.click(box.x + box.width / 2, box.y + box.height / 2);
+    await page.getByRole("textbox", { name: "포스트잇 내용" }).press("Escape");
+    await expect(guide).toBeHidden();
+    await expect(toolButton(page, "사건")).not.toHaveAttribute("data-hint", "");
+
+    await page.keyboard.press("Control+KeyZ");
+    await expect(guide).toBeVisible();
+  });
+
+  test("요소가 모두 필터로 숨겨지면 안내 대신 알림 · 필터 해제", async ({ page }) => {
+    const block = await placeEvent(page, 2, "숨길 사건");
+    await block.click();
+    await page.getByRole("button", { name: /^라인:/ }).click();
+    await page.getByRole("menuitem", { name: "메인", exact: true }).click();
+    await page.getByRole("button", { name: "필터" }).click();
+    await page.getByRole("dialog", { name: "필터" }).getByRole("checkbox").first().uncheck();
+
+    const notice = page.getByRole("status").filter({ hasText: "필터로" });
+    await expect(notice).toHaveText(/필터로 1개 숨김/);
+    await expect(page.getByRole("region", { name: "보드 시작 안내" })).toBeHidden();
+    await notice.getByRole("button", { name: "필터 해제" }).click();
+    await expect(block).toBeVisible();
+    await expect(notice).toBeHidden();
+  });
+});

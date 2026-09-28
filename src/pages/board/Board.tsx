@@ -73,6 +73,7 @@ import { FrameNode, StickyNode, TextNode } from "./FreeNodes";
 import Lanes from "./Lanes";
 import Leaders, { type Rect } from "./Leaders";
 import LineEditDialog from "./LineEditDialog";
+import { AllHiddenNotice, EmptyGuide } from "./EmptyGuide";
 import { NO_LINE } from "./lines";
 import PlacePreview, { FrameDraft, type Preview } from "./PlacePreview";
 import StateNode from "./StateNode";
@@ -115,18 +116,6 @@ const STATE_COLOR = {
   change: "var(--color-brand-lavender)",
   exit: "var(--color-brand-teal)",
 } as const;
-
-// 구현된 도구만 활성 (나머지는 각 항목 구현 시 추가)
-const ENABLED_TOOLS: ReadonlySet<Tool> = new Set([
-  "select",
-  "hand",
-  "event",
-  "state",
-  "sticky",
-  "text",
-  "frame",
-  "line",
-]);
 
 // React Flow가 알려 주는 노드 화면 상태 (크기 · 선택 · 끌기/크기 조절 중 위치 · 크기). 데이터는 스토어가 원본
 type NodeUi = {
@@ -387,7 +376,6 @@ function Canvas({
   // 도구 선택: C를 다시 누르면 상태 유형 순환
   const chooseTool = useCallback(
     (next: Tool) => {
-      if (!ENABLED_TOOLS.has(next)) return;
       if (next === "state" && tool === "state") {
         setStateType((t) => STATE_CYCLE[(STATE_CYCLE.indexOf(t) + 1) % STATE_CYCLE.length]);
       }
@@ -433,7 +421,7 @@ function Canvas({
   // 도구 모음에서 끌어 놓기 (Pointer Events). 4px 미만 이동은 클릭(도구 선택)으로 처리
   const startToolDrag = useCallback(
     (dragTool: Tool, e: ReactPointerEvent) => {
-      if (!isPlaceTool(dragTool) || !ENABLED_TOOLS.has(dragTool)) return;
+      if (!isPlaceTool(dragTool)) return;
       const start = { x: e.clientX, y: e.clientY };
       let moved = false;
       const onMove = (ev: PointerEvent) => {
@@ -691,6 +679,10 @@ function Canvas({
 
   const editState = editId && items[editId]?.kind === "state" ? editId : null;
   const placing = isPlaceTool(tool) || tool === "frame";
+  // 빈 보드 안내: 실제 요소 0개일 때만 (필터 무관) / 요소는 있으나 필터로 전부 숨김이면 알림 (B-9)
+  const itemCount = Object.keys(items).length;
+  const empty = itemCount === 0;
+  const allHidden = itemCount > 0 && hiddenIds.size === itemCount;
   return (
     <BoardUiContext.Provider value={boardUi}>
       <ReactFlow
@@ -797,12 +789,12 @@ function Canvas({
         <Toolbar
           tool={tool}
           stateType={stateType}
-          enabled={ENABLED_TOOLS}
           snap={timeScale.snap}
           onTool={chooseTool}
           onDragStart={startToolDrag}
           onSnap={() => setTimeScale({ snap: !timeScale.snap })}
           lanes={!!stateLanes?.enabled}
+          hint={empty}
           onLanes={() =>
             setLanes({
               enabled: !stateLanes?.enabled,
@@ -817,6 +809,13 @@ function Canvas({
           />
         </Toolbar>
         <ZoomControls />
+        {empty && <EmptyGuide />}
+        {allHidden && (
+          <AllHiddenNotice
+            count={hiddenIds.size}
+            onClear={() => changeFilters({ hiddenLineIds: [] })}
+          />
+        )}
         <LineEditDialog
           open={linesOpen}
           onClose={() => setLinesOpen(false)}
