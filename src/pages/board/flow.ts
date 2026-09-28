@@ -104,8 +104,44 @@ export function timePlace(
   return t === null ? { mode: "undated", x, y } : { mode: "timed", t, y };
 }
 
-export function itemNode(item: BoardItem, scale: TimeScale): Node | null {
+// 상태 블록: 왼쪽 끝 = 눈금 (ui_guide `state-block`, B-4 메모 6)
+export const STATE_W = 160;
+
+// 캐릭터별 정렬 (UC-13): 축 아래 레인. 블록은 레인 세로 가운데
+export const LANE_TOP = 40;
+export const LANE_H = 72;
+const LANE_PAD = 12;
+export const laneTop = (index: number) => LANE_TOP + index * LANE_H;
+
+// 레인 순서: 저장된 순서 먼저, 나머지 캐릭터는 첫 상태 블록 시점 순
+export function laneOrder(order: string[], items: Collection<BoardItem>): string[] {
+  const firstT = new Map<string, number>();
+  for (const i of Object.values(items)) {
+    if (i.kind !== "state") continue;
+    const t = i.place.mode === "timed" ? i.place.t : -Infinity;
+    firstT.set(i.docId, Math.min(firstT.get(i.docId) ?? Infinity, t));
+  }
+  const kept = order.filter((id) => firstT.has(id));
+  const rest = [...firstT.keys()]
+    .filter((id) => !kept.includes(id))
+    .sort((a, b) => firstT.get(a)! - firstT.get(b)!);
+  return [...kept, ...rest];
+}
+
+// lane: 캐릭터별 정렬 중이면 캐릭터 문서 ID → 레인 번호
+export function itemNode(
+  item: BoardItem,
+  scale: TimeScale,
+  lane?: Map<string, number>,
+): Node | null {
   const base = { id: item.id, zIndex: item.z, data: {} };
+  if (item.kind === "state") {
+    const p = item.place;
+    const x = p.mode === "timed" ? tickToX(p.t, scale) : p.x;
+    const index = lane?.get(item.docId);
+    const y = index === undefined ? p.y : laneTop(index) + LANE_PAD;
+    return { ...base, type: "state", position: { x, y } };
+  }
   if (item.kind === "event") {
     const p = item.place;
     // 기간 사건: 왼쪽 끝 = 시작 눈금, 폭 = 기간

@@ -491,3 +491,99 @@ test.describe("스토리 라인", () => {
     await expect(dialog).toBeHidden();
   });
 });
+
+// 상태 도구(C, 누를 때마다 유형 순환)로 눈금 t 아래에 놓고 캐릭터 선택 (없으면 새로 만듦)
+async function placeState(page: Page, t: number, name: string, presses = 1, dy = 90) {
+  await expect(page.getByTestId("time-axis")).toBeVisible();
+  for (let i = 0; i < presses; i++) await page.keyboard.press("KeyC");
+  await page.mouse.click((await tickX(page, t)) + 10, (await axisY(page)) + dy);
+  const picker = page.getByRole("dialog", { name: "캐릭터 선택" });
+  await picker.getByRole("textbox", { name: "캐릭터 검색" }).fill(name);
+  await picker.getByRole("textbox", { name: "캐릭터 검색" }).press("Enter");
+  await expect(page.getByRole("dialog", { name: "상태 입력" })).toBeVisible();
+}
+
+async function addChange(page: Page, key: string, to: string) {
+  const panel = page.getByRole("dialog", { name: "상태 입력" });
+  await panel.getByRole("button", { name: /^속성/ }).last().click();
+  const n = await panel.getByLabel(/^속성 \d+ 키$/).count();
+  await panel.getByLabel(`속성 ${n} 키`).fill(key);
+  await panel.getByLabel(`속성 ${n} 새값`).click(); // 키 칸을 벗어나면 이전값 자동 채움
+  await panel.getByLabel(`속성 ${n} 새값`).fill(to);
+  await panel.getByLabel(`속성 ${n} 새값`).blur();
+}
+
+const closePanel = (page: Page) =>
+  page.getByRole("dialog", { name: "상태 입력" }).getByRole("button", { name: "완료" }).click();
+
+test.describe("캐릭터 상태 블록", () => {
+  test("등장: 새 캐릭터 · 초기 속성 · 왼쪽 끝 = 눈금 · 지시선", async ({ page }) => {
+    await placeState(page, 2, "카엘");
+    await addChange(page, "소속", "기사단");
+    await closePanel(page);
+    const block = page.getByTestId("state-block");
+    await expect(block).toHaveAttribute("data-type", "appear");
+    await expect(block).toContainText("카엘");
+    await expect(block).toContainText("소속: 기사단");
+    expect(Math.abs((await block.boundingBox())!.x - (await tickX(page, 2)))).toBeLessThan(2);
+    await expect(page.getByTestId("leader")).toHaveCount(1);
+  });
+
+  test("C 반복 = 유형 순환 · 변화의 이전값 자동 채움 · 퇴장 이후 경고", async ({ page }) => {
+    await placeState(page, 1, "카엘");
+    await addChange(page, "소속", "기사단");
+    await closePanel(page);
+
+    await placeState(page, 2, "카엘", 2, 150); // 등장 → 변화 (블록끼리 겹치지 않게 높이 다르게)
+    await expect(toolButton(page, "캐릭터 상태: 변화")).toBeVisible();
+    await addChange(page, "소속", "반란군");
+    const panel = page.getByRole("dialog", { name: "상태 입력" });
+    await expect(panel.getByLabel("속성 1 이전값")).toHaveValue("기사단");
+    await closePanel(page);
+    await expect(page.getByTestId("state-block").filter({ hasText: "반란군" })).toContainText(
+      "소속: 기사단 → 반란군",
+    );
+
+    await placeState(page, 3, "카엘", 2, 210); // 변화 → 퇴장
+    await closePanel(page);
+    await placeState(page, 4, "카엘", 2, 40); // 퇴장 → 등장 (오른쪽 아래 줌 컨트롤을 피해 축 가까이)
+    await expect(page.getByRole("note")).toContainText("이미 퇴장한 캐릭터");
+    await closePanel(page);
+    await expect(page.getByLabel("퇴장 이후")).toHaveCount(1);
+  });
+
+  test("관련 사건 지정 → 옅은 점선 연결", async ({ page }) => {
+    await placeEvent(page, 2, "왕도 습격");
+    await placeState(page, 2, "레아");
+    await page.getByRole("combobox", { name: "관련 사건" }).selectOption({ label: "왕도 습격" });
+    await closePanel(page);
+    await expect(page.getByTestId("state-link")).toHaveCount(1);
+  });
+
+  test("캐릭터별 정렬: 레인 머리 · 레인 정렬 · 머리 끌어 순서 변경 · 끄면 원래 위치", async ({
+    page,
+  }) => {
+    await placeState(page, 1, "카엘", 1, 200);
+    await closePanel(page);
+    await placeState(page, 3, "레아", 1, 60);
+    await closePanel(page);
+    const kael = page.getByTestId("state-block").filter({ hasText: "카엘" });
+    const before = (await kael.boundingBox())!.y;
+
+    await page.getByRole("button", { name: "캐릭터별 정렬" }).click();
+    const heads = page.getByTestId("lane-head");
+    await expect(heads).toHaveCount(2);
+    await expect(heads.first()).toContainText("카엘"); // 첫 등장 순
+    const lane0 = (await page.getByTestId("lane").first().boundingBox())!;
+    const k = (await kael.boundingBox())!;
+    expect(k.y).toBeGreaterThan(lane0.y);
+    expect(k.y + k.height).toBeLessThan(lane0.y + lane0.height);
+
+    await dragTo(page, page.getByLabel("레아 레인 순서 변경"), lane0.x + 40, lane0.y + 10);
+    await expect(heads.first()).toContainText("레아");
+
+    await page.getByRole("button", { name: "캐릭터별 정렬" }).click();
+    await expect(heads).toHaveCount(0);
+    await expect.poll(async () => Math.round((await kael.boundingBox())!.y - before)).toBe(0);
+  });
+});

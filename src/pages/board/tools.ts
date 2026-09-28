@@ -22,6 +22,11 @@ export const TOOL_BY_CODE: Record<string, Tool> = {
 
 // C 도구를 다시 누르면 등장 → 변화 → 퇴장 순환
 export const STATE_CYCLE: StateType[] = ["appear", "change", "exit"];
+export const STATE_LABEL: Record<StateType, string> = {
+  appear: "등장",
+  change: "변화",
+  exit: "퇴장",
+};
 
 // 텍스트 편집 중이면 보드 단축키 무시 (예외 키는 호출하는 쪽에서 처리)
 export const isEditable = (t: EventTarget | null) =>

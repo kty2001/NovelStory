@@ -1,4 +1,12 @@
-import type { BoardItem, EventItem, StoryLine, WikiCategory, WikiDoc } from "../db/types";
+import type {
+  Board,
+  BoardItem,
+  EventItem,
+  StateItem,
+  StoryLine,
+  WikiCategory,
+  WikiDoc,
+} from "../db/types";
 import { useNovelStore, type Collection, type NovelState } from "./novelStore";
 
 // 보드 편집 동작. 한 번의 setState = 실행 취소 1건 (보드 데이터만 기록, 사전 문서는 기록 안 함)
@@ -147,5 +155,60 @@ export function deleteLine(id: string) {
   setDocsLine(
     used.map((d) => d.id),
     undefined,
+  );
+}
+
+// ── 캐릭터 상태 (UC-12 · 13) ──
+
+// 캐릭터 분류에 새 캐릭터 문서 (템플릿 적용). 문서 ID 반환
+export function addCharacter(name: string): string | null {
+  const s = store.getState();
+  const category = systemCategory(s, "character");
+  if (!s.novelId || !category) return null;
+  const doc = newDoc(s.novelId, category, name);
+  store.setState({ docs: { ...s.docs, [doc.id]: doc } });
+  return doc.id;
+}
+
+export function addState(
+  place: StateItem["place"],
+  docId: string,
+  stateType: StateItem["stateType"],
+): string | null {
+  const s = store.getState();
+  if (!s.novelId) return null;
+  const item: StateItem = {
+    id: crypto.randomUUID(),
+    novelId: s.novelId,
+    updatedAt: now(),
+    kind: "state",
+    z: nextZ(s.items),
+    place,
+    docId,
+    stateType,
+    changes: [],
+    note: "",
+  };
+  store.setState({ items: { ...s.items, [item.id]: item } });
+  return item.id;
+}
+
+type StatePatch = Partial<Pick<StateItem, "stateType" | "changes" | "note" | "linkedEventItemId">>;
+
+// 상태 블록 입력 변경 (입력 확정 1회 = 1건). linkedEventItemId: undefined = 연결 해제
+export function updateState(id: string, patch: StatePatch) {
+  store.setState(({ items }) => {
+    const item = items[id];
+    if (item?.kind !== "state") return {};
+    const next = { ...item, ...patch };
+    if ("linkedEventItemId" in patch && !patch.linkedEventItemId) delete next.linkedEventItemId;
+    return { items: { ...items, [id]: next } };
+  });
+}
+
+// 캐릭터별 정렬 설정 (보드 기록 대상)
+export function setLanes(patch: Partial<Board["stateLanes"]>) {
+  store.setState(({ board }) =>
+    board ? { board: { ...board, stateLanes: { ...board.stateLanes, ...patch } } } : {},
   );
 }

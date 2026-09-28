@@ -4,6 +4,7 @@ import {
   Frame,
   Hand,
   Magnet,
+  Rows3,
   MousePointer2,
   RectangleHorizontal,
   Spline,
@@ -11,9 +12,7 @@ import {
   Type,
   UserRound,
 } from "lucide-react";
-import { isPlaceTool, type StateType, type Tool } from "./tools";
-
-const STATE_LABEL: Record<StateType, string> = { appear: "등장", change: "변화", exit: "퇴장" };
+import { isPlaceTool, STATE_LABEL, type StateType, type Tool } from "./tools";
 
 type ToolDef = { tool: Tool; label: string; key: string; icon: ReactNode };
 const GROUPS: ToolDef[][] = [
@@ -39,18 +38,22 @@ export default function Toolbar({
   stateType,
   enabled,
   snap,
+  lanes,
   onTool,
   onDragStart,
   onSnap,
+  onLanes,
   children,
 }: {
   tool: Tool;
   stateType: StateType;
   enabled: ReadonlySet<Tool>;
   snap: boolean;
+  lanes: boolean;
   onTool: (tool: Tool) => void;
   onDragStart: (tool: Tool, e: ReactPointerEvent) => void;
   onSnap: () => void;
+  onLanes: () => void;
   children?: ReactNode;
 }) {
   return (
@@ -85,6 +88,15 @@ export default function Toolbar({
         </div>
       ))}
       <Sep />
+      <button
+        type="button"
+        aria-pressed={lanes}
+        className={`flex h-10 items-center gap-1.5 rounded-md px-3 text-button whitespace-nowrap ${lanes ? "bg-surface-card text-ink" : "text-muted hover:bg-surface-card"}`}
+        onClick={onLanes}
+      >
+        <Rows3 size={16} />
+        캐릭터별 정렬
+      </button>
       <button
         type="button"
         aria-pressed={snap}

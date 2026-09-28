@@ -12,15 +12,17 @@ export default function PlacePreview({ preview, scale }: { preview: Preview; sca
   const top = preview.y - EVENT_H / 2;
   const place = timePlace(preview.x, top, scale, preview.snap);
   const x = place.mode === "timed" ? tickToX(place.t, scale) : preview.x;
+  // 사건은 가운데 = 눈금, 상태는 왼쪽 끝 = 눈금
+  const left = preview.tool === "state" ? x : x - EVENT_W / 2;
   const guideTop = Math.min(top + EVENT_H, 0);
   const guideBottom = Math.max(top, 0);
   return (
     <ViewportPortal>
       <div
         data-testid="place-preview"
-        className="absolute rounded-md border-dashed border-ink bg-brand-peach/50"
+        className={`absolute rounded-md border-dashed border-ink ${preview.tool === "state" ? "bg-brand-mint/50" : "bg-brand-peach/50"}`}
         style={{
-          transform: `translate(${x - EVENT_W / 2}px, ${top}px)`,
+          transform: `translate(${left}px, ${top}px)`,
           width: EVENT_W,
           height: EVENT_H,
           borderWidth: 1.5 / zoom,

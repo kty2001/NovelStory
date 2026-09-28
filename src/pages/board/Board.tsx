@@ -26,7 +26,7 @@ import { Maximize, Minus, Plus } from "lucide-react";
 import { db } from "../../db/db";
 import type { TimeScale, UiState } from "../../db/types";
 import { patchUiState } from "../../db/uiState";
-import { addEvent, moveItems } from "../../store/boardActions";
+import { addEvent, addState, moveItems, setLanes } from "../../store/boardActions";
 import { setTimeScale, useNovelStore } from "../../store/novelStore";
 import Axis from "./Axis";
 import { AxisTrack, MiniMapNode, UndatedZone } from "./DecorNodes";
@@ -34,11 +34,23 @@ import BlockMenu from "./BlockMenu";
 import { BoardUiContext } from "./boardContext";
 import EventNode from "./EventNode";
 import FilterMenu from "./FilterMenu";
-import { decorNodes, EVENT_H, itemNode, movedPlace, timePlace } from "./flow";
-import Leaders from "./Leaders";
+import {
+  decorNodes,
+  EVENT_H,
+  EVENT_W,
+  itemNode,
+  laneOrder,
+  movedPlace,
+  STATE_W,
+  timePlace,
+} from "./flow";
+import Lanes from "./Lanes";
+import Leaders, { type Rect } from "./Leaders";
 import LineEditDialog from "./LineEditDialog";
 import { NO_LINE } from "./lines";
 import PlacePreview, { type Preview } from "./PlacePreview";
+import StateNode from "./StateNode";
+import StatePanel, { CharacterPicker } from "./StatePanel";
 import Toolbar from "./Toolbar";
 import {
   isEditable,
@@ -60,10 +72,16 @@ const MULTI_SELECT_KEYS = ["Shift", "Control", "Meta"];
 // 연결선은 연결선 구현 시 스토어에서 변환
 const NO_EDGES: Edge[] = [];
 
-const nodeTypes = { undated: UndatedZone, axis: AxisTrack, event: EventNode };
+const nodeTypes = { undated: UndatedZone, axis: AxisTrack, event: EventNode, state: StateNode };
+
+const STATE_COLOR = {
+  appear: "var(--color-brand-mint)",
+  change: "var(--color-brand-lavender)",
+  exit: "var(--color-brand-teal)",
+} as const;
 
 // 구현된 도구만 활성 (나머지는 각 블록 구현 시 추가)
-const ENABLED_TOOLS: ReadonlySet<Tool> = new Set(["select", "hand", "event"]);
+const ENABLED_TOOLS: ReadonlySet<Tool> = new Set(["select", "hand", "event", "state"]);
 
 // React Flow가 알려 주는 노드 화면 상태 (크기 · 선택 · 드래그 중 위치). 데이터는 스토어가 원본
 type NodeUi = {
@@ -193,6 +211,23 @@ function Canvas({
   const [stateType, setStateType] = useState<StateType>("appear");
   const [preview, setPreview] = useState<Preview | null>(null);
   const [editId, setEditId] = useState<string | null>(null);
+  // 상태 도구로 놓은 자리: 캐릭터를 고르면 블록 생성 (B-3 ①)
+  const [pending, setPending] = useState<{
+    place: ReturnType<typeof timePlace>;
+    client: XYPosition;
+    type: StateType;
+  } | null>(null);
+
+  // 캐릭터별 정렬 (UC-13): 켜져 있으면 캐릭터 → 레인 번호
+  const stateLanes = useNovelStore((s) => s.board?.stateLanes);
+  const laneIds = useMemo(
+    () => (stateLanes?.enabled ? laneOrder(stateLanes.order, items) : []),
+    [stateLanes, items],
+  );
+  const laneMap = useMemo(
+    () => (stateLanes?.enabled ? new Map(laneIds.map((id, i) => [id, i])) : undefined),
+    [stateLanes?.enabled, laneIds],
+  );
 
   const heightOf = useCallback((id: string) => ui[id]?.measured?.height ?? EVENT_H, [ui]);
   // 블록 메뉴 대상: 선택된 (보이는) 사건 블록
@@ -209,7 +244,7 @@ function Canvas({
     const all: Node[] = [
       ...decorNodes(timeScale, items, (item) => heightOf(item.id)),
       ...Object.values(items).flatMap((item) => {
-        const n = itemNode(item, timeScale);
+        const n = itemNode(item, timeScale, laneMap);
         return n ? [hiddenIds.has(item.id) ? { ...n, hidden: true } : n] : [];
       }),
     ];
@@ -223,7 +258,20 @@ function Canvas({
         position: u.position ?? n.position,
       };
     });
-  }, [timeScale, items, ui, heightOf, hiddenIds]);
+  }, [timeScale, items, ui, heightOf, hiddenIds, laneMap]);
+
+  // 노드 사각형 (보드 좌표, 왼쪽 위 기준): 지시선 · 관련 사건 연결용
+  const rects = useMemo(() => {
+    const out = new Map<string, Rect>();
+    for (const n of nodes) {
+      const w = n.measured?.width ?? n.width ?? (n.type === "state" ? STATE_W : EVENT_W);
+      const h = n.measured?.height ?? n.height ?? EVENT_H;
+      const ox = n.origin?.[0] ?? 0;
+      out.set(n.id, { x: n.position.x - w * ox, y: n.position.y, w, h });
+    }
+    return out;
+  }, [nodes]);
+  const rectOf = useCallback((id: string) => rects.get(id), [rects]);
   // 키 처리기에서 최신 선택 상태를 읽기 위한 참조
   const uiRef = useRef(ui);
   useEffect(() => {
@@ -252,13 +300,14 @@ function Canvas({
     (placeTool: PlaceTool, client: XYPosition, alt: boolean) => {
       const p = screenToFlowPosition(client);
       const snap = timeScale.snap && !alt;
-      // 사건: 배치 직후 제목 입력 (UC-10)
-      if (placeTool === "event")
-        setEditId(addEvent(timePlace(p.x, p.y - EVENT_H / 2, timeScale, snap)));
+      const at = timePlace(p.x, p.y - EVENT_H / 2, timeScale, snap);
+      // 사건: 배치 직후 제목 입력 (UC-10) / 상태: 캐릭터 선택 후 생성 (UC-12)
+      if (placeTool === "event") setEditId(addEvent(at));
+      if (placeTool === "state") setPending({ place: at, client, type: stateType });
       setTool("select");
       setPreview(null);
     },
-    [screenToFlowPosition, timeScale],
+    [screenToFlowPosition, timeScale, stateType],
   );
 
   const showPreview = useCallback(
@@ -332,7 +381,10 @@ function Canvas({
         dragged.flatMap((n) => {
           const item = current[n.id];
           if (item?.kind === "event" || item?.kind === "state") {
-            return [[n.id, movedPlace(item, n.position, timeScale, snap)]];
+            // 캐릭터별 정렬 중 상태 블록은 세로 위치 유지 (레인 순서는 레인 머리로 변경)
+            const keepY = item.kind === "state" && stateLanes?.enabled;
+            const pos = keepY ? { x: n.position.x, y: item.place.y } : n.position;
+            return [[n.id, movedPlace(item, pos, timeScale, snap)]];
           }
           return [];
         }),
@@ -344,9 +396,10 @@ function Canvas({
         return next;
       });
     },
-    [timeScale],
+    [timeScale, stateLanes?.enabled],
   );
 
+  const editState = editId && items[editId]?.kind === "state" ? editId : null;
   const placing = isPlaceTool(tool);
   return (
     <BoardUiContext.Provider value={boardUi}>
@@ -391,12 +444,44 @@ function Canvas({
           nodeComponent={MiniMapNode}
           nodeColor={(n) => {
             const item = items[n.id];
-            return item?.kind === "event"
-              ? `var(--color-${item.color})`
-              : "var(--color-surface-strong)";
+            if (item?.kind === "event") return `var(--color-${item.color})`;
+            if (item?.kind === "state") return STATE_COLOR[item.stateType];
+            return "var(--color-surface-strong)";
           }}
         />
-        <Leaders items={items} hiddenIds={hiddenIds} scale={timeScale} heightOf={heightOf} />
+        {stateLanes?.enabled && (
+          <Lanes
+            order={laneIds}
+            items={items}
+            scale={timeScale}
+            onReorder={(order) => setLanes({ order })}
+          />
+        )}
+        <Leaders
+          items={items}
+          hiddenIds={hiddenIds}
+          scale={timeScale}
+          lanes={!!stateLanes?.enabled}
+          rectOf={rectOf}
+        />
+        {editState && (
+          <StatePanel
+            key={editState}
+            itemId={editState}
+            rect={rects.get(editState)}
+            onClose={() => setEditId(null)}
+          />
+        )}
+        {pending && (
+          <CharacterPicker
+            at={pending.client}
+            onCancel={() => setPending(null)}
+            onPick={(docId) => {
+              setEditId(addState(pending.place, docId, pending.type));
+              setPending(null);
+            }}
+          />
+        )}
         {selectedEvents.length > 0 && !editId && (
           <BlockMenu itemIds={selectedEvents} onEditLines={() => setLinesOpen(true)} />
         )}
@@ -410,6 +495,13 @@ function Canvas({
           onTool={chooseTool}
           onDragStart={startToolDrag}
           onSnap={() => setTimeScale({ snap: !timeScale.snap })}
+          lanes={!!stateLanes?.enabled}
+          onLanes={() =>
+            setLanes({
+              enabled: !stateLanes?.enabled,
+              order: laneOrder(stateLanes?.order ?? [], items),
+            })
+          }
         >
           <FilterMenu
             hiddenLineIds={filters.hiddenLineIds}
