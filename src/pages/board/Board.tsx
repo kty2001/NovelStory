@@ -2,6 +2,7 @@ import {
   useCallback,
   useEffect,
   useMemo,
+  useRef,
   useState,
   type PointerEvent as ReactPointerEvent,
 } from "react";
@@ -16,18 +17,21 @@ import {
   type Edge,
   type Node,
   type NodeChange,
+  type OnNodeDrag,
   type Viewport,
   type XYPosition,
 } from "@xyflow/react";
 import { Maximize, Minus, Plus } from "lucide-react";
 import type { TimeScale } from "../../db/types";
 import { patchUiState } from "../../db/uiState";
-import { addEvent } from "../../store/boardActions";
+import { addEvent, moveItems } from "../../store/boardActions";
 import { setTimeScale, useNovelStore } from "../../store/novelStore";
 import Axis from "./Axis";
 import { AxisTrack, MiniMapNode, UndatedZone } from "./DecorNodes";
+import { BoardUiContext } from "./boardContext";
 import EventNode from "./EventNode";
-import { decorNodes, EVENT_H, itemNode, timePlace } from "./flow";
+import { decorNodes, EVENT_H, itemNode, movedPlace, timePlace } from "./flow";
+import Leaders from "./Leaders";
 import PlacePreview, { type Preview } from "./PlacePreview";
 import Toolbar from "./Toolbar";
 import {
@@ -67,8 +71,9 @@ function applyUi(prev: Record<string, NodeUi>, changes: NodeChange[]) {
     if (c.type === "dimensions" && c.dimensions)
       next[c.id] = { ...next[c.id], measured: c.dimensions };
     else if (c.type === "select") next[c.id] = { ...next[c.id], selected: c.selected };
-    else if (c.type === "position" && c.position)
-      next[c.id] = { ...next[c.id], position: c.position };
+    // 드래그 중 위치만 화면 상태로. 드래그가 끝나면 스토어 위치(스냅 결과)를 따름
+    else if (c.type === "position")
+      next[c.id] = { ...next[c.id], position: c.dragging ? c.position : undefined };
   }
   return next;
 }
@@ -138,9 +143,16 @@ function Canvas({
   const [tool, setTool] = useState<Tool>("select");
   const [stateType, setStateType] = useState<StateType>("appear");
   const [preview, setPreview] = useState<Preview | null>(null);
+  const [editId, setEditId] = useState<string | null>(null);
+
+  const heightOf = useCallback((id: string) => ui[id]?.measured?.height ?? EVENT_H, [ui]);
+  const selectionSize = useMemo(
+    () => Object.keys(items).filter((id) => ui[id]?.selected).length,
+    [items, ui],
+  );
+  const boardUi = useMemo(() => ({ editId, setEditId, selectionSize }), [editId, selectionSize]);
 
   const nodes = useMemo(() => {
-    const heightOf = (id: string) => ui[id]?.measured?.height ?? EVENT_H;
     const all: Node[] = [
       ...decorNodes(timeScale, items, (item) => heightOf(item.id)),
       ...Object.values(items).flatMap((item) => itemNode(item, timeScale) ?? []),
@@ -155,7 +167,12 @@ function Canvas({
         position: u.position ?? n.position,
       };
     });
-  }, [timeScale, items, ui]);
+  }, [timeScale, items, ui, heightOf]);
+  // 키 처리기에서 최신 선택 상태를 읽기 위한 참조
+  const uiRef = useRef(ui);
+  useEffect(() => {
+    uiRef.current = ui;
+  }, [ui]);
   const onNodesChange = useCallback(
     (changes: NodeChange[]) => setUi((u) => applyUi(u, changes)),
     [],
@@ -179,7 +196,9 @@ function Canvas({
     (placeTool: PlaceTool, client: XYPosition, alt: boolean) => {
       const p = screenToFlowPosition(client);
       const snap = timeScale.snap && !alt;
-      if (placeTool === "event") addEvent(timePlace(p.x, p.y - EVENT_H / 2, timeScale, snap));
+      // 사건: 배치 직후 제목 입력 (UC-10)
+      if (placeTool === "event")
+        setEditId(addEvent(timePlace(p.x, p.y - EVENT_H / 2, timeScale, snap)));
       setTool("select");
       setPreview(null);
     },
@@ -226,6 +245,14 @@ function Canvas({
     const onKey = (e: KeyboardEvent) => {
       if (e.isComposing || e.keyCode === 229 || isEditable(e.target)) return;
       if (e.ctrlKey || e.metaKey || e.altKey) return;
+      // F2: 선택한 블록 하나의 제목 편집
+      if (e.key === "F2") {
+        const ids = Object.keys(useNovelStore.getState().items).filter(
+          (id) => uiRef.current[id]?.selected,
+        );
+        if (ids.length === 1) setEditId(ids[0]);
+        return;
+      }
       if (e.key === "Escape") {
         setTool("select");
         setPreview(null);
@@ -238,58 +265,92 @@ function Canvas({
     return () => window.removeEventListener("keydown", onKey);
   }, [chooseTool]);
 
+  // 끌기 종료: 눈금 스냅(Alt = 해제) · 미정 영역 판정 후 스토어에 1건으로 기록
+  const onNodeDragStop = useCallback<OnNodeDrag>(
+    (e, _node, dragged) => {
+      const current = useNovelStore.getState().items;
+      const snap = timeScale.snap && !e.altKey;
+      const places = Object.fromEntries(
+        dragged.flatMap((n) => {
+          const item = current[n.id];
+          if (item?.kind === "event" || item?.kind === "state") {
+            return [[n.id, movedPlace(item, n.position, timeScale, snap)]];
+          }
+          return [];
+        }),
+      );
+      moveItems(places);
+      setUi((u) => {
+        const next = { ...u };
+        for (const n of dragged) next[n.id] = { ...next[n.id], position: undefined };
+        return next;
+      });
+    },
+    [timeScale],
+  );
+
   const placing = isPlaceTool(tool);
   return (
-    <ReactFlow
-      className={`${simple ? "board-simple" : ""} ${placing ? "tool-place" : ""}`}
-      nodes={nodes}
-      edges={NO_EDGES}
-      nodeTypes={nodeTypes}
-      onNodesChange={onNodesChange}
-      nodesDraggable={false}
-      onPaneClick={(e) => {
-        if (placing) place(tool, { x: e.clientX, y: e.clientY }, e.altKey);
-      }}
-      onPaneMouseMove={(e) => {
-        if (placing) showPreview(tool, { x: e.clientX, y: e.clientY }, e.altKey);
-      }}
-      onPaneMouseLeave={() => placing && setPreview(null)}
-      defaultViewport={viewport}
-      minZoom={MIN_ZOOM}
-      maxZoom={MAX_ZOOM}
-      // 빈 곳 드래그 = 박스 선택, 팬 = Space+드래그 · 가운데 버튼 · 손 도구 (shortcuts.md 2.4)
-      selectionOnDrag={tool === "select"}
-      panOnDrag={tool === "hand" ? true : [1]}
-      panActivationKeyCode="Space"
-      // 삭제는 보드에서 직접 처리 (프레임 자식 유지, C7)
-      deleteKeyCode={null}
-      // 화면 밖 렌더 생략 (C3)
-      onlyRenderVisibleElements
-      attributionPosition="bottom-left"
-      onMoveEnd={(_, vp) => void patchUiState(novelId, { viewport: vp })}
-    >
-      <Background variant={BackgroundVariant.Dots} color="var(--color-hairline)" size={2} />
-      <MiniMap
-        pannable
-        style={{ width: 200, height: 130 }}
-        className="overflow-hidden rounded-md border border-hairline shadow-float max-md:hidden"
-        bgColor="var(--color-canvas)"
-        maskColor="rgb(10 10 10 / 0.04)"
-        nodeComponent={MiniMapNode}
-      />
-      <Axis scale={timeScale} />
-      {preview && <PlacePreview preview={preview} scale={timeScale} />}
-      <Toolbar
-        tool={tool}
-        stateType={stateType}
-        enabled={ENABLED_TOOLS}
-        snap={timeScale.snap}
-        onTool={chooseTool}
-        onDragStart={startToolDrag}
-        onSnap={() => setTimeScale({ snap: !timeScale.snap })}
-      />
-      <ZoomControls />
-    </ReactFlow>
+    <BoardUiContext.Provider value={boardUi}>
+      <ReactFlow
+        className={`${simple ? "board-simple" : ""} ${placing ? "tool-place" : ""}`}
+        nodes={nodes}
+        edges={NO_EDGES}
+        nodeTypes={nodeTypes}
+        onNodesChange={onNodesChange}
+        onNodeDragStop={onNodeDragStop}
+        zoomOnDoubleClick={false}
+        onPaneClick={(e) => {
+          if (placing) place(tool, { x: e.clientX, y: e.clientY }, e.altKey);
+        }}
+        onPaneMouseMove={(e) => {
+          if (placing) showPreview(tool, { x: e.clientX, y: e.clientY }, e.altKey);
+        }}
+        onPaneMouseLeave={() => placing && setPreview(null)}
+        defaultViewport={viewport}
+        minZoom={MIN_ZOOM}
+        maxZoom={MAX_ZOOM}
+        // 빈 곳 드래그 = 박스 선택, 팬 = Space+드래그 · 가운데 버튼 · 손 도구 (shortcuts.md 2.4)
+        selectionOnDrag={tool === "select"}
+        panOnDrag={tool === "hand" ? true : [1]}
+        panActivationKeyCode="Space"
+        // 삭제는 보드에서 직접 처리 (프레임 자식 유지, C7)
+        deleteKeyCode={null}
+        // 화면 밖 렌더 생략 (C3)
+        onlyRenderVisibleElements
+        attributionPosition="bottom-left"
+        onMoveEnd={(_, vp) => void patchUiState(novelId, { viewport: vp })}
+      >
+        <Background variant={BackgroundVariant.Dots} color="var(--color-hairline)" size={2} />
+        <MiniMap
+          pannable
+          style={{ width: 200, height: 130 }}
+          className="overflow-hidden rounded-md border border-hairline shadow-float max-md:hidden"
+          bgColor="var(--color-canvas)"
+          maskColor="rgb(10 10 10 / 0.04)"
+          nodeComponent={MiniMapNode}
+          nodeColor={(n) => {
+            const item = items[n.id];
+            return item?.kind === "event"
+              ? `var(--color-${item.color})`
+              : "var(--color-surface-strong)";
+          }}
+        />
+        <Leaders items={items} scale={timeScale} heightOf={heightOf} />
+        <Axis scale={timeScale} />
+        {preview && <PlacePreview preview={preview} scale={timeScale} />}
+        <Toolbar
+          tool={tool}
+          stateType={stateType}
+          enabled={ENABLED_TOOLS}
+          snap={timeScale.snap}
+          onTool={chooseTool}
+          onDragStart={startToolDrag}
+          onSnap={() => setTimeScale({ snap: !timeScale.snap })}
+        />
+        <ZoomControls />
+      </ReactFlow>
+    </BoardUiContext.Provider>
   );
 }
 

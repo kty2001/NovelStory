@@ -231,6 +231,9 @@ test.describe("도구 모음 · 배치", () => {
     await page.mouse.move(x2 + 30, y, { steps: 8 });
     await expect(page.getByTestId("place-tick")).toHaveText("2");
     await page.mouse.up();
+    // 배치 직후 제목 입력 (UC-10)
+    await expect(page.getByRole("textbox", { name: "사건 제목" })).toBeFocused();
+    await page.keyboard.press("Enter");
 
     const block = page.getByTestId("event-block");
     await expect(block).toHaveText("새 사건");
@@ -293,5 +296,104 @@ test.describe("도구 모음 · 배치", () => {
     await page.mouse.move(before + 400, y, { steps: 5 });
     await page.mouse.up();
     expect(await tickX(page, 0)).toBeCloseTo(before + 100, 0);
+  });
+});
+
+// 눈금 t 위(기본 축 위 90px)에 사건 배치 + 제목 입력
+async function placeEvent(page: Page, t: number, title: string, dy = -90) {
+  await dragTool(page, "사건", await tickX(page, t), (await axisY(page)) + dy);
+  const input = page.getByRole("textbox", { name: "사건 제목" });
+  await input.fill(title);
+  await input.press("Enter");
+  const block = page.getByTestId("event-block").filter({ hasText: title });
+  await expect(block).toBeVisible();
+  return block;
+}
+
+// 요소를 (x, y)로 끌기
+async function dragTo(
+  page: Page,
+  target: import("@playwright/test").Locator,
+  x: number,
+  y: number,
+) {
+  const b = (await target.boundingBox())!;
+  await page.mouse.move(b.x + b.width / 2, b.y + b.height / 2);
+  await page.mouse.down();
+  await page.mouse.move(x, y, { steps: 10 });
+  await page.mouse.up();
+}
+
+const center = async (l: import("@playwright/test").Locator) => {
+  const b = (await l.boundingBox())!;
+  return { x: b.x + b.width / 2, y: b.y + b.height / 2, width: b.width, left: b.x };
+};
+
+test.describe("사건 블록", () => {
+  test("제목: 배치 직후 입력 · 새로고침 유지 · 더블클릭 재편집 · 비우면 유지", async ({ page }) => {
+    const block = await placeEvent(page, 2, "왕도 습격");
+    await page.waitForTimeout(800);
+    await page.reload();
+    await expect(block).toBeVisible();
+
+    await block.dblclick();
+    const input = page.getByRole("textbox", { name: "사건 제목" });
+    await input.fill("왕도 함락");
+    await input.press("Enter");
+    await expect(page.getByTestId("event-block")).toHaveText("왕도 함락");
+
+    await page.getByTestId("event-block").dblclick();
+    await input.fill("   ");
+    await input.press("Enter");
+    await expect(page.getByTestId("event-block")).toHaveText("왕도 함락");
+  });
+
+  test("끌어서 시점 이동(스냅) · 미정 영역 오가기 · 지시선", async ({ page }) => {
+    const block = await placeEvent(page, 2, "첫 만남");
+    await expect(page.getByTestId("leader")).toHaveCount(1);
+
+    const x4 = await tickX(page, 4);
+    const c0 = await center(block);
+    await dragTo(page, block, x4 + 20, c0.y);
+    await expect.poll(async () => Math.round((await center(block)).x - x4)).toBe(0);
+
+    const zone = (await page.getByTestId("undated-zone").boundingBox())!;
+    await dragTo(page, block, zone.x + zone.width / 2, zone.y + 150);
+    const inZone = await center(block);
+    expect(inZone.x).toBeGreaterThan(zone.x);
+    expect(inZone.x).toBeLessThan(zone.x + zone.width);
+    await expect(page.getByTestId("leader")).toHaveCount(0);
+
+    const x1 = await tickX(page, 1);
+    await dragTo(page, block, x1 - 25, c0.y);
+    await expect.poll(async () => Math.round((await center(block)).x - x1)).toBe(0);
+    await expect(page.getByTestId("leader")).toHaveCount(1);
+  });
+
+  test("양 끝 핸들로 기간 조절 · 시작으로 되돌리면 단일 시점", async ({ page }) => {
+    const block = await placeEvent(page, 2, "원정");
+    await block.click();
+    const x2 = await tickX(page, 2);
+    const x5 = await tickX(page, 5);
+    await dragTo(page, page.getByTestId("resize-end"), x5 + 10, (await center(block)).y);
+    await expect.poll(async () => Math.round((await center(block)).left - x2)).toBe(0);
+    expect(Math.abs((await center(block)).width - (x5 - x2))).toBeLessThan(2);
+    await expect(page.getByTestId("leader")).toHaveCount(2);
+
+    await block.click();
+    await dragTo(page, page.getByTestId("resize-end"), x2 + 5, (await center(block)).y);
+    await expect.poll(async () => Math.round((await center(block)).width)).toBe(160);
+    expect(Math.abs((await center(block)).x - x2)).toBeLessThan(2);
+  });
+
+  test("블록 메뉴: 색 변경", async ({ page }) => {
+    const block = await placeEvent(page, 2, "밀약");
+    await block.click();
+    await page.getByRole("button", { name: "색: 민트" }).click();
+    await expect(block).toHaveCSS("background-color", "rgb(164, 212, 197)");
+    await expect(page.getByRole("button", { name: "색: 민트" })).toHaveAttribute(
+      "aria-pressed",
+      "true",
+    );
   });
 });

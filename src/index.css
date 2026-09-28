@@ -1,8 +1,9 @@
 @import "tailwindcss";
 @import "@xyflow/react/dist/style.css";
 
-/* ui_guide.md 토큰. 간격은 Tailwind 기본 4px 단위 사용 (xxs=1 · xs=2 · sm=3 · md=4 · lg=6 · xl=8 · xxl=12) */
-@theme {
+/* ui_guide.md 토큰. 간격은 Tailwind 기본 4px 단위 사용 (xxs=1 · xs=2 · sm=3 · md=4 · lg=6 · xl=8 · xxl=12)
+   static: 블록 색(`ColorToken`)을 var(--color-*)로 직접 쓰므로 클래스에 안 쓰인 변수도 항상 출력 */
+@theme static {
   /* 정의된 색 토큰 외 임의 색상 금지 → Tailwind 기본 색 제거 */
   --color-*: initial;
 

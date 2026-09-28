@@ -56,14 +56,33 @@ export function addEvent(place: EventItem["place"], title = "새 사건"): strin
   return item.id;
 }
 
-// 여러 요소 위치 변경 (드래그 1회 = 1건)
+const samePlace = (a: BoardItem["place"], b: BoardItem["place"]) =>
+  JSON.stringify(a) === JSON.stringify(b);
+
+// 여러 요소 위치 변경 (드래그 1회 = 1건). 바뀐 것이 없으면 기록하지 않음
 export function moveItems(places: Record<string, BoardItem["place"]>) {
+  const { items } = store.getState();
+  const changed = Object.entries(places).filter(
+    ([id, place]) => items[id] && !samePlace(items[id].place, place),
+  );
+  if (!changed.length) return;
+  const next = { ...items };
+  for (const [id, place] of changed) next[id] = { ...next[id], place } as BoardItem;
+  store.setState({ items: next });
+}
+
+// 요소 일부 필드 변경 (색 등)
+export function patchItems(ids: string[], patch: Partial<Pick<EventItem, "color">>) {
   store.setState(({ items }) => {
     const next = { ...items };
-    for (const [id, place] of Object.entries(places)) {
-      const item = next[id];
-      if (item) next[id] = { ...item, place } as BoardItem;
-    }
+    for (const id of ids) if (next[id]) next[id] = { ...next[id], ...patch } as BoardItem;
     return { items: next };
   });
+}
+
+// 사전 문서 제목 변경 (블록 제목 = 문서 제목)
+export function renameDoc(docId: string, title: string) {
+  store.setState(({ docs }) =>
+    docs[docId] ? { docs: { ...docs, [docId]: { ...docs[docId], title } } } : {},
+  );
 }

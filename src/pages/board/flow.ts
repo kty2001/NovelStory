@@ -1,5 +1,12 @@
 import type { Node } from "@xyflow/react";
-import type { BoardItem, TimedPlace, TimeScale, UndatedPlace } from "../../db/types";
+import type {
+  BoardItem,
+  EventItem,
+  StateItem,
+  TimedPlace,
+  TimeScale,
+  UndatedPlace,
+} from "../../db/types";
 import type { Collection } from "../../store/novelStore";
 import { snapTick, tickToX, xToTick } from "./timeAxis";
 
@@ -112,4 +119,25 @@ export function itemNode(item: BoardItem, scale: TimeScale): Node | null {
     return { ...base, type: "event", position: { x, y: p.y }, origin: [0.5, 0] };
   }
   return null;
+}
+
+// 드래그 종료 위치 → 새 place (data_model 4.1). 기간 사건은 왼쪽 끝 기준, 기간 길이(눈금 수) 유지
+export function movedPlace(
+  item: EventItem | StateItem,
+  pos: { x: number; y: number },
+  scale: TimeScale,
+  snap: boolean,
+): TimedPlace | UndatedPlace {
+  const p = item.place;
+  const next = timePlace(pos.x, pos.y, scale, snap);
+  if (p.mode !== "timed" || p.tEnd === undefined) return next;
+  // 미정 영역으로 옮긴 기간 사건은 단일 블록 (가운데 기준)
+  if (next.mode === "undated") return { ...next, x: pos.x + EVENT_W / 2 };
+  return { ...next, tEnd: next.t + (p.tEnd - p.t) };
+}
+
+// 기간 조절: 시작·끝 눈금. 같으면 단일 시점
+export function spanPlace(place: TimedPlace, start: number, end: number): TimedPlace {
+  const [t, tEnd] = start <= end ? [start, end] : [end, start];
+  return tEnd > t ? { mode: "timed", t, tEnd, y: place.y } : { mode: "timed", t, y: place.y };
 }
