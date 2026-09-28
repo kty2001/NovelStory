@@ -215,12 +215,12 @@ Pretendard는 **다이나믹 서브셋**(페이지에 쓰인 글자 조각만 �
     | 1 (서브) | 1.5px 실선 `{colors.muted}` |
     | 2 (사이드) | 1.5px 점선 `{colors.muted}` |
     | 3 이후 (추가 라인) | 1.5px 실선 `{colors.muted}`, 배지로만 구분 |
-    | 미지정 | 테두리 없음 |
+    | 미지정 | 기본 테두리 (1px `{colors.ink}` 20%) |
 
   - 채움 색(`color`)은 라인과 무관하게 작가가 고른 색 유지. 선택 강조(`{colors.brand-teal}`)는 라인 테두리 바깥에 표시. 라인 색 지정은 MVP 이후
-- **`state-block`**: 캐릭터 상태 블록. `{rounded.sm}`, 유형별 색 (등장 mint / 변화 lavender / 퇴장 teal) + 아이콘, 좌측에 캐릭터 이름. 상단에 시간축까지 이어지는 점선 지시선
-- **`sticky-note`**: 포스트잇. 포스트잇 색, `{rounded.xs}`, 약한 그림자, 기본 160 × 160px, 텍스트 `{typography.body-sm}`
-- **`board-text`**: 배경 없는 자유 텍스트, `{typography.title-md}` 기본
+- **`state-block`**: 캐릭터 상태 블록. `{rounded.sm}`, 1px `{colors.ink}` 20% 테두리, 유형별 색 (등장 mint / 변화 lavender / 퇴장 teal) + 아이콘, 좌측에 캐릭터 이름. 상단에 시간축까지 이어지는 점선 지시선
+- **`sticky-note`**: 포스트잇. 포스트잇 색, `{rounded.xs}`, 1px `{colors.ink}` 20% 테두리, 약한 그림자, 기본 160 × 160px, 텍스트 `{typography.body-sm}`
+- **`board-text`**: 배경 없는 자유 텍스트, 1px `{colors.ink}` 20% 테두리, `{typography.title-md}` 기본
 - **`board-shape`**: 사각형·원·마름모. 테두리 2px `{colors.ink}`, 채움 없음 또는 포스트잇 색
 - **`frame`**: 영역 묶음. 1.5px 점선 `{colors.muted}` 테두리, `{rounded.lg}`, 좌상단 바깥에 제목(`{typography.title-sm}`)
 - **`board-edge`**: 연결선. 2px `{colors.body}`, 화살촉, 점선 옵션, 라벨은 선 중앙의 `badge-pill`. 선택 시 `{colors.brand-teal}`

@@ -1,6 +1,6 @@
 import type { CSSProperties } from "react";
 
-// 스토리 라인 테두리 (ui_guide `event-block` 표): 라인 순서로 모양 결정, 미지정은 없음
+// 스토리 라인 테두리 (ui_guide `event-block` 표): 라인 순서로 모양 결정, 미지정은 기본 테두리(1px ink/20, 클래스)
 export function lineBorder(index: number | undefined): CSSProperties {
   if (index === undefined) return {};
   if (index === 0) return { border: "2px solid var(--color-ink)" };

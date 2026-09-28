@@ -112,7 +112,7 @@ export default function EventNode({ id, data, selected }: NodeProps<EventNodeTyp
       <Ports />
       <div
         data-testid="event-block"
-        className={`relative rounded-md px-3 py-2 text-block-label break-keep text-ink ${selected ? "outline-2 outline-offset-2 outline-brand-teal" : ""}`}
+        className={`relative rounded-md border border-ink/20 px-3 py-2 text-block-label break-keep text-ink ${selected ? "outline-2 outline-offset-2 outline-brand-teal" : ""}`}
         data-line={lineName ?? ""}
         style={{
           width: data.span ? "100%" : EVENT_W,

@@ -71,7 +71,7 @@ export function StickyNode({ id, selected }: NodeProps) {
       <Ports />
       <div
         data-testid="sticky"
-        className={`h-full w-full rounded-xs p-3 text-body-sm break-keep text-ink shadow-sticky ${selected ? "outline-2 outline-offset-2 outline-brand-teal" : ""}`}
+        className={`h-full w-full rounded-xs border border-ink/20 p-3 text-body-sm break-keep text-ink shadow-sticky ${selected ? "outline-2 outline-offset-2 outline-brand-teal" : ""}`}
         style={{ background: `var(--color-${item.color})` }}
         onDoubleClick={() => setEditId(id)}
       >
@@ -104,7 +104,7 @@ export function TextNode({ id, selected }: NodeProps) {
       <Ports />
       <div
         data-testid="board-text"
-        className={`min-h-8 w-full rounded-xs text-title-md break-keep text-ink ${selected ? "outline-2 outline-offset-2 outline-brand-teal" : ""}`}
+        className={`min-h-8 w-full rounded-xs border border-ink/20 px-2 py-1 text-title-md break-keep text-ink ${selected ? "outline-2 outline-offset-2 outline-brand-teal" : ""}`}
         onDoubleClick={() => setEditId(id)}
       >
         {editing ? (

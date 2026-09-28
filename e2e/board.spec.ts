@@ -421,7 +421,7 @@ test.describe("스토리 라인", () => {
 
     await setLine(page, block, "미지정");
     await expect(block).toHaveAttribute("data-line", "");
-    await expect(block).toHaveCSS("border-top-width", "0px");
+    await expect(block).toHaveCSS("border-top-width", "1px");
   });
 
   test("여러 블록 선택(Shift+클릭) 후 한꺼번에 지정", async ({ page }) => {

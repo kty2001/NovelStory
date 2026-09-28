@@ -36,7 +36,7 @@ export default function StateNode({ id, selected }: NodeProps) {
       <div
         data-testid="state-block"
         data-type={item.stateType}
-        className={`rounded-sm px-2.5 py-1.5 break-keep ${selected ? "outline-2 outline-offset-2 outline-brand-teal" : ""}`}
+        className={`rounded-sm border border-ink/20 px-2.5 py-1.5 break-keep ${selected ? "outline-2 outline-offset-2 outline-brand-teal" : ""}`}
         style={{ width: STATE_W, background: look.bg, color: look.fg }}
         onDoubleClick={() => setEditId(id)}
       >
