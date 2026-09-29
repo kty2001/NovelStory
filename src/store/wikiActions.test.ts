@@ -11,6 +11,7 @@ import {
   moveDoc,
   setCategoryColor,
   setDocBody,
+  setTemplateProps,
   updateDoc,
 } from "./wikiActions";
 
@@ -155,4 +156,13 @@ describe("문서 동작", () => {
     deleteDoc("d1");
     expect(store.getState().docs.d1).toBeUndefined();
   });
+});
+
+it("템플릿 변경은 새 문서에만 적용", () => {
+  const before = addDoc("char")!;
+  setTemplateProps("char", ["출신", "나이"]);
+  const after = addDoc("char")!;
+  const { docs } = store.getState();
+  expect(docs[after].props.map((p) => p.key)).toEqual(["출신", "나이"]);
+  expect(docs[before].props.map((p) => p.key)).toEqual(["나이", "성별"]);
 });

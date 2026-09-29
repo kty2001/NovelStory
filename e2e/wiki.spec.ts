@@ -221,3 +221,75 @@ test.describe("문서 편집", () => {
     await expect(page.getByTestId("doc-row")).toHaveCount(0);
   });
 });
+
+test.describe("분류 설정 · 템플릿", () => {
+  const settingsTab = (page: Page) => page.getByRole("tab", { name: "설정" });
+  const keyValues = (page: Page) =>
+    page
+      .getByRole("list", { name: "템플릿 속성" })
+      .getByRole("textbox", { name: "속성 이름" })
+      .evaluateAll((els) => els.map((e) => (e as HTMLInputElement).value));
+
+  test("기본 분류: 이동 · 색 잠금, 템플릿 변경은 새 문서에만", async ({ page }) => {
+    // 기존 문서 (변경 전 템플릿)
+    await page.getByRole("button", { name: "새 문서" }).first().click();
+    await nameButton(page, "캐릭터").click();
+
+    await settingsTab(page).click();
+    await expect(page.getByText("기본 분류 — 삭제 · 이동 불가")).toBeVisible();
+    await expect(page.getByRole("combobox", { name: "상위 분류" })).toBeDisabled();
+    await expect(page.getByRole("group", { name: "분류 색" })).toHaveCount(0);
+    await expect(page.getByText("기존 문서 1개는 그대로입니다")).toBeVisible();
+    expect(await keyValues(page)).toEqual(["나이", "성별", "소속", "능력"]);
+
+    await page.getByRole("button", { name: "키 추가" }).click();
+    await page.keyboard.type("나이");
+    await page.keyboard.press("Enter");
+    await expect(page.getByRole("alert")).toHaveText("'나이' 속성이 이미 있어요");
+    const last = page.getByRole("textbox", { name: "속성 이름" }).last();
+    await last.fill("출신");
+    await last.press("Enter");
+    await page.getByLabel("출신 순서 변경").dragTo(page.getByTestId("prop-row").first(), {
+      force: true,
+    });
+    await page.getByRole("button", { name: "성별 속성 삭제" }).click({ force: true });
+    expect(await keyValues(page)).toEqual(["출신", "나이", "소속", "능력"]);
+
+    await page.getByRole("button", { name: "새 문서" }).first().click();
+    const keys = page.getByRole("textbox", { name: "속성 이름" });
+    await expect(keys).toHaveCount(4);
+    expect(await keys.evaluateAll((els) => els.map((e) => (e as HTMLInputElement).value))).toEqual([
+      "출신",
+      "나이",
+      "소속",
+      "능력",
+    ]);
+    // 먼저 만든 문서는 그대로
+    await page.getByTestId("doc-row").first().click();
+    await expect(page.getByRole("textbox", { name: "성별 값" })).toHaveCount(1);
+  });
+
+  test("사용자 분류: 이름 · 색 · 상위 분류 변경", async ({ page }) => {
+    await addRoot(page, "용어집");
+    await nameButton(page, "용어집").click();
+    await settingsTab(page).click();
+
+    const name = page.getByRole("main").getByRole("textbox", { name: "분류 이름" });
+    await name.fill("사전 용어");
+    await name.press("Enter");
+    await expect(row(page, "사전 용어")).toBeVisible();
+
+    await page
+      .getByRole("group", { name: "분류 색" })
+      .getByRole("button", { name: "코랄" })
+      .click();
+    await expect(
+      page.getByRole("group", { name: "분류 색" }).getByRole("button", { name: "코랄" }),
+    ).toHaveAttribute("aria-pressed", "true");
+
+    await page.getByRole("combobox", { name: "상위 분류" }).selectOption({ label: "장소" });
+    await expect(row(page, "사전 용어")).toHaveAttribute("data-depth", "1");
+    await page.getByRole("combobox", { name: "상위 분류" }).selectOption({ label: "(최상위)" });
+    await expect(row(page, "사전 용어")).toHaveAttribute("data-depth", "0");
+  });
+});

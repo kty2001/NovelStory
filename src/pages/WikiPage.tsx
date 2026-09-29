@@ -24,7 +24,7 @@ export default function WikiPage() {
         {doc ? (
           <DocView key={doc.id} doc={doc} />
         ) : (
-          categoryId && <CategoryView categoryId={categoryId} />
+          categoryId && <CategoryView key={categoryId} categoryId={categoryId} />
         )}
       </main>
     </div>

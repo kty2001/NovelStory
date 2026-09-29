@@ -20,13 +20,16 @@ const newKey = (props: WikiProp[]) => {
 const inputClass =
   "min-w-0 rounded-xs px-2 py-1.5 text-body-sm text-ink focus:bg-surface-soft focus:outline-none";
 
-// 속성 표 (W-1 ⑥): 2열 키-값, 추가 · 삭제 · ⋮⋮ 끌어서 순서, 같은 키 중복 금지 (data_model 5장)
+// 속성 표 (W-1 ⑥): 2열 키-값, 추가 · 삭제 · ⋮⋮ 끌어서 순서, 같은 키 중복 금지 (data_model 5장).
+// keysOnly = 분류 템플릿 키 목록 (W-5, 값 칸 숨김)
 export default function PropsTable({
   props,
   onChange,
+  keysOnly = false,
 }: {
   props: WikiProp[];
   onChange: (props: WikiProp[]) => void;
+  keysOnly?: boolean;
 }) {
   const [dragIndex, setDragIndex] = useState<number | null>(null);
   const [focusKey, setFocusKey] = useState<string | null>(null);
@@ -57,7 +60,7 @@ export default function PropsTable({
 
   return (
     <div>
-      <ul aria-label="속성" className="border-t border-hairline">
+      <ul aria-label={keysOnly ? "템플릿 속성" : "속성"} className="border-t border-hairline">
         {props.map((p, i) => (
           <li
             // 행은 순번, 입력칸은 값 기준 key: 값이 바뀌면 입력칸만 새로 그림 (포커스 이동 유지)
@@ -89,11 +92,12 @@ export default function PropsTable({
                 e.currentTarget.select();
                 setFocusKey(null);
               }}
-              className={`${inputClass} w-32 shrink-0 text-muted`}
+              className={`${inputClass} ${keysOnly ? "flex-1" : "w-32 shrink-0 text-muted"}`}
               onKeyDown={(e) => commitKeys(e, p.key)}
               onBlur={(e) => renameKey(i, e.currentTarget)}
             />
             <input
+              hidden={keysOnly}
               key={`${p.key}\u0000${p.value}`}
               aria-label={`${p.key} 값`}
               defaultValue={p.value}
@@ -130,7 +134,7 @@ export default function PropsTable({
         }}
       >
         <Plus size={14} />
-        속성 추가
+        {keysOnly ? "키 추가" : "속성 추가"}
       </button>
     </div>
   );

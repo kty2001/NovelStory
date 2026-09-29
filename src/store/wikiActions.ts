@@ -53,6 +53,15 @@ export function setCategoryColor(id: string, color: ColorToken) {
   );
 }
 
+// 템플릿 키 (UC-32). 새 문서에만 적용, 기존 문서는 그대로
+export function setTemplateProps(id: string, templateProps: string[]) {
+  store.setState(({ categories }) =>
+    categories[id]
+      ? { categories: { ...categories, [id]: { ...categories[id], templateProps } } }
+      : {},
+  );
+}
+
 export function deleteCategory(id: string) {
   const { categories, docs } = store.getState();
   if (!categories[id] || deleteError(categories, docs, id)) return;
