@@ -51,20 +51,27 @@ export function addEvent(place: EventItem["place"], title = "새 사건"): strin
   const category = systemCategory(s, "event");
   if (!s.novelId || !category) return null;
   const doc = { ...newDoc(s.novelId, category, title), autoCreated: true };
+  // 문서는 실행 취소 기록 밖이라 블록 생성만 1건으로 기록됨
+  store.setState({ docs: { ...s.docs, [doc.id]: doc } });
+  return placeEvent(place, doc.id);
+}
+
+// 기존 사건 문서의 블록 배치 (문서 → 보드 끌기, UC-22). 문서당 블록 1개 — 이미 있으면 null
+export function placeEvent(place: EventItem["place"], docId: string): string | null {
+  const s = store.getState();
+  if (!s.novelId || !s.docs[docId]) return null;
+  if (Object.values(s.items).some((i) => i.kind === "event" && i.docId === docId)) return null;
   const item: EventItem = {
     id: crypto.randomUUID(),
     novelId: s.novelId,
-    updatedAt: doc.updatedAt,
+    updatedAt: now(),
     kind: "event",
     z: nextZ(s.items),
     place,
-    docId: doc.id,
-    color: category.color,
+    docId,
+    color: systemCategory(s, "event")?.color ?? "brand-peach",
   };
-  store.setState({
-    docs: { ...s.docs, [doc.id]: doc },
-    items: { ...s.items, [item.id]: item },
-  });
+  store.setState({ items: { ...s.items, [item.id]: item } });
   return item.id;
 }
 

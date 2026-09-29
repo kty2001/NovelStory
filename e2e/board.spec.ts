@@ -955,3 +955,114 @@ test.describe("빈 보드 안내", () => {
     await expect(notice).toBeHidden();
   });
 });
+
+test.describe("보드 ↔ 사전 연동", () => {
+  const panel = (page: Page) => page.getByRole("complementary", { name: "사전 패널" });
+  // 사전 패널 손잡이를 끌어 눈금 t 위(축 기준 dy)에 놓기
+  async function dropDoc(page: Page, t: number, dy: number) {
+    const pane = (await page.locator(".react-flow__pane").boundingBox())!;
+    await panel(page)
+      .getByLabel("보드로 끌기")
+      .dragTo(page.locator(".react-flow__pane"), {
+        targetPosition: {
+          x: (await tickX(page, t)) - pane.x,
+          y: (await axisY(page)) + dy - pane.y,
+        },
+      });
+  }
+
+  test("블록 상세 · Enter → 사전 패널, 패널 편집이 블록에 반영, 사전에서 열기", async ({
+    page,
+  }) => {
+    const block = await placeEvent(page, 2, "왕도 습격");
+    await block.click();
+    await page
+      .getByRole("toolbar", { name: "블록 메뉴" })
+      .getByRole("button", { name: "상세" })
+      .click();
+    const title = panel(page).getByRole("textbox", { name: "제목" });
+    await expect(title).toHaveValue("왕도 습격");
+    await title.fill("왕도 함락");
+    await title.press("Enter");
+    await panel(page).getByRole("textbox", { name: "태그 추가" }).fill("전투");
+    await panel(page).getByRole("textbox", { name: "태그 추가" }).press("Enter");
+    const renamed = page.getByTestId("event-block").filter({ hasText: "왕도 함락" });
+    await expect(renamed).toContainText("#전투");
+
+    await panel(page).getByRole("button", { name: "패널 닫기" }).click();
+    await expect(panel(page)).toBeHidden();
+    await renamed.click();
+    await page.keyboard.press("Enter");
+    await expect(panel(page)).toBeVisible();
+    await panel(page).getByRole("button", { name: "사전에서 열기" }).click();
+    await expect(page).toHaveURL(/\/wiki\/[^/?]+$/);
+    await expect(page.getByRole("textbox", { name: "제목" })).toHaveValue("왕도 함락");
+  });
+
+  test("패널 문서 → 보드 끌기: 캐릭터 = 등장 블록, 사건 = 블록 1개(이미 있으면 이동)", async ({
+    page,
+  }) => {
+    await placeState(page, 1, "카엘", 1, 150);
+    await closePanel(page);
+    await page.getByTestId("state-block").click();
+    await page.getByRole("button", { name: "상세" }).click();
+    await dropDoc(page, 0, 60); // 패널이 캔버스를 좁히므로 화면 안 눈금
+    await expect(page.getByTestId("state-block")).toHaveCount(2);
+    await expect(page.getByTestId("state-block").last()).toHaveAttribute("data-type", "appear");
+
+    // 블록 없는 사건 문서: 사전에서 만들고 보드에서 빠른 이동 → 사전 패널
+    await page.getByRole("link", { name: "사전" }).click();
+    await page.getByRole("button", { name: /^사건( 기본 분류)?$/ }).click();
+    await page.getByRole("button", { name: "새 문서" }).first().click();
+    await page.getByRole("textbox", { name: "제목" }).fill("밀약");
+    await page.getByRole("textbox", { name: "제목" }).press("Enter");
+    await page.getByRole("link", { name: "보드" }).click();
+    await page.keyboard.press("Control+k");
+    await page.getByRole("textbox", { name: "빠른 이동 검색" }).fill("밀약");
+    await page.getByRole("textbox", { name: "빠른 이동 검색" }).press("Enter");
+    await expect(panel(page).getByRole("textbox", { name: "제목" })).toHaveValue("밀약");
+
+    await dropDoc(page, 0, -90);
+    await expect(page.getByTestId("event-block").filter({ hasText: "밀약" })).toHaveCount(1);
+    await dropDoc(page, 0, 200); // 새 블록의 블록 메뉴 · 미니맵을 피해 축 아래
+    await expect(page.getByTestId("event-block").filter({ hasText: "밀약" })).toHaveCount(1);
+  });
+
+  test("보드 연동 칸 · 표 열 · 보드에서 보기 · 삭제 경고로 블록 함께 삭제", async ({ page }) => {
+    await placeEvent(page, 2, "왕도 습격");
+    await placeState(page, 2, "레아");
+    await page.getByRole("combobox", { name: "관련 사건" }).selectOption({ label: "왕도 습격" });
+    await closePanel(page);
+
+    await page.getByRole("link", { name: "사전" }).click();
+    await page.getByRole("button", { name: "캐릭터 펼치기" }).click();
+    await page.getByTestId("doc-row").filter({ hasText: "레아" }).click();
+    const links = page.getByRole("region", { name: "보드 연동" });
+    await expect(links).toContainText("왕도 습격");
+    await expect(links).toContainText("▲ 등장");
+
+    await page.getByRole("button", { name: "보드에서 보기 · 1" }).click();
+    await expect(page).toHaveURL(/\/board$/);
+    await expect(page.locator(".react-flow__node.selected").getByTestId("state-block")).toHaveCount(
+      1,
+    );
+
+    await page.getByRole("link", { name: "사전" }).click();
+    await page.getByRole("button", { name: /^사건( 기본 분류)?$/ }).click();
+    await page.getByRole("tab", { name: "표" }).click();
+    const row = page.getByTestId("table-row").filter({ hasText: "왕도 습격" });
+    await expect(row).toContainText("2");
+    await expect(row).toContainText("레아");
+
+    await page.getByRole("button", { name: "캐릭터 펼치기" }).click();
+    await page.getByTestId("doc-row").filter({ hasText: "레아" }).click();
+    await page.getByRole("button", { name: "문서 메뉴" }).click();
+    await page.getByRole("menuitem", { name: "삭제" }).click();
+    const dialog = page.getByRole("dialog");
+    await expect(dialog).toContainText("보드 블록 1개가 함께 삭제됩니다");
+    await dialog.getByRole("button", { name: "문서와 블록 삭제" }).click();
+    await page.getByRole("link", { name: "보드" }).click();
+    await expect(page.getByTestId("event-block")).toHaveCount(1);
+    await expect(page.getByTestId("state-block")).toHaveCount(0);
+  });
+});

@@ -5,6 +5,7 @@ import {
   useMemo,
   useRef,
   useState,
+  type DragEvent as ReactDragEvent,
   type PointerEvent as ReactPointerEvent,
 } from "react";
 import {
@@ -40,16 +41,20 @@ import {
   addText,
   adopt,
   deleteItems,
+  placeEvent,
   setLanes,
   updateItems,
 } from "../../store/boardActions";
 import { redo, setTimeScale, undo, useNovelStore } from "../../store/novelStore";
+import { eventBlock } from "../wiki/boardLinks";
+import { familyOf } from "../wiki/categories";
 import { copyClip, pasteRecords, type Clip } from "./clipboard";
 import Axis from "./Axis";
 import BlockMenu from "./BlockMenu";
 import { BoardUiContext } from "./boardContext";
 import { AxisTrack, MiniMapNode, UndatedZone } from "./DecorNodes";
 import EdgeView from "./EdgeView";
+import DocPanel, { DOC_MIME } from "./DocPanel";
 import EventNode from "./EventNode";
 import FilterMenu from "./FilterMenu";
 import {
@@ -225,11 +230,22 @@ function Canvas({
     );
   }, [tickParam, setCenter, getZoom, setParams]);
 
+  // 사전 패널 (B-2 ④, UC-22): 연 문서는 UiState.wikiPanelDocId로 기억
+  const [panelId, setPanelId] = useState<string | null>(null);
+  const openPanel = useCallback(
+    (docId: string | null) => {
+      setPanelId(docId);
+      void patchUiState(novelId, { wikiPanelDocId: docId ?? undefined });
+    },
+    [novelId],
+  );
+
   // 필터는 소설별로 기억 (UiState.filters)
   useEffect(() => {
     let alive = true;
     void db.uiState.get(novelId).then((s) => {
       if (alive && s?.filters) setFilters({ ...NO_FILTERS, ...s.filters });
+      if (alive && s?.wikiPanelDocId) setPanelId(s.wikiPanelDocId);
     });
     return () => {
       alive = false;
@@ -541,6 +557,90 @@ function Canvas({
     setEdgeSel({});
   }, []);
 
+  // 블록들이 보이게 화면 이동: 모두 들어오도록 가운데 맞춤, 확대는 하지 않음
+  const viewW = useStore((st) => st.width);
+  const viewH = useStore((st) => st.height);
+  const showItems = useCallback(
+    (ids: string[]) => {
+      const rs = ids.flatMap((id) => latest.current.rects.get(id) ?? []);
+      if (!rs.length) return;
+      const x0 = Math.min(...rs.map((r) => r.x));
+      const y0 = Math.min(...rs.map((r) => r.y));
+      const x1 = Math.max(...rs.map((r) => r.x + r.w));
+      const y1 = Math.max(...rs.map((r) => r.y + r.h));
+      const fit = Math.min(viewW / (x1 - x0 + 200), viewH / (y1 - y0 + 200));
+      const zoom = Math.max(MIN_ZOOM, Math.min(getZoom(), fit));
+      void setCenter((x0 + x1) / 2, (y0 + y1) / 2, { zoom, duration: 300 });
+    },
+    [viewW, viewH, getZoom, setCenter],
+  );
+
+  // 사전에서 온 이동 (UC-22): ?focus=문서 ID(그 문서 블록 전부) · 블록 ID → 선택 + 화면 이동,
+  // ?doc=문서 ID(빠른 이동) → 사전 패널
+  const focusParam = params.get("focus");
+  const docParam = params.get("doc");
+  useEffect(() => {
+    if (focusParam === null && docParam === null) return;
+    // 다음 프레임에 처리: 막 열린 보드의 노드 위치가 잡힌 뒤 이동
+    const frame = requestAnimationFrame(() => {
+      if (focusParam !== null) {
+        const cur = useNovelStore.getState().items;
+        const ids = cur[focusParam]
+          ? [focusParam]
+          : Object.values(cur).flatMap((i) =>
+              "docId" in i && i.docId === focusParam ? [i.id] : [],
+            );
+        if (ids.length) {
+          select(ids);
+          showItems(ids);
+        }
+      }
+      if (docParam !== null) openPanel(docParam);
+      setParams(
+        (p) => {
+          p.delete("focus");
+          p.delete("doc");
+          return p;
+        },
+        { replace: true },
+      );
+    });
+    return () => cancelAnimationFrame(frame);
+  }, [focusParam, docParam, select, showItems, openPanel, setParams]);
+
+  // 사전 패널의 문서를 끌어 놓기 (B-2 ⑥): 사건 = 블록 생성(이미 있으면 그 블록으로), 캐릭터 = 등장 상태 블록
+  const onDocDragOver = (e: ReactDragEvent) => {
+    if (!e.dataTransfer.types.includes(DOC_MIME)) return;
+    e.preventDefault();
+    e.dataTransfer.dropEffect = "copy";
+  };
+  const onDocDrop = (e: ReactDragEvent) => {
+    const docId = e.dataTransfer.getData(DOC_MIME);
+    if (!docId) return;
+    e.preventDefault();
+    const s = useNovelStore.getState();
+    const doc = s.docs[docId];
+    if (!doc) return;
+    const family = familyOf(s.categories, doc.categoryId);
+    const existing = family === "event" ? eventBlock(s.items, docId) : undefined;
+    if (existing) {
+      select([existing.id]);
+      showItems([existing.id]);
+      return;
+    }
+    const p = screenToFlowPosition({ x: e.clientX, y: e.clientY });
+    const at = timePlace(p.x, p.y - EVENT_H / 2, timeScale, timeScale.snap && !e.altKey);
+    const id =
+      family === "event"
+        ? placeEvent(at, docId)
+        : family === "character"
+          ? addState(at, docId, "appear")
+          : null;
+    if (!id) return;
+    adopt([id], frameAt(p, s.items));
+    select([id]);
+  };
+
   // 복사 · 붙여넣기 · 복제 (UC-20). 붙여넣기 위치 = 마우스 위치, 캔버스 밖이면 원본 +24px (반복할수록 더 밀림)
   const clip = useRef<Clip | null>(null);
   const pasteCount = useRef(0);
@@ -604,7 +704,7 @@ function Canvas({
   useLayoutEffect(() => {
     const onKey = (e: KeyboardEvent) => {
       if (e.isComposing || e.keyCode === 229 || isEditable(e.target)) return;
-      if (e.target instanceof Element && e.target.closest("dialog")) return;
+      if (e.target instanceof Element && e.target.closest("dialog, [data-doc-panel]")) return;
       const mod = e.ctrlKey || e.metaKey;
       if (mod && e.code === "KeyG") {
         e.preventDefault();
@@ -655,8 +755,15 @@ function Canvas({
         deleteItems(latest.current.selectedIds, latest.current.selectedEdgeIds);
         return;
       }
+      // Enter: 사건 · 상태 블록 하나 = 사전 패널, 그 외 = 편집 (shortcuts 2.2, UC-22)
       // F2: 선택한 요소 하나 편집 (제목 · 내용) / 연결선 하나는 Enter로도 라벨 편집
       const { selectedIds: ids, selectedEdgeIds: edgeIds } = latest.current;
+      if (e.key === "Enter" && ids.length === 1 && !edgeIds.length) {
+        const item = useNovelStore.getState().items[ids[0]];
+        if (item && "docId" in item) openPanel(item.docId);
+        else setEditId(ids[0]);
+        return;
+      }
       if (e.key === "F2" || (e.key === "Enter" && !ids.length)) {
         if (ids.length === 1 && !edgeIds.length) setEditId(ids[0]);
         else if (edgeIds.length === 1 && !ids.length) setEditId(edgeIds[0]);
@@ -672,7 +779,17 @@ function Canvas({
     };
     window.addEventListener("keydown", onKey);
     return () => window.removeEventListener("keydown", onKey);
-  }, [chooseTool, group, ungroup, select, copySelection, paste, cycleSelection, hiddenIds]);
+  }, [
+    chooseTool,
+    group,
+    ungroup,
+    select,
+    copySelection,
+    paste,
+    cycleSelection,
+    hiddenIds,
+    openPanel,
+  ]);
 
   // 끌기 종료: 눈금 스냅(Alt = 해제) · 미정 영역 · 프레임 소속 판정 후 스토어에 1건으로 기록
   const onNodeDragStop = useCallback<OnNodeDrag>(
@@ -708,145 +825,158 @@ function Canvas({
   const allHidden = itemCount > 0 && hiddenIds.size === itemCount;
   return (
     <BoardUiContext.Provider value={boardUi}>
-      <ReactFlow
-        className={`${simple ? "board-simple" : ""} ${placing ? "tool-place" : ""} ${tool === "line" ? "tool-line" : ""}`}
-        nodes={nodes}
-        edges={edges}
-        nodeTypes={nodeTypes}
-        edgeTypes={edgeTypes}
-        onNodesChange={onNodesChange}
-        onEdgesChange={onEdgesChange}
-        onConnect={onConnect}
-        // 핸들 종류 구분 없이 아무 면끼리 연결
-        connectionMode={ConnectionMode.Loose}
-        onEdgeDoubleClick={(_, edge) => setEditId(edge.id)}
-        onNodeDragStop={onNodeDragStop}
-        onPointerDown={startFrameDraw}
-        // 붙여넣기 위치용 마우스 위치 (캔버스 밖이면 없음)
-        onPointerMove={(e) => (pointer.current = { x: e.clientX, y: e.clientY })}
-        onPointerLeave={() => (pointer.current = null)}
-        zoomOnDoubleClick={false}
-        onPaneClick={(e) => {
-          if (isPlaceTool(tool)) place(tool, { x: e.clientX, y: e.clientY }, e.altKey);
-        }}
-        onPaneMouseMove={(e) => {
-          if (isPlaceTool(tool)) showPreview(tool, { x: e.clientX, y: e.clientY }, e.altKey);
-        }}
-        onPaneMouseLeave={() => isPlaceTool(tool) && setPreview(null)}
-        defaultViewport={viewport}
-        minZoom={MIN_ZOOM}
-        maxZoom={MAX_ZOOM}
-        // 빈 곳 드래그 = 박스 선택, 팬 = Space+드래그 · 가운데 버튼 · 손 도구 (shortcuts.md 2.4)
-        selectionOnDrag={tool === "select"}
-        // Shift · Ctrl(⌘)+클릭 = 선택 추가·해제 (UC-20)
-        multiSelectionKeyCode={MULTI_SELECT_KEYS}
-        panOnDrag={tool === "hand" ? true : [1]}
-        panActivationKeyCode="Space"
-        // 삭제는 보드에서 직접 처리 (프레임 자식 유지, C7)
-        deleteKeyCode={null}
-        // 화면 밖 렌더 생략 (C3)
-        onlyRenderVisibleElements
-        attributionPosition="bottom-left"
-        onMoveEnd={(_, vp) => void patchUiState(novelId, { viewport: vp })}
-      >
-        <Background variant={BackgroundVariant.Dots} color="var(--color-hairline)" size={2} />
-        <MiniMap
-          pannable
-          style={{ width: 200, height: 130 }}
-          className="overflow-hidden rounded-md border border-hairline shadow-float max-md:hidden"
-          bgColor="var(--color-canvas)"
-          maskColor="rgb(10 10 10 / 0.04)"
-          nodeComponent={MiniMapNode}
-          nodeColor={(n) => minimapColor(items[n.id])}
-        />
-        {stateLanes?.enabled && (
-          <Lanes
-            order={laneIds}
-            items={items}
-            scale={timeScale}
-            onReorder={(order) => setLanes({ order })}
-          />
-        )}
-        <Leaders
-          items={items}
-          hiddenIds={hiddenIds}
-          scale={timeScale}
-          lanes={!!stateLanes?.enabled}
-          rectOf={rectOf}
-        />
-        {editState && (
-          <StatePanel
-            key={editState}
-            itemId={editState}
-            rect={rects.get(editState)}
-            onClose={() => setEditId(null)}
-          />
-        )}
-        {pending && (
-          <CharacterPicker
-            at={pending.client}
-            onCancel={() => setPending(null)}
-            onPick={(docId) => {
-              const id = addState(pending.place, docId, pending.type);
-              if (id) adopt([id], frameAt(screenToFlowPosition(pending.client), items));
-              setEditId(id);
-              setPending(null);
-            }}
-          />
-        )}
-        {selectedIds.length > 0 && !editId && (
-          <BlockMenu itemIds={selectedIds} onEditLines={() => setLinesOpen(true)} />
-        )}
-        <Axis scale={timeScale} />
-        {preview && <PlacePreview preview={preview} scale={timeScale} />}
-        {draft && (
-          <FrameDraft
-            rect={{
-              x: Math.min(draft.x0, draft.x1),
-              y: Math.min(draft.y0, draft.y1),
-              w: Math.abs(draft.x1 - draft.x0),
-              h: Math.abs(draft.y1 - draft.y0),
-            }}
-          />
-        )}
-        <Toolbar
-          tool={tool}
-          stateType={stateType}
-          snap={timeScale.snap}
-          onTool={chooseTool}
-          onDragStart={startToolDrag}
-          onSnap={() => setTimeScale({ snap: !timeScale.snap })}
-          lanes={!!stateLanes?.enabled}
-          hint={empty}
-          onLanes={() =>
-            setLanes({
-              enabled: !stateLanes?.enabled,
-              order: laneOrder(stateLanes?.order ?? [], items),
-            })
-          }
+      <div className="flex h-full">
+        <div
+          className="relative h-full min-w-0 flex-1"
+          onDragOver={onDocDragOver}
+          onDrop={onDocDrop}
         >
-          <FilterMenu
-            hiddenLineIds={filters.hiddenLineIds}
-            onChange={(hiddenLineIds) => changeFilters({ hiddenLineIds })}
-            onEditLines={() => setLinesOpen(true)}
-          />
-        </Toolbar>
-        <ZoomControls />
-        {empty && <EmptyGuide />}
-        {allHidden && (
-          <AllHiddenNotice
-            count={hiddenIds.size}
-            onClear={() => changeFilters({ hiddenLineIds: [] })}
-          />
-        )}
-        <LineEditDialog
-          open={linesOpen}
-          onClose={() => setLinesOpen(false)}
-          onDeleted={(id) =>
-            changeFilters({ hiddenLineIds: filters.hiddenLineIds.filter((k) => k !== id) })
-          }
-        />
-      </ReactFlow>
+          <ReactFlow
+            className={`${simple ? "board-simple" : ""} ${placing ? "tool-place" : ""} ${tool === "line" ? "tool-line" : ""}`}
+            nodes={nodes}
+            edges={edges}
+            nodeTypes={nodeTypes}
+            edgeTypes={edgeTypes}
+            onNodesChange={onNodesChange}
+            onEdgesChange={onEdgesChange}
+            onConnect={onConnect}
+            // 핸들 종류 구분 없이 아무 면끼리 연결
+            connectionMode={ConnectionMode.Loose}
+            onEdgeDoubleClick={(_, edge) => setEditId(edge.id)}
+            onNodeDragStop={onNodeDragStop}
+            onPointerDown={startFrameDraw}
+            // 붙여넣기 위치용 마우스 위치 (캔버스 밖이면 없음)
+            onPointerMove={(e) => (pointer.current = { x: e.clientX, y: e.clientY })}
+            onPointerLeave={() => (pointer.current = null)}
+            zoomOnDoubleClick={false}
+            onPaneClick={(e) => {
+              if (isPlaceTool(tool)) place(tool, { x: e.clientX, y: e.clientY }, e.altKey);
+            }}
+            onPaneMouseMove={(e) => {
+              if (isPlaceTool(tool)) showPreview(tool, { x: e.clientX, y: e.clientY }, e.altKey);
+            }}
+            onPaneMouseLeave={() => isPlaceTool(tool) && setPreview(null)}
+            defaultViewport={viewport}
+            minZoom={MIN_ZOOM}
+            maxZoom={MAX_ZOOM}
+            // 빈 곳 드래그 = 박스 선택, 팬 = Space+드래그 · 가운데 버튼 · 손 도구 (shortcuts.md 2.4)
+            selectionOnDrag={tool === "select"}
+            // Shift · Ctrl(⌘)+클릭 = 선택 추가·해제 (UC-20)
+            multiSelectionKeyCode={MULTI_SELECT_KEYS}
+            panOnDrag={tool === "hand" ? true : [1]}
+            panActivationKeyCode="Space"
+            // 삭제는 보드에서 직접 처리 (프레임 자식 유지, C7)
+            deleteKeyCode={null}
+            // 화면 밖 렌더 생략 (C3)
+            onlyRenderVisibleElements
+            attributionPosition="bottom-left"
+            onMoveEnd={(_, vp) => void patchUiState(novelId, { viewport: vp })}
+          >
+            <Background variant={BackgroundVariant.Dots} color="var(--color-hairline)" size={2} />
+            <MiniMap
+              pannable
+              style={{ width: 200, height: 130 }}
+              className="overflow-hidden rounded-md border border-hairline shadow-float max-md:hidden"
+              bgColor="var(--color-canvas)"
+              maskColor="rgb(10 10 10 / 0.04)"
+              nodeComponent={MiniMapNode}
+              nodeColor={(n) => minimapColor(items[n.id])}
+            />
+            {stateLanes?.enabled && (
+              <Lanes
+                order={laneIds}
+                items={items}
+                scale={timeScale}
+                onReorder={(order) => setLanes({ order })}
+              />
+            )}
+            <Leaders
+              items={items}
+              hiddenIds={hiddenIds}
+              scale={timeScale}
+              lanes={!!stateLanes?.enabled}
+              rectOf={rectOf}
+            />
+            {editState && (
+              <StatePanel
+                key={editState}
+                itemId={editState}
+                rect={rects.get(editState)}
+                onClose={() => setEditId(null)}
+              />
+            )}
+            {pending && (
+              <CharacterPicker
+                at={pending.client}
+                onCancel={() => setPending(null)}
+                onPick={(docId) => {
+                  const id = addState(pending.place, docId, pending.type);
+                  if (id) adopt([id], frameAt(screenToFlowPosition(pending.client), items));
+                  setEditId(id);
+                  setPending(null);
+                }}
+              />
+            )}
+            {selectedIds.length > 0 && !editId && (
+              <BlockMenu
+                itemIds={selectedIds}
+                onEditLines={() => setLinesOpen(true)}
+                onDetail={(docId) => openPanel(docId)}
+              />
+            )}
+            <Axis scale={timeScale} />
+            {preview && <PlacePreview preview={preview} scale={timeScale} />}
+            {draft && (
+              <FrameDraft
+                rect={{
+                  x: Math.min(draft.x0, draft.x1),
+                  y: Math.min(draft.y0, draft.y1),
+                  w: Math.abs(draft.x1 - draft.x0),
+                  h: Math.abs(draft.y1 - draft.y0),
+                }}
+              />
+            )}
+            <Toolbar
+              tool={tool}
+              stateType={stateType}
+              snap={timeScale.snap}
+              onTool={chooseTool}
+              onDragStart={startToolDrag}
+              onSnap={() => setTimeScale({ snap: !timeScale.snap })}
+              lanes={!!stateLanes?.enabled}
+              hint={empty}
+              onLanes={() =>
+                setLanes({
+                  enabled: !stateLanes?.enabled,
+                  order: laneOrder(stateLanes?.order ?? [], items),
+                })
+              }
+            >
+              <FilterMenu
+                hiddenLineIds={filters.hiddenLineIds}
+                onChange={(hiddenLineIds) => changeFilters({ hiddenLineIds })}
+                onEditLines={() => setLinesOpen(true)}
+              />
+            </Toolbar>
+            <ZoomControls />
+            {empty && <EmptyGuide />}
+            {allHidden && (
+              <AllHiddenNotice
+                count={hiddenIds.size}
+                onClear={() => changeFilters({ hiddenLineIds: [] })}
+              />
+            )}
+            <LineEditDialog
+              open={linesOpen}
+              onClose={() => setLinesOpen(false)}
+              onDeleted={(id) =>
+                changeFilters({ hiddenLineIds: filters.hiddenLineIds.filter((k) => k !== id) })
+              }
+            />
+          </ReactFlow>
+        </div>
+        {panelId && <DocPanel docId={panelId} onOpen={openPanel} onClose={() => openPanel(null)} />}
+      </div>
     </BoardUiContext.Provider>
   );
 }

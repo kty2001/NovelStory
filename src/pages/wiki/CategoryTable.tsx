@@ -4,6 +4,7 @@ import type { WikiDoc } from "../../db/types";
 import { setDocsLine, sortedLines } from "../../store/boardActions";
 import { useNovelStore } from "../../store/novelStore";
 import { setPropValue } from "../../store/wikiActions";
+import { eventBlock, placeText, relatedCharacters } from "./boardLinks";
 import { familyOf, subtreeDocs } from "./categories";
 import { useWikiNav } from "./useWikiNav";
 
@@ -37,6 +38,8 @@ export default function CategoryTable({ categoryId }: { categoryId: string }) {
   const categories = useNovelStore((s) => s.categories);
   const docs = useNovelStore((s) => s.docs);
   const lines = sortedLines(useNovelStore((s) => s.lines));
+  const items = useNovelStore((s) => s.items);
+  const scale = useNovelStore((s) => s.board?.timeScale);
   const { openDoc } = useWikiNav();
   const category = categories[categoryId];
   const isEvent = familyOf(categories, categoryId) === "event";
@@ -127,6 +130,41 @@ export default function CategoryTable({ categoryId }: { categoryId: string }) {
                   </option>
                 ))}
               </select>
+            ),
+          },
+        ]
+      : []),
+    // 보드에서 계산한 읽기 전용 열 (W-3 ⑥): 블록 없으면 "블록 없음", 미정 영역이면 "미정"
+    ...(isEvent && scale
+      ? [
+          {
+            id: "time",
+            label: "작중 시점",
+            sortKey: (d: WikiDoc) => {
+              const p = eventBlock(items, d.id)?.place;
+              return p?.mode === "timed" ? p.t : Infinity;
+            },
+            cell: (d: WikiDoc) => (
+              <span className="text-body tabular-nums">
+                {placeText(eventBlock(items, d.id)?.place, scale) ?? (
+                  <span className="text-muted">블록 없음</span>
+                )}
+              </span>
+            ),
+          },
+          {
+            id: "chars",
+            label: "관련 캐릭터",
+            sortKey: (d: WikiDoc) =>
+              relatedCharacters(items, docs, d.id)
+                .map((c) => c.title)
+                .join(", "),
+            cell: (d: WikiDoc) => (
+              <span className="text-body">
+                {relatedCharacters(items, docs, d.id)
+                  .map((c) => c.title)
+                  .join(", ")}
+              </span>
             ),
           },
         ]

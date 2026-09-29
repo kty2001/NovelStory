@@ -1,7 +1,7 @@
 # 진행 상태 (Status)
 
 ## 현재 단계
-1단계(MVP) 진행 중 — 기반 · F0 서재 완료, F1 보드 완료(단축키 도움말 · 방향키 · 줌 단축키는 남음), F4 사전 진행 중(분류 트리 · 문서 편집 · 템플릿 · `@` 링크 + 역링크 · 표 보기 · 검색 완료, 다음: 보드 연동). MVP는 데스크톱 전용, 태블릿·모바일(와이어프레임·반응형·터치·실기기 확인)은 MVP 이후로 연기(확인 기기 없음)
+1단계(MVP) 진행 중 — 기반 · F0 서재 완료, F1 보드 완료(단축키 도움말 · 방향키 · 줌 단축키는 남음), F4 사전 진행 중(분류 트리 · 문서 편집 · 템플릿 · `@` 링크 + 역링크 · 표 보기 · 검색 · 보드 연동 완료, 다음: 빈 상태 안내(W-7)). MVP는 데스크톱 전용, 태블릿·모바일(와이어프레임·반응형·터치·실기기 확인)은 MVP 이후로 연기(확인 기기 없음)
 
 ## 이력
 | 날짜 | 내용 |
@@ -42,6 +42,7 @@
 | 2026-09-29 | F4 템플릿: 분류 화면 탭(문서 목록 · 설정), `CategorySettings`(이름 · 상위 분류 · 색 · 템플릿 키), `PropsTable` `keysOnly`, `setTemplateProps`, Vitest 1건 · Playwright 2건 |
 | 2026-09-29 | F4 `@` 링크 · 역링크: `mention.ts`(후보 검색 `mentionCandidates` · 스파이크 C1 후보 팝업 이식), `MentionChip`(Tiptap React 노드 뷰, 현재 제목 · 깨진 링크), `Backlinks` + `mentionContext`, 속성 값 링크는 MVP 이후로, Vitest 3건 · Playwright 2건 |
 | 2026-09-29 | F4 표 보기 · 검색: `CategoryTable`(정렬 · 셀 수정 · `setPropValue`), `search.ts` `searchWiki` + `SearchResults`(분류 탭), 빠른 이동 `QuickMove`(`Ctrl+K`, 보드 `?tick=` 이동 · 접힌 구간 펼침), Vitest 4건 · Playwright 4건 |
+| 2026-09-29 | F4 보드 연동: `DocPanel`(사전 패널 · 문서 끌어 놓기 `placeEvent` / `addState`), `OpenDocContext`, 보드 `?focus=` · `?doc=` 처리, `boardLinks.ts` + `BoardSection`(등장 사건 · 상태 이력 · 작중 시점 · 관련 캐릭터), 표 보드 열, 문서 삭제 경고 + 연쇄 삭제(`deleteDoc`), Vitest 5건 · Playwright 3건 |
 
 ## 결정됨
 | 항목 | 결정 |

@@ -140,7 +140,8 @@
 }
 
 /* 줌 0.5 미만 간략 표시 (C3): 라인 배지 숨김, 테두리는 유지 */
-.board-simple .line-badge {
+.board-simple .line-badge,
+.board-simple .block-tags {
   display: none;
 }
 

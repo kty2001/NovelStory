@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { FolderInput, MoreHorizontal, Trash2 } from "lucide-react";
+import { Crosshair, FolderInput, MoreHorizontal, Trash2 } from "lucide-react";
 import Button from "../../components/Button";
 import Dialog from "../../components/Dialog";
 import Menu from "../../components/Menu";
@@ -9,6 +9,7 @@ import { useNovelStore } from "../../store/novelStore";
 import { deleteDoc, moveDoc, updateDoc } from "../../store/wikiActions";
 import Backlinks from "./Backlinks";
 import BodyEditor from "./BodyEditor";
+import BoardSection from "./BoardSection";
 import { blockCount, categoryPath, familyOf, flatCategories, usedDocIds } from "./categories";
 import ChipInput from "./ChipInput";
 import DocImage from "./DocImage";
@@ -54,12 +55,78 @@ function MoveDocDialog({ doc, onClose }: { doc: WikiDoc; onClose: () => void }) 
   );
 }
 
+// 문서 삭제 확인 (W-6, UC-35): 함께 삭제될 블록 · 연결선 수, 깨진 링크가 될 역링크 수
+function DeleteDocDialog({
+  doc,
+  onClose,
+  onDeleted,
+}: {
+  doc: WikiDoc;
+  onClose: () => void;
+  onDeleted: () => void;
+}) {
+  const items = useNovelStore((s) => s.items);
+  const edges = useNovelStore((s) => s.edges);
+  const docs = useNovelStore((s) => s.docs);
+  const blockIds = new Set(
+    Object.values(items).flatMap((i) => ("docId" in i && i.docId === doc.id ? [i.id] : [])),
+  );
+  const edgeCount = Object.values(edges).filter(
+    (e) => blockIds.has(e.source) || blockIds.has(e.target),
+  ).length;
+  const backlinks = Object.values(docs).filter(
+    (d) => d.id !== doc.id && d.mentions.includes(doc.id),
+  ).length;
+
+  return (
+    <Dialog
+      open
+      onClose={onClose}
+      title={`'${doc.title}' 문서를 삭제할까요?`}
+      footer={
+        <>
+          <Button onClick={onClose}>취소</Button>
+          <Button
+            variant="danger"
+            onClick={() => {
+              deleteDoc(doc.id);
+              onDeleted();
+            }}
+          >
+            {blockIds.size ? "문서와 블록 삭제" : "삭제"}
+          </Button>
+        </>
+      }
+    >
+      {blockIds.size > 0 && (
+        <div role="alert" className="mb-3 rounded-sm bg-surface-card px-3 py-2 text-body-sm">
+          <b>보드 블록 {blockIds.size}개가 함께 삭제됩니다.</b>
+          <p className="text-caption text-muted">
+            {edgeCount > 0 && `그 블록에 이어진 연결선 ${edgeCount}개도 삭제돼요. `}
+            보드에서 실행 취소로 되돌릴 수 없어요.
+          </p>
+        </div>
+      )}
+      {backlinks > 0 && (
+        <p className="text-body-sm">
+          이 문서를 언급한 문서 {backlinks}개의 링크는 깨진 링크로 남아요.
+        </p>
+      )}
+      {doc.imageId && <p className="text-body-sm">대표 이미지도 함께 삭제돼요.</p>}
+      {!blockIds.size && !backlinks && !doc.imageId && (
+        <p className="text-body-sm">삭제한 문서는 되돌릴 수 없어요.</p>
+      )}
+    </Dialog>
+  );
+}
+
 // 사전 문서 편집 (W-1 · W-2, UC-31): 제목 · 별칭 · 태그 · 라인(사건) · 속성 + 대표 이미지 · 본문
-export default function DocView({ doc }: { doc: WikiDoc }) {
+// · 보드 연동 · 역링크. 사전 화면과 보드의 사전 패널에서 공용 (onDeleted: 삭제 후 동작)
+export default function DocView({ doc, onDeleted }: { doc: WikiDoc; onDeleted?: () => void }) {
   const categories = useNovelStore((s) => s.categories);
   const lines = useNovelStore((s) => s.lines);
   const items = useNovelStore((s) => s.items);
-  const { openCategory } = useWikiNav();
+  const { openCategory, openBoard, inPanel } = useWikiNav();
   const [dialog, setDialog] = useState<"move" | "delete" | null>(null);
 
   const path = categoryPath(categories, doc.categoryId);
@@ -75,6 +142,12 @@ export default function DocView({ doc }: { doc: WikiDoc }) {
         />
         {path.map((c) => c.name).join(" › ")}
         <span className="ml-auto" />
+        {blocks > 0 && !inPanel && (
+          <Button size="sm" onClick={() => openBoard(doc.id)}>
+            <Crosshair size={14} />
+            보드에서 보기 · {blocks}
+          </Button>
+        )}
         <Menu
           label="문서 메뉴"
           trigger={<MoreHorizontal size={18} />}
@@ -88,8 +161,6 @@ export default function DocView({ doc }: { doc: WikiDoc }) {
               label: "삭제",
               icon: <Trash2 size={14} />,
               danger: true,
-              disabled: blocks > 0,
-              hint: blocks ? `보드 블록 ${blocks}개 — 보드에서 먼저 삭제` : undefined,
               onSelect: () => setDialog("delete"),
             },
           ]}
@@ -145,8 +216,8 @@ export default function DocView({ doc }: { doc: WikiDoc }) {
         )}
       </div>
 
-      <div className="mt-6 flex items-start gap-8">
-        <div className="min-w-0 flex-1">
+      <div className="mt-6 flex flex-wrap items-start gap-8">
+        <div className="min-w-64 flex-1">
           <PropsTable props={doc.props} onChange={(props) => updateDoc(doc.id, { props })} />
         </div>
         <DocImage doc={doc} />
@@ -156,30 +227,17 @@ export default function DocView({ doc }: { doc: WikiDoc }) {
         <BodyEditor docId={doc.id} initial={doc.body} />
       </div>
 
+      <BoardSection doc={doc} />
       <Backlinks docId={doc.id} title={doc.title} />
 
       {dialog === "move" && <MoveDocDialog doc={doc} onClose={() => setDialog(null)} />}
-      <Dialog
-        open={dialog === "delete"}
-        onClose={() => setDialog(null)}
-        title={`'${doc.title}' 문서를 삭제할까요?`}
-        footer={
-          <>
-            <Button onClick={() => setDialog(null)}>취소</Button>
-            <Button
-              variant="danger"
-              onClick={() => {
-                deleteDoc(doc.id);
-                openCategory(doc.categoryId);
-              }}
-            >
-              삭제
-            </Button>
-          </>
-        }
-      >
-        <p className="text-body-sm">대표 이미지도 함께 삭제돼요.</p>
-      </Dialog>
+      {dialog === "delete" && (
+        <DeleteDocDialog
+          doc={doc}
+          onClose={() => setDialog(null)}
+          onDeleted={onDeleted ?? (() => openCategory(doc.categoryId))}
+        />
+      )}
     </article>
   );
 }

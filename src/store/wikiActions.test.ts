@@ -1,6 +1,7 @@
 import { beforeEach, describe, expect, it } from "vitest";
-import type { EventItem, WikiCategory } from "../db/types";
-import { doc, OLD } from "../test/fixtures";
+import type { EventItem, StateItem, WikiCategory } from "../db/types";
+import { board, doc, OLD } from "../test/fixtures";
+import { placeEvent, setLanes } from "./boardActions";
 import { useNovelStore } from "./novelStore";
 import {
   addCategory,
@@ -149,13 +150,30 @@ describe("문서 동작", () => {
     expect(store.getState().docs.d1).not.toHaveProperty("lineId");
   });
 
-  it("삭제: 보드 블록이 있으면 무시", () => {
-    store.setState({ items: { b1: eventBlock } });
+  it("삭제: 연결 블록 · 연결선 · 레인 순서도 정리, 보드 실행 취소 기록 비움", () => {
+    const state = {
+      id: "s1",
+      kind: "state",
+      docId: "d1",
+      linkedEventItemId: "b1",
+    } as unknown as StateItem;
+    const other = { ...eventBlock, id: "b2", docId: "d2" } as EventItem;
+    store.setState({
+      board: board("n1"),
+      items: { b1: eventBlock, s1: state, b2: other },
+      edges: {
+        e1: { id: "e1", novelId: "n1", updatedAt: OLD, source: "b1", target: "b2", dashed: false },
+      },
+    });
+    setLanes({ order: ["d1", "d2"] });
+    store.setState({ items: { ...store.getState().items } }); // 기록 1건 이상
     deleteDoc("d1");
-    expect(store.getState().docs.d1).toBeDefined();
-    store.setState({ items: {} });
-    deleteDoc("d1");
-    expect(store.getState().docs.d1).toBeUndefined();
+    const s = store.getState();
+    expect(s.docs.d1).toBeUndefined();
+    expect(Object.keys(s.items)).toEqual(["b2"]);
+    expect(s.edges).toEqual({});
+    expect(s.board?.stateLanes.order).toEqual(["d2"]);
+    expect(store.temporal.getState().pastStates).toHaveLength(0);
   });
 });
 
@@ -177,4 +195,10 @@ it("표 셀 수정: 있는 키는 값 변경, 없는 키는 끝에 추가", () =
     { key: "성별", value: "여" },
     { key: "출신", value: "북부" },
   ]);
+});
+
+it("문서 → 보드: 사건 블록은 문서당 1개", () => {
+  const first = placeEvent({ mode: "timed", t: 1, y: 0 }, "d1");
+  expect(store.getState().items[first!]).toMatchObject({ kind: "event", docId: "d1" });
+  expect(placeEvent({ mode: "timed", t: 2, y: 0 }, "d1")).toBeNull();
 });

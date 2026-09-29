@@ -1,6 +1,6 @@
 import { useCallback, useRef, useState } from "react";
 import { NodeToolbar, Position } from "@xyflow/react";
-import { ChevronDown, ListOrdered, Trash2 } from "lucide-react";
+import { ChevronDown, ListOrdered, PanelRight, Trash2 } from "lucide-react";
 import { useShallow } from "zustand/react/shallow";
 import { MenuList, type MenuItem } from "../../components/Menu";
 import { useDismiss } from "../../components/useDismiss";
@@ -36,13 +36,15 @@ const colorOf = (i: BoardItem | undefined) =>
   i?.kind === "event" || i?.kind === "sticky" ? i.color : "";
 
 // 블록 메뉴 (B-2): 선택한 요소 위에 뜨는 바. 여러 개 선택이면 공통 항목만 한꺼번에 적용
-// 사건 = 색 · 라인, 포스트잇 = 색, 공통 = 삭제
+// 사건 = 색 · 라인, 포스트잇 = 색, 사건 · 상태 하나 = 상세(사전 패널), 공통 = 삭제
 export default function BlockMenu({
   itemIds,
   onEditLines,
+  onDetail,
 }: {
   itemIds: string[];
   onEditLines: () => void;
+  onDetail: (docId: string) => void;
 }) {
   const items = useNovelStore(useShallow((s) => itemIds.map((id) => s.items[id] as BoardItem)));
   const docs = useNovelStore((s) => s.docs);
@@ -115,6 +117,17 @@ export default function BlockMenu({
           </>
         )}
         {colors.length > 0 && <Sep />}
+        {items.length === 1 && items[0] && "docId" in items[0] && (
+          <button
+            type="button"
+            title="상세 (Enter)"
+            className="flex h-7 items-center gap-1 rounded-sm px-2 text-button text-ink hover:bg-surface-card"
+            onClick={() => onDetail((items[0] as { docId: string }).docId)}
+          >
+            <PanelRight size={15} />
+            상세
+          </button>
+        )}
         <button
           type="button"
           aria-label="삭제"

@@ -126,6 +126,11 @@ export default function EventNode({ id, data, selected }: NodeProps<EventNodeTyp
         ) : (
           <p className="line-clamp-2">{doc?.title}</p>
         )}
+        {!!doc?.tags.length && !editing && (
+          <p className="block-tags mt-1 truncate text-caption text-ink/70">
+            {doc.tags.map((t) => `#${t}`).join(" ")}
+          </p>
+        )}
         {lineName && !editing && (
           <span className="line-badge mt-1 inline-block rounded-full bg-canvas/70 px-2 text-caption text-ink">
             {lineName}

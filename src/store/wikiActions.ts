@@ -2,7 +2,6 @@ import { deleteImage } from "../db/images";
 import type { ColorToken, TiptapJSON, WikiCategory, WikiDoc } from "../db/types";
 import { deriveDoc } from "../db/wikiDerived";
 import {
-  blockCount,
   childCategories,
   deleteError,
   dropError,
@@ -12,7 +11,7 @@ import {
   usedDocIds,
   type DropPos,
 } from "../pages/wiki/categories";
-import { newDoc, setDocsLine } from "./boardActions";
+import { deleteItems, newDoc, setDocsLine, setLanes } from "./boardActions";
 import { useNovelStore } from "./novelStore";
 
 // 사전 분류 · 문서 동작 (UC-30 · 31). 실행 취소 기록 대상 아님
@@ -139,12 +138,22 @@ export function moveDoc(id: string, categoryId: string): string | null {
   return null;
 }
 
-// 문서 삭제 (보드 블록이 없는 문서만) + 대표 이미지 삭제
+// 문서 삭제 (UC-35): 연결 블록(사건 1개 / 상태 블록 전부) · 그 연결선 · 레인 순서도 함께 정리, 대표 이미지 삭제.
+// 되돌리면 문서 없는 블록이 생기므로 블록이 있었다면 보드 실행 취소 기록을 비움
 export function deleteDoc(id: string) {
-  const { docs, items } = store.getState();
+  const { docs, items, board } = store.getState();
   const doc = docs[id];
-  if (!doc || blockCount(items, id)) return;
-  const { [id]: _removed, ...rest } = docs;
+  if (!doc) return;
+  const blockIds = Object.values(items).flatMap((i) =>
+    "docId" in i && i.docId === id ? [i.id] : [],
+  );
+  if (blockIds.length) {
+    deleteItems(blockIds);
+    const order = board?.stateLanes.order ?? [];
+    if (order.includes(id)) setLanes({ order: order.filter((x) => x !== id) });
+    store.temporal.getState().clear();
+  }
+  const { [id]: _removed, ...rest } = store.getState().docs;
   store.setState({ docs: rest });
   if (doc.imageId) void deleteImage(doc.imageId);
 }

@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { useNavigate, useParams } from "react-router";
+import { useLocation, useNavigate, useParams } from "react-router";
 import { Clock } from "lucide-react";
 import Dialog from "../components/Dialog";
 import { useNovelStore } from "../store/novelStore";
@@ -23,6 +23,7 @@ export default function QuickMove({ open, onClose }: { open: boolean; onClose: (
 function Palette({ onClose }: { onClose: () => void }) {
   const { novelId } = useParams();
   const navigate = useNavigate();
+  const onBoard = useLocation().pathname.endsWith("/board");
   const docs = useNovelStore((s) => s.docs);
   const categories = useNovelStore((s) => s.categories);
   const labels = useNovelStore((s) => s.board?.timeScale.tickLabels ?? {});
@@ -58,7 +59,9 @@ function Palette({ onClose }: { onClose: () => void }) {
   const go = (r: Result | undefined) => {
     if (!r) return;
     onClose();
-    if (r.kind === "doc") navigate(`/novel/${novelId}/wiki/${r.id}`);
+    // 문서: 보드에서는 사전 패널, 사전에서는 문서 화면
+    if (r.kind === "doc")
+      navigate(onBoard ? `/novel/${novelId}/board?doc=${r.id}` : `/novel/${novelId}/wiki/${r.id}`);
     else navigate(`/novel/${novelId}/board?tick=${r.t}`);
   };
 
