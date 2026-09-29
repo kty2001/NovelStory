@@ -1,6 +1,6 @@
 import Dialog from "../components/Dialog";
 
-// shortcuts.md 1 · 2.1~2.4 · 3장 표
+// shortcuts.md 1 · 2.1~2.5 · 3장 표
 const SECTIONS: { title: string; rows: [string, string][] }[] = [
   {
     title: "공통",
@@ -53,6 +53,16 @@ const SECTIONS: { title: string; rows: [string, string][] }[] = [
       ["Shift 0", "100%"],
       ["Shift 1", "화면 맞춤"],
       ["Shift 2", "선택 요소에 맞춤"],
+      ["% 클릭", "배율 직접 입력 · 프리셋"],
+    ],
+  },
+  {
+    title: "시간축",
+    rows: [
+      ["눈금 클릭", "라벨 편집"],
+      ["Shift + 눈금 클릭", "구간 선택 → 끝 눈금 클릭 → 접기"],
+      ["눈금 우클릭", "눈금 삽입 · 라벨 · 구간 선택"],
+      ["≈ 칩 클릭", "접힌 구간 펼치기"],
     ],
   },
   {

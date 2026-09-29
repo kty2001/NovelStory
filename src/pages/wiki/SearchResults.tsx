@@ -11,7 +11,7 @@ import { useWikiNav } from "./useWikiNav";
 const Mark = ({ hit }: { hit: Hit }) => (
   <>
     {hit.before}
-    <mark className="rounded-xs bg-surface-strong px-0.5 text-ink">{hit.match}</mark>
+    <mark className="rounded-xs bg-surface-strong text-ink">{hit.match}</mark>
     {hit.after}
   </>
 );

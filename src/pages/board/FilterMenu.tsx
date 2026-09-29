@@ -45,11 +45,13 @@ export default function FilterMenu({
         aria-haspopup="dialog"
         aria-expanded={open}
         aria-pressed={hidden.size > 0}
+        title="필터"
         className={`flex h-10 items-center gap-1.5 rounded-md px-3 text-button ${hidden.size > 0 ? "bg-surface-card text-ink" : "text-muted hover:bg-surface-card"}`}
         onClick={() => setOpen((o) => !o)}
       >
         <Filter size={16} />
-        필터
+        {/* 좁은 캔버스에선 아이콘만 (Toolbar 글자와 같은 기준) */}
+        <span className="@max-3xl:sr-only">필터</span>
         {hidden.size > 0 && (
           <span
             data-testid="filter-count"

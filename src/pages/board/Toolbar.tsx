@@ -32,6 +32,9 @@ const GROUPS: ToolDef[][] = [
 
 const Sep = () => <span className="mx-1 h-6 w-px bg-hairline" />;
 
+// 버튼 글자: 캔버스가 768px보다 좁으면(1024px + 사전 패널) 아이콘만, 접근 이름은 유지
+const LABEL = "@max-3xl:sr-only";
+
 // 상단 중앙 도구 모음 (ui_guide `board-toolbar`). 배치 도구는 클릭 = 도구 선택, 끌기 = 캔버스에 배치
 export default function Toolbar({
   tool,
@@ -94,11 +97,12 @@ export default function Toolbar({
       <button
         type="button"
         aria-pressed={lanes}
+        title="캐릭터별 정렬"
         className={`flex h-10 items-center gap-1.5 rounded-md px-3 text-button whitespace-nowrap ${lanes ? "bg-surface-card text-ink" : "text-muted hover:bg-surface-card"}`}
         onClick={onLanes}
       >
         <Rows3 size={16} />
-        캐릭터별 정렬
+        <span className={LABEL}>캐릭터별 정렬</span>
       </button>
       <button
         type="button"
@@ -108,7 +112,7 @@ export default function Toolbar({
         onClick={onSnap}
       >
         <Magnet size={16} />
-        스냅
+        <span className={LABEL}>스냅</span>
       </button>
       {children}
     </Panel>

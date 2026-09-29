@@ -44,7 +44,7 @@ export default function Backlinks({ docId, title }: { docId: string; title: stri
                 {ctx && (
                   <span className="min-w-0 truncate text-muted">
                     {ctx.before}
-                    <mark className="rounded-xs bg-surface-strong px-0.5 text-ink">{title}</mark>
+                    <mark className="rounded-xs bg-surface-strong text-ink">{title}</mark>
                     {ctx.after}
                   </span>
                 )}

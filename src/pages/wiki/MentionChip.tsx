@@ -25,7 +25,7 @@ export default function MentionChip({ node }: ReactNodeViewProps) {
         type="button"
         data-testid="wiki-link"
         data-broken={doc ? undefined : ""}
-        className={`wiki-link mx-0.5 inline-flex items-center gap-1 rounded-xs px-1.5 align-baseline ${doc ? "bg-surface-card text-ink hover:bg-surface-strong" : "border border-dashed border-muted-soft text-muted line-through"}`}
+        className={`wiki-link inline-flex items-center gap-1 rounded-xs pr-0.5 pl-1 align-baseline ${doc ? "bg-surface-card text-ink hover:bg-surface-strong" : "border border-dashed border-muted-soft text-muted line-through"}`}
         onClick={() => (doc ? openDoc(id) : setNotice(true))}
       >
         {doc && (

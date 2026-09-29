@@ -124,7 +124,7 @@ function NovelForm({ novel, onClose, onSubmit }: Omit<Props, "open">) {
             className={inputClass}
             value={title}
             onChange={(e) => setTitle(e.target.value)}
-            autoFocus
+            data-autofocus
           />
         </label>
         <label className="flex flex-col gap-1 text-body-sm text-ink">

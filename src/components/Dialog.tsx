@@ -16,7 +16,11 @@ export default function Dialog({ open, onClose, title, children, footer, classNa
   useEffect(() => {
     const el = ref.current;
     if (!el) return;
-    if (open && !el.open) el.showModal();
+    if (open && !el.open) {
+      el.showModal();
+      // autoFocus는 dialog가 열리기 전에 적용돼 무효 → 열린 뒤 data-autofocus 요소로 이동
+      el.querySelector<HTMLElement>("[data-autofocus]")?.focus();
+    }
     if (!open && el.open) el.close();
   }, [open]);
 

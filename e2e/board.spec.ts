@@ -23,7 +23,7 @@ test("캔버스 · 점 격자 · 미니맵 · 줌 컨트롤 표시", async ({ pa
   const board = page.getByTestId("board");
   await expect(board.locator(".react-flow__background")).toBeVisible();
   await expect(board.locator(".react-flow__minimap")).toBeVisible();
-  await expect(page.getByRole("button", { name: "100%로 보기" })).toHaveText("100%");
+  await expect(page.getByRole("button", { name: "배율", exact: true })).toHaveText("100%");
 });
 
 test("빈 보드: 미니맵에 시간축 · 미정 영역, 화면 맞춤은 둘을 기준으로", async ({ page }) => {
@@ -31,7 +31,7 @@ test("빈 보드: 미니맵에 시간축 · 미정 영역, 화면 맞춤은 둘�
   await expect(minimap.locator("line.minimap-axis")).toHaveCount(1);
   await expect(minimap.locator("rect.minimap-undated")).toHaveCount(1);
 
-  const zoomLabel = page.getByRole("button", { name: "100%로 보기" });
+  const zoomLabel = page.getByRole("button", { name: "배율", exact: true });
   await page.getByRole("button", { name: "화면 맞춤" }).click();
   await expect(zoomLabel).not.toHaveText("100%");
   await expect(page.getByTestId("undated-zone")).toBeInViewport();
@@ -40,7 +40,7 @@ test("빈 보드: 미니맵에 시간축 · 미정 영역, 화면 맞춤은 둘�
 
 test("줌 0.5 미만 간략 표시 · 100% 복귀", async ({ page }) => {
   const flow = page.locator(".react-flow");
-  const zoomLabel = page.getByRole("button", { name: "100%로 보기" });
+  const zoomLabel = page.getByRole("button", { name: "배율", exact: true });
   for (let i = 0; i < 4; i++) {
     await page.getByRole("button", { name: "축소" }).click();
     await page.waitForTimeout(250); // 줌 애니메이션 200ms
@@ -49,8 +49,37 @@ test("줌 0.5 미만 간략 표시 · 100% 복귀", async ({ page }) => {
   await expect(flow).toHaveClass(/board-simple/);
 
   await zoomLabel.click();
+  await page.getByRole("menuitem", { name: "100%" }).click();
   await expect(zoomLabel).toHaveText("100%");
   await expect(flow).not.toHaveClass(/board-simple/);
+});
+
+test("배율 메뉴: 프리셋 · 직접 입력(범위 제한) · Esc 닫기", async ({ page }) => {
+  const zoomLabel = page.getByRole("button", { name: "배율", exact: true });
+  const input = page.getByRole("spinbutton", { name: "배율 직접 입력" });
+
+  await zoomLabel.click();
+  await expect(input).toBeFocused();
+  await expect(input).toHaveValue("100");
+  await page.getByRole("menuitem", { name: "50%", exact: true }).click();
+  await expect(zoomLabel).toHaveText("50%");
+
+  await zoomLabel.click();
+  await input.fill("130");
+  await input.press("Enter");
+  await expect(input).toBeHidden();
+  await expect(zoomLabel).toHaveText("130%");
+
+  await zoomLabel.click();
+  await input.fill("500");
+  await input.press("Enter");
+  await expect(zoomLabel).toHaveText("200%");
+
+  await zoomLabel.click();
+  await input.fill("30");
+  await input.press("Escape");
+  await expect(input).toBeHidden();
+  await expect(zoomLabel).toHaveText("200%");
 });
 
 test("휠 줌 후 새로고침해도 화면 위치 유지", async ({ page }) => {
@@ -58,7 +87,7 @@ test("휠 줌 후 새로고침해도 화면 위치 유지", async ({ page }) => 
   const box = (await pane.boundingBox())!;
   await page.mouse.move(box.x + box.width / 2, box.y + box.height / 2);
   await page.mouse.wheel(0, 400);
-  const zoomLabel = page.getByRole("button", { name: "100%로 보기" });
+  const zoomLabel = page.getByRole("button", { name: "배율", exact: true });
   await expect(zoomLabel).not.toHaveText("100%");
   const zoomed = await zoomLabel.textContent();
 
@@ -131,8 +160,11 @@ test.describe("구간 접기", () => {
   test("Shift+클릭 두 눈금 → 접기 → 칩 · 구간 안 라벨 숨김 · 새로고침 유지 · 칩 클릭 펼치기", async ({
     page,
   }) => {
+    await expect(tick(page, 1)).toHaveAttribute("title", /Shift\+클릭: 구간 선택/);
     await tick(page, 1).click({ modifiers: ["Shift"] });
+    await expect(page.getByTestId("tick-range-hint")).toHaveText("끝 눈금을 클릭 · Esc 취소");
     await tick(page, 4).click();
+    await expect(page.getByTestId("tick-range-hint")).toBeHidden();
     await expect(page.getByTestId("tick-range")).toBeVisible();
     await page.getByRole("button", { name: "≈ 구간 1~4 접기" }).click();
 
@@ -1012,7 +1044,10 @@ test.describe("보드 ↔ 사전 연동", () => {
 
     // 블록 없는 사건 문서: 사전에서 만들고 보드에서 빠른 이동 → 사전 패널
     await page.getByRole("link", { name: "사전" }).click();
-    await page.getByRole("button", { name: /^사건( 기본 분류)?$/ }).click();
+    await page
+      .getByRole("list", { name: "분류 트리" })
+      .getByRole("button", { name: /^사건( 기본 분류)?$/ })
+      .click();
     await page.getByRole("button", { name: "새 문서" }).first().click();
     await page.getByRole("textbox", { name: "제목" }).fill("밀약");
     await page.getByRole("textbox", { name: "제목" }).press("Enter");
@@ -1048,7 +1083,11 @@ test.describe("보드 ↔ 사전 연동", () => {
     );
 
     await page.getByRole("link", { name: "사전" }).click();
-    await page.getByRole("button", { name: /^사건( 기본 분류)?$/ }).click();
+    // 트리 안으로 한정: 사전 화면이 늦게 그려지면 보드 도구 모음의 "사건" 버튼을 누를 수 있음
+    await page
+      .getByRole("list", { name: "분류 트리" })
+      .getByRole("button", { name: /^사건( 기본 분류)?$/ })
+      .click();
     await page.getByRole("tab", { name: "표" }).click();
     const row = page.getByTestId("table-row").filter({ hasText: "왕도 습격" });
     await expect(row).toContainText("2");
@@ -1135,7 +1174,7 @@ test.describe("단축키", () => {
   test("줌: + · − · Shift+0 100% · Shift+1 화면 맞춤 · Shift+2 선택 요소에 맞춤", async ({
     page,
   }) => {
-    const zoomLabel = page.getByRole("button", { name: "100%로 보기" });
+    const zoomLabel = page.getByRole("button", { name: "배율", exact: true });
     await expect(page.getByTestId("time-axis")).toBeVisible();
     await page.keyboard.press("Equal");
     await expect(zoomLabel).toHaveText("120%");
@@ -1174,6 +1213,7 @@ test.describe("단축키", () => {
     await page.keyboard.press("Shift+Slash");
     await expect(help).toBeVisible();
     await expect(help).toContainText("선택 요소에 맞춤");
+    await expect(help).toContainText("Shift + 눈금 클릭");
     await page.keyboard.press("Escape");
     await expect(help).toBeHidden();
 

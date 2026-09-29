@@ -12,6 +12,7 @@ const card = (page: Page, title: string) =>
 // 서재에서 새 소설 → 보드 → 서재로 복귀
 async function newNovel(page: Page, title: string) {
   await page.getByRole("button", { name: "새 소설" }).first().click();
+  await expect(page.getByRole("dialog").getByLabel("제목")).toBeFocused();
   await page.getByRole("dialog").getByLabel("제목").fill(title);
   await page.getByRole("button", { name: "만들기" }).click();
   await expect(page).toHaveURL(/\/novel\/[^/]+\/board$/);

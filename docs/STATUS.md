@@ -45,6 +45,8 @@
 | 2026-09-29 | F4 보드 연동: `DocPanel`(사전 패널 · 문서 끌어 놓기 `placeEvent` / `addState`), `OpenDocContext`, 보드 `?focus=` · `?doc=` 처리, `boardLinks.ts` + `BoardSection`(등장 사건 · 상태 이력 · 작중 시점 · 관련 캐릭터), 표 보드 열, 문서 삭제 경고 + 연쇄 삭제(`deleteDoc`), Vitest 5건 · Playwright 3건 |
 | 2026-09-29 | F4 빈 상태 안내(W-7): `EmptyState`, 빈 분류 · 검색 0건(검색어로 문서 만들기) · 빠른 이동 0건 · 빈 역링크 · 보드 연동 0, 받침 조사 `lib/particle.ts`(서재 삭제 확인과 공용), 사전 검색어는 트리 클릭 · 연 문서 변경 시 비움(라우터 transition 중 입력 유실 수정), Vitest 1건 · Playwright 3건. F4 사전 TODO 항목 완료 |
 | 2026-09-29 | F1 단축키 마무리: `flow.ts` `nudgedPlace` · `nudgePatches`(방향키, `beginBatch`/`endBatch` 묶음 기록), 줌 단축키, `Esc` 선택 해제, `disableKeyboardA11y`, 공통 `Alt+1/2` · `Ctrl+S` 안내 · `?` `ShortcutHelp` 대화상자(`ShortcutHelpContext`), Vitest 4건 · Playwright 6건 |
+| 2026-09-29 | 데스크톱 점검 1차: Chrome 수동(미리보기 빌드) + Edge e2e 84/84(msedge 채널) + 1024 · 1366px 화면 캡처. 구간 접기 안내(눈금 툴팁 · "끝 눈금을 클릭" 칩 · 도움말 "시간축", shortcuts 2.5), `Dialog` `data-autofocus`(새 소설 제목 포커스), e2e 분류 클릭을 트리 안으로 한정(flaky 수정) |
+| 2026-09-29 | 데스크톱 점검 2차: 도구 모음 글자 캔버스 < 768px이면 숨김(`@container` · `@max-3xl:sr-only`), `<mark>` · `MentionChip` 여백 축소, 보드 · 사전 라우트 `lazy`(1.19MB → 최대 462kB, `server.warmup`), `ZoomControls` 배율 메뉴(직접 입력 · 25~200% 프리셋, 5~200% 제한), e2e 화면 밖 눈금 클릭 제거 |
 
 ## 결정됨
 | 항목 | 결정 |

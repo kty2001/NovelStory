@@ -28,14 +28,10 @@ test.beforeEach(async ({ page }) => {
 });
 
 test("기본 분류 6개 · 🔒 캐릭터 · 사건, 첫 진입은 캐릭터 분류 화면", async ({ page }) => {
-  expect(await rootNames(page)).toEqual([
-    "캐릭터",
-    "사건",
-    "장소",
-    "세력·조직",
-    "아이템",
-    "세계관 설정",
-  ]);
+  // toHaveText: 사전 화면(지연 로드)이 그려질 때까지 대기
+  await expect(
+    page.locator('[data-testid="category-row"][data-depth="0"] button:nth-of-type(2)'),
+  ).toHaveText(["캐릭터", "사건", "장소", "세력·조직", "아이템", "세계관 설정"]);
   await expect(page.getByRole("img", { name: "기본 분류" })).toHaveCount(2);
   await expect(row(page, "캐릭터")).toHaveAttribute("draggable", "false");
   await expect(row(page, "장소")).toHaveAttribute("draggable", "true");
@@ -468,12 +464,13 @@ test.describe("표 보기 · 검색 · 빠른 이동", () => {
     await input.press("Enter");
     await expect(page.getByRole("textbox", { name: "제목" })).toHaveValue("왕도");
 
-    // 보드에서 1~6 접기 → 빠른 이동 3 → 펼쳐지고 3 눈금이 화면에
+    // 보드에서 1~4 접기 → 빠른 이동 3 → 펼쳐지고 3 눈금이 화면에
+    // (눈금은 화면 안 것만 클릭: 6 눈금은 1280px 창 밖이라 브라우저에 따라 클릭 재시도로 시간 초과)
     await page.getByRole("link", { name: "보드" }).click();
     const tick = (t: number) => page.locator(`.tick-label[data-tick="${t}"]`);
     await tick(1).click({ modifiers: ["Shift"] });
-    await tick(6).click();
-    await page.getByRole("button", { name: "≈ 구간 1~6 접기" }).click();
+    await tick(4).click();
+    await page.getByRole("button", { name: "≈ 구간 1~4 접기" }).click();
     await expect(tick(3)).toHaveCount(0);
 
     await page.getByRole("link", { name: "사전" }).click();

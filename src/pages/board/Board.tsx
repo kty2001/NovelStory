@@ -896,7 +896,8 @@ function Canvas({
     <BoardUiContext.Provider value={boardUi}>
       <div className="flex h-full">
         <div
-          className="relative h-full min-w-0 flex-1"
+          // @container: 좁은 캔버스(사전 패널 열림)에서 도구 모음 글자 숨김
+          className="@container relative h-full min-w-0 flex-1"
           onDragOver={onDocDragOver}
           onDrop={onDocDrop}
         >

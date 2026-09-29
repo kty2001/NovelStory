@@ -235,6 +235,16 @@ export default function Axis({ scale }: { scale: TimeScale }) {
             }}
           />
         )}
+        {range && range.to === null && (
+          <Fixed x={tickToX(range.from, scale)} zoom={zoom}>
+            <div
+              data-testid="tick-range-hint"
+              className="absolute -top-14 -translate-x-1/2 rounded-full bg-surface-strong px-2.5 py-1 text-caption whitespace-nowrap text-ink"
+            >
+              끝 눈금을 클릭 · Esc 취소
+            </div>
+          </Fixed>
+        )}
         {range && range.to !== null && (
           <Fixed x={(tickToX(a, scale) + tickToX(b, scale)) / 2} zoom={zoom}>
             <button
@@ -261,6 +271,7 @@ export default function Axis({ scale }: { scale: TimeScale }) {
               <button
                 type="button"
                 data-tick={l.tick}
+                title="클릭: 라벨 편집 · Shift+클릭: 구간 선택(접기) · 우클릭: 메뉴"
                 {...{ [KEEP_RANGE]: "" }}
                 className={`nodrag nopan tick-label absolute top-2 -translate-x-1/2 rounded-xs px-1.5 text-caption whitespace-nowrap tabular-nums hover:bg-surface-card ${l.named ? "font-semibold text-ink" : "text-muted"}`}
                 // ViewportPortal 내용은 포인터 이벤트를 받지 않음 → 라벨만 허용
