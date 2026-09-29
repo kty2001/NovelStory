@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import { Link, NavLink, Outlet, useLocation, useParams } from "react-router";
-import { Download, Info, MoreHorizontal } from "lucide-react";
+import { Download, Info, MoreHorizontal, Search } from "lucide-react";
 import Menu from "../components/Menu";
 import { exportNovel } from "../db/novelExport";
 import { updateNovelInfo } from "../db/novels";
@@ -8,6 +8,7 @@ import { patchUiState } from "../db/uiState";
 import { adoptNovel, flushSave, loadNovel, unloadNovel, useNovelStore } from "../store/novelStore";
 import BackupBanner from "./BackupBanner";
 import NovelFormDialog, { type NovelFormSubmit } from "./library/NovelFormDialog";
+import QuickMove from "./QuickMove";
 
 const SAVE_LABEL = { saving: "저장 중", saved: "저장됨", error: "저장 실패" } as const;
 
@@ -22,6 +23,19 @@ export default function NovelLayout() {
   const novel = useNovelStore((s) => s.novel);
   const save = useNovelStore((s) => s.save);
   const [infoOpen, setInfoOpen] = useState(false);
+  const [quickOpen, setQuickOpen] = useState(false);
+
+  // 빠른 이동 Ctrl+K (보드 · 사전 공통, B-8)
+  useEffect(() => {
+    const onKey = (e: KeyboardEvent) => {
+      if ((e.ctrlKey || e.metaKey) && e.code === "KeyK" && !e.isComposing) {
+        e.preventDefault();
+        setQuickOpen(true);
+      }
+    };
+    window.addEventListener("keydown", onKey);
+    return () => window.removeEventListener("keydown", onKey);
+  }, []);
 
   useEffect(() => {
     if (!novelId) return;
@@ -80,6 +94,16 @@ export default function NovelLayout() {
             >
               {SAVE_LABEL[save]}
             </span>
+            <button
+              type="button"
+              aria-label="빠른 이동"
+              className="flex w-64 items-center gap-2 rounded-full border border-hairline px-3 py-1.5 text-caption text-muted hover:border-muted-soft"
+              onClick={() => setQuickOpen(true)}
+            >
+              <Search size={14} />
+              빠른 이동 — 문서 · 시점
+              <kbd className="ml-auto rounded-xs bg-surface-card px-1.5 font-sans">Ctrl K</kbd>
+            </button>
             <Menu
               label="소설 메뉴"
               trigger={<MoreHorizontal size={18} />}
@@ -97,6 +121,7 @@ export default function NovelLayout() {
       </header>
       {status === "ready" && novelId && <BackupBanner novelId={novelId} onExport={exportCurrent} />}
       <div className="min-h-0 flex-1">{status === "ready" && <Outlet />}</div>
+      {status === "ready" && <QuickMove open={quickOpen} onClose={() => setQuickOpen(false)} />}
       <NovelFormDialog
         open={infoOpen}
         novel={novel ?? undefined}

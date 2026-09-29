@@ -5,11 +5,12 @@ import { useNovelStore } from "../../store/novelStore";
 import { addDoc } from "../../store/wikiActions";
 import { subtreeDocs } from "./categories";
 import CategorySettings from "./CategorySettings";
+import CategoryTable from "./CategoryTable";
 import { useWikiNav } from "./useWikiNav";
 
-const TABS = { list: "문서 목록", settings: "설정" } as const;
+const TABS = { list: "문서 목록", table: "표", settings: "설정" } as const;
 
-// 분류 화면: 머리(색 · 이름 · 문서 수 · 새 문서) + 탭(문서 목록(하위 분류 포함) · 설정)
+// 분류 화면: 머리(색 · 이름 · 문서 수 · 새 문서) + 탭(문서 목록(하위 분류 포함) · 표 · 설정)
 export default function CategoryView({ categoryId }: { categoryId: string }) {
   const categories = useNovelStore((s) => s.categories);
   const docs = useNovelStore((s) => s.docs);
@@ -59,6 +60,10 @@ export default function CategoryView({ categoryId }: { categoryId: string }) {
       {tab === "settings" ? (
         <div className="mt-6">
           <CategorySettings category={category} />
+        </div>
+      ) : tab === "table" && list.length > 0 ? (
+        <div className="mt-6">
+          <CategoryTable categoryId={categoryId} />
         </div>
       ) : (
         <>

@@ -107,6 +107,18 @@ export function updateDoc(id: string, patch: DocPatch) {
   });
 }
 
+// 속성 값 하나 변경 (표 셀 수정, UC-34). 없는 키면 끝에 추가
+export function setPropValue(id: string, key: string, value: string) {
+  const doc = store.getState().docs[id];
+  if (!doc) return;
+  const has = doc.props.some((p) => p.key === key);
+  updateDoc(id, {
+    props: has
+      ? doc.props.map((p) => (p.key === key ? { key, value } : p))
+      : [...doc.props, { key, value }],
+  });
+}
+
 // 본문 변경: 파생 필드(mentions · plainText) 함께 계산 (data_model 4.5)
 export function setDocBody(id: string, body: TiptapJSON | null) {
   store.setState(({ docs }) =>

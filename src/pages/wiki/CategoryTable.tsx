@@ -1,0 +1,215 @@
+import { useState, type ReactNode } from "react";
+import { ArrowDown, ArrowUp } from "lucide-react";
+import type { WikiDoc } from "../../db/types";
+import { setDocsLine, sortedLines } from "../../store/boardActions";
+import { useNovelStore } from "../../store/novelStore";
+import { setPropValue } from "../../store/wikiActions";
+import { familyOf, subtreeDocs } from "./categories";
+import { useWikiNav } from "./useWikiNav";
+
+type Column = {
+  id: string;
+  label: string;
+  sortKey: (d: WikiDoc) => string | number;
+  cell: (d: WikiDoc, row: number) => ReactNode;
+};
+
+const valueOf = (d: WikiDoc, key: string) => d.props.find((p) => p.key === key)?.value ?? "";
+
+// 빈 값은 방향과 관계없이 뒤로
+function compare(a: string | number, b: string | number, dir: 1 | -1) {
+  if (a === "" || a === Infinity) return b === "" || b === Infinity ? 0 : 1;
+  if (b === "" || b === Infinity) return -1;
+  return (
+    (typeof a === "number" && typeof b === "number"
+      ? a - b
+      : String(a).localeCompare(String(b), "ko")) * dir
+  );
+}
+
+const th =
+  "border-b border-hairline bg-surface-soft px-3 py-2 text-left text-caption font-semibold text-body whitespace-nowrap";
+const td = "border-b border-hairline px-3 py-1.5 text-body-sm whitespace-nowrap";
+
+// 표 보기 (W-3, UC-34): 문서 = 행, 속성 키 = 열, 셀 바로 수정, 열 머리 클릭 = 정렬.
+// 첫 열(제목) 고정, 사건 계열은 라인 열 + 라인 순서 기본 정렬
+export default function CategoryTable({ categoryId }: { categoryId: string }) {
+  const categories = useNovelStore((s) => s.categories);
+  const docs = useNovelStore((s) => s.docs);
+  const lines = sortedLines(useNovelStore((s) => s.lines));
+  const { openDoc } = useWikiNav();
+  const category = categories[categoryId];
+  const isEvent = familyOf(categories, categoryId) === "event";
+  const [sort, setSort] = useState<{ id: string; dir: 1 | -1 }>({
+    id: isEvent ? "line" : "title",
+    dir: 1,
+  });
+
+  const rows = subtreeDocs(categories, docs, categoryId);
+  // 속성 열: 템플릿 키 → 문서들에 쓰인 키 (처음 나온 순서)
+  const keys = [
+    ...new Set([...category.templateProps, ...rows.flatMap((d) => d.props.map((p) => p.key))]),
+  ];
+  const lineOrder = new Map(lines.map((l, i) => [l.id, i]));
+
+  // Enter: 확정 후 아래 칸으로
+  const focusCell = (from: Element, row: number, col: string) =>
+    from
+      .closest("table")
+      ?.querySelector<HTMLInputElement>(`input[data-row="${row}"][data-col="${CSS.escape(col)}"]`)
+      ?.focus();
+
+  const propColumn = (key: string): Column => ({
+    id: `prop:${key}`,
+    label: key,
+    sortKey: (d) => valueOf(d, key),
+    cell: (d, row) => {
+      const value = valueOf(d, key);
+      return (
+        <input
+          key={value}
+          aria-label={`${d.title} ${key}`}
+          data-row={row}
+          data-col={key}
+          defaultValue={value}
+          className="w-full min-w-24 rounded-xs bg-transparent px-1 py-0.5 text-ink focus:bg-surface-soft focus:outline-none"
+          onKeyDown={(e) => {
+            if (e.nativeEvent.isComposing || e.keyCode === 229) return;
+            if (e.key === "Escape") {
+              e.currentTarget.value = value;
+              e.currentTarget.blur();
+            }
+            if (e.key === "Enter") {
+              e.currentTarget.blur();
+              focusCell(e.currentTarget, row + 1, key);
+            }
+          }}
+          onBlur={(e) => {
+            if (e.currentTarget.value !== value) setPropValue(d.id, key, e.currentTarget.value);
+          }}
+        />
+      );
+    },
+  });
+
+  const columns: Column[] = [
+    {
+      id: "title",
+      label: "제목",
+      sortKey: (d) => d.title,
+      cell: (d) => (
+        <button
+          type="button"
+          className="font-semibold text-ink hover:underline"
+          onClick={() => openDoc(d.id)}
+        >
+          {d.title || "제목 없음"}
+        </button>
+      ),
+    },
+    ...(isEvent
+      ? [
+          {
+            id: "line",
+            label: "라인",
+            sortKey: (d: WikiDoc) => (d.lineId ? (lineOrder.get(d.lineId) ?? Infinity) : Infinity),
+            cell: (d: WikiDoc) => (
+              <select
+                aria-label={`${d.title} 라인`}
+                value={d.lineId ?? ""}
+                className="rounded-xs bg-transparent py-0.5 text-ink"
+                onChange={(e) => setDocsLine([d.id], e.target.value || undefined)}
+              >
+                <option value="">미지정</option>
+                {lines.map((l) => (
+                  <option key={l.id} value={l.id}>
+                    {l.name}
+                  </option>
+                ))}
+              </select>
+            ),
+          },
+        ]
+      : []),
+    {
+      id: "tags",
+      label: "태그",
+      sortKey: (d) => d.tags.join(", "),
+      cell: (d) => <span className="text-body">{d.tags.join(", ")}</span>,
+    },
+    ...keys.map(propColumn),
+    ...(rows.some((d) => d.categoryId !== categoryId)
+      ? [
+          {
+            id: "sub",
+            label: "하위 분류",
+            sortKey: (d: WikiDoc) =>
+              d.categoryId === categoryId ? "" : (categories[d.categoryId]?.name ?? ""),
+            cell: (d: WikiDoc) => (
+              <span className="text-muted">
+                {d.categoryId === categoryId ? "—" : categories[d.categoryId]?.name}
+              </span>
+            ),
+          },
+        ]
+      : []),
+  ];
+
+  const col = columns.find((c) => c.id === sort.id) ?? columns[0];
+  const sorted = [...rows].sort(
+    (a, b) =>
+      compare(col.sortKey(a), col.sortKey(b), sort.dir) || a.title.localeCompare(b.title, "ko"),
+  );
+
+  return (
+    <div>
+      <div className="overflow-x-auto rounded-md border border-hairline">
+        <table aria-label={`${category.name} 표`} className="w-full border-collapse">
+          <thead>
+            <tr>
+              {columns.map((c, i) => (
+                <th
+                  key={c.id}
+                  aria-sort={
+                    sort.id === c.id ? (sort.dir === 1 ? "ascending" : "descending") : "none"
+                  }
+                  className={`${th} ${i === 0 ? "sticky left-0 z-[1]" : ""}`}
+                >
+                  <button
+                    type="button"
+                    className="flex items-center gap-1"
+                    onClick={() =>
+                      setSort((s) => ({
+                        id: c.id,
+                        dir: s.id === c.id ? (s.dir === 1 ? -1 : 1) : 1,
+                      }))
+                    }
+                  >
+                    {c.label}
+                    {sort.id === c.id &&
+                      (sort.dir === 1 ? <ArrowUp size={12} /> : <ArrowDown size={12} />)}
+                  </button>
+                </th>
+              ))}
+            </tr>
+          </thead>
+          <tbody>
+            {sorted.map((d, row) => (
+              <tr key={d.id} data-testid="table-row">
+                {columns.map((c, i) => (
+                  <td
+                    key={c.id}
+                    className={`${td} ${i === 0 ? "sticky left-0 z-[1] bg-canvas" : ""}`}
+                  >
+                    {c.cell(d, row)}
+                  </td>
+                ))}
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
+      <p className="mt-2 text-caption text-muted">셀을 눌러 바로 수정 · 열 머리를 눌러 정렬</p>
+    </div>
+  );
+}

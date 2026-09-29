@@ -25,6 +25,7 @@ import {
   type Viewport,
   type XYPosition,
 } from "@xyflow/react";
+import { useSearchParams } from "react-router";
 import { db } from "../../db/db";
 import type { BoardItem, TimeScale, UiState } from "../../db/types";
 import { patchUiState } from "../../db/uiState";
@@ -78,6 +79,7 @@ import { NO_LINE } from "./lines";
 import PlacePreview, { FrameDraft, type Preview } from "./PlacePreview";
 import StateNode from "./StateNode";
 import StatePanel, { CharacterPicker } from "./StatePanel";
+import { tickToX } from "./timeAxis";
 import Toolbar from "./Toolbar";
 import {
   isEditable,
@@ -183,7 +185,7 @@ function Canvas({
   const simple = useStore((s) => s.transform[2] < SIMPLE_ZOOM);
   const items = useNovelStore((s) => s.items);
   const docs = useNovelStore((s) => s.docs);
-  const { screenToFlowPosition } = useReactFlow();
+  const { screenToFlowPosition, setCenter, getZoom } = useReactFlow();
   const [filters, setFilters] = useState<Filters>(NO_FILTERS);
   const [linesOpen, setLinesOpen] = useState(false);
   const [ui, setUi] = useState<Record<string, NodeUi>>({});
@@ -201,6 +203,27 @@ function Canvas({
   const [draft, setDraft] = useState<{ x0: number; y0: number; x1: number; y1: number } | null>(
     null,
   );
+
+  // 빠른 이동으로 온 시점 (?tick=N, B-8): 접힌 구간 안이면 펼치고 그 눈금을 화면 가운데로
+  const [params, setParams] = useSearchParams();
+  const tickParam = params.get("tick");
+  useEffect(() => {
+    if (tickParam === null) return;
+    const t = Number(tickParam);
+    const scale = useNovelStore.getState().board?.timeScale;
+    if (scale && Number.isFinite(t)) {
+      const collapsed = scale.collapsed.filter((c) => !(t > c.from && t < c.to));
+      if (collapsed.length !== scale.collapsed.length) setTimeScale({ collapsed });
+      void setCenter(tickToX(t, { ...scale, collapsed }), 0, { zoom: getZoom(), duration: 300 });
+    }
+    setParams(
+      (p) => {
+        p.delete("tick");
+        return p;
+      },
+      { replace: true },
+    );
+  }, [tickParam, setCenter, getZoom, setParams]);
 
   // 필터는 소설별로 기억 (UiState.filters)
   useEffect(() => {

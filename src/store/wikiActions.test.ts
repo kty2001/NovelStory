@@ -11,6 +11,7 @@ import {
   moveDoc,
   setCategoryColor,
   setDocBody,
+  setPropValue,
   setTemplateProps,
   updateDoc,
 } from "./wikiActions";
@@ -165,4 +166,15 @@ it("템플릿 변경은 새 문서에만 적용", () => {
   const { docs } = store.getState();
   expect(docs[after].props.map((p) => p.key)).toEqual(["출신", "나이"]);
   expect(docs[before].props.map((p) => p.key)).toEqual(["나이", "성별"]);
+});
+
+it("표 셀 수정: 있는 키는 값 변경, 없는 키는 끝에 추가", () => {
+  const id = addDoc("char")!;
+  setPropValue(id, "성별", "여");
+  setPropValue(id, "출신", "북부");
+  expect(store.getState().docs[id].props).toEqual([
+    { key: "나이", value: "" },
+    { key: "성별", value: "여" },
+    { key: "출신", value: "북부" },
+  ]);
 });

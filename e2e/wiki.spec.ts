@@ -377,3 +377,111 @@ test.describe("@ 링크 · 역링크", () => {
     await expect(link(page)).toHaveText("카엘");
   });
 });
+
+test.describe("표 보기 · 검색 · 빠른 이동", () => {
+  async function docWith(page: Page, category: string, title: string) {
+    await nameButton(page, category).click();
+    await page.getByRole("button", { name: "새 문서" }).first().click();
+    const input = page.getByRole("textbox", { name: "제목" });
+    await input.fill(title);
+    await input.press("Enter");
+    await expect(page.getByTestId("doc-row").filter({ hasText: title })).toBeVisible();
+  }
+
+  test("표: 속성 열 · 셀 수정(Enter → 아래 칸) · 정렬 · 제목 클릭", async ({ page }) => {
+    await docWith(page, "장소", "나루터");
+    await docWith(page, "장소", "가람");
+    await nameButton(page, "장소").click();
+    await page.getByRole("tab", { name: "표" }).click();
+
+    const table = page.getByRole("table", { name: "장소 표" });
+    await expect(table.getByRole("columnheader")).toHaveText(["제목", "태그", "지역", "특징"]);
+    const rows = table.getByTestId("table-row");
+    await expect(rows.first()).toContainText("가람");
+
+    await page.getByRole("textbox", { name: "가람 지역" }).fill("남부");
+    await page.getByRole("textbox", { name: "가람 지역" }).press("Enter");
+    await expect(page.getByRole("textbox", { name: "나루터 지역" })).toBeFocused();
+    await page.keyboard.type("북부");
+    await page.keyboard.press("Tab");
+    await expect(page.getByRole("textbox", { name: "나루터 특징" })).toBeFocused();
+
+    await table.getByRole("button", { name: "지역" }).click();
+    await expect(rows.first()).toContainText("가람"); // 남부 < 북부 (가나다)
+    await table.getByRole("button", { name: "지역" }).click();
+    await expect(rows.first()).toContainText("나루터");
+
+    await table.getByRole("button", { name: "나루터" }).click();
+    await expect(page.getByRole("textbox", { name: "제목" })).toHaveValue("나루터");
+    await expect(page.getByRole("textbox", { name: "지역 값" })).toHaveValue("북부");
+  });
+
+  test("사건 표: 라인 열 · 라인 순서 기본 정렬", async ({ page }) => {
+    await docWith(page, "사건", "가-미지정");
+    await docWith(page, "사건", "나-메인");
+    await page.getByRole("combobox", { name: "스토리 라인" }).selectOption({ label: "메인" });
+    await nameButton(page, "사건").click();
+    await page.getByRole("tab", { name: "표" }).click();
+    const rows = page.getByTestId("table-row");
+    await expect(rows.first()).toContainText("나-메인");
+    await page.getByRole("combobox", { name: "가-미지정 라인" }).selectOption({ label: "서브" });
+    await expect(rows.last()).toContainText("가-미지정");
+    await expect(rows.first()).toContainText("나-메인");
+  });
+
+  test("검색: 제목 · 별칭 · 본문, 분류 탭, × 복귀, 결과 클릭", async ({ page }) => {
+    await docWith(page, "캐릭터", "카엘");
+    await page.getByRole("textbox", { name: "별칭 추가" }).fill("반란의 기사");
+    await page.getByRole("textbox", { name: "별칭 추가" }).press("Enter");
+    await docWith(page, "사건", "반란");
+    await docWith(page, "장소", "성");
+    await page.getByRole("textbox", { name: "본문" }).click();
+    await page.keyboard.type("반란군이 점령한 성");
+
+    const search = page.getByRole("searchbox", { name: "사전 검색" });
+    await search.fill("반란");
+    const hits = page.getByTestId("search-hit");
+    await expect(hits).toHaveCount(3);
+    await expect(hits.nth(0)).toContainText("사건 · 제목");
+    await expect(hits.nth(1)).toContainText('캐릭터 · 별칭 "반란의 기사"');
+    await expect(hits.nth(2)).toContainText("장소 · 본문");
+    await expect(hits.nth(2).locator("mark")).toHaveText("반란");
+
+    await page.getByRole("tab", { name: "캐릭터 1" }).click();
+    await expect(hits).toHaveCount(1);
+    await page.getByRole("button", { name: "검색 지우기" }).click();
+    await expect(hits).toHaveCount(0);
+    await expect(page.getByRole("textbox", { name: "제목" })).toHaveValue("성");
+
+    await search.fill("카엘");
+    await hits.first().click();
+    await expect(page.getByRole("textbox", { name: "제목" })).toHaveValue("카엘");
+    await expect(search).toHaveValue("");
+  });
+
+  test("Ctrl+K: 문서 열기 · 눈금 번호로 보드 이동(접힌 구간 펼침)", async ({ page }) => {
+    await docWith(page, "장소", "왕도");
+    await page.keyboard.press("Control+k");
+    const input = page.getByRole("textbox", { name: "빠른 이동 검색" });
+    await input.fill("왕");
+    await expect(page.getByRole("option")).toHaveText([/왕도/]);
+    await input.press("Enter");
+    await expect(page.getByRole("textbox", { name: "제목" })).toHaveValue("왕도");
+
+    // 보드에서 1~6 접기 → 빠른 이동 3 → 펼쳐지고 3 눈금이 화면에
+    await page.getByRole("link", { name: "보드" }).click();
+    const tick = (t: number) => page.locator(`.tick-label[data-tick="${t}"]`);
+    await tick(1).click({ modifiers: ["Shift"] });
+    await tick(6).click();
+    await page.getByRole("button", { name: "≈ 구간 1~6 접기" }).click();
+    await expect(tick(3)).toHaveCount(0);
+
+    await page.getByRole("link", { name: "사전" }).click();
+    await page.getByRole("button", { name: "빠른 이동" }).click();
+    await input.fill("3");
+    await expect(page.getByRole("option")).toHaveText([/눈금 3/]);
+    await input.press("Enter");
+    await expect(page).toHaveURL(/\/board$/);
+    await expect(tick(3)).toBeInViewport();
+  });
+});
