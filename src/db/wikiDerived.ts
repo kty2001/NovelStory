@@ -43,3 +43,31 @@ export function remapMentions(body: TiptapJSON | null, map: (id: string) => stri
   });
   return walk(body as Node);
 }
+
+const CONTEXT_CHARS = 30;
+const inlineText = (n: Node) =>
+  n.type === "text" ? (n.text ?? "") : n.type === "mention" ? (n.attrs?.label ?? "") : "";
+
+// 역링크 문맥: docId 멘션이 처음 나오는 문단의 멘션 앞뒤 글자, 잘리면 … (UC-33, W-1 ⑨)
+export function mentionContext(
+  body: TiptapJSON | null,
+  docId: string,
+): { before: string; after: string } | null {
+  let found: { before: string; after: string } | null = null;
+  const walk = (node: Node) => {
+    if (found || !node.content) return;
+    const i = node.content.findIndex((c) => c.type === "mention" && c.attrs?.id === docId);
+    if (i < 0) return node.content.forEach(walk);
+    const before = node.content.slice(0, i).map(inlineText).join("");
+    const after = node.content
+      .slice(i + 1)
+      .map(inlineText)
+      .join("");
+    found = {
+      before: before.length > CONTEXT_CHARS ? `…${before.slice(-CONTEXT_CHARS)}` : before,
+      after: after.length > CONTEXT_CHARS ? `${after.slice(0, CONTEXT_CHARS)}…` : after,
+    };
+  };
+  if (body) walk(body as Node);
+  return found;
+}

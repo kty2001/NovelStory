@@ -1,7 +1,7 @@
 # 진행 상태 (Status)
 
 ## 현재 단계
-1단계(MVP) 진행 중 — 기반 · F0 서재 완료, F1 보드 완료(단축키 도움말 · 방향키 · 줌 단축키 · 빠른 이동은 남음), F4 사전 진행 중(분류 트리 · 문서 편집 · 템플릿 완료, 다음: `@` 링크 + 역링크), 이후 보드 ↔ 사전 연동. MVP는 데스크톱 전용, 태블릿·모바일(와이어프레임·반응형·터치·실기기 확인)은 MVP 이후로 연기(확인 기기 없음)
+1단계(MVP) 진행 중 — 기반 · F0 서재 완료, F1 보드 완료(단축키 도움말 · 방향키 · 줌 단축키 · 빠른 이동은 남음), F4 사전 진행 중(분류 트리 · 문서 편집 · 템플릿 · `@` 링크 + 역링크 완료, 다음: 표 보기 · 전체 검색), 이후 보드 ↔ 사전 연동. MVP는 데스크톱 전용, 태블릿·모바일(와이어프레임·반응형·터치·실기기 확인)은 MVP 이후로 연기(확인 기기 없음)
 
 ## 이력
 | 날짜 | 내용 |
@@ -40,6 +40,7 @@
 | 2026-09-29 | F4 분류 트리: `wiki/categories.ts`(트리 · 문서 수 · 계열 · 이동 가능 판정 · 순서 재번호), `wikiActions`(분류 추가 · 이름 · 색 · 삭제 · 이동, 새 문서), 트리(HTML 끌어 놓기 앞 · 하위 · 뒤, 분류 메뉴 비활성 이유 `MenuItem.hint`), 최소 분류 화면, Vitest 17건 · Playwright 4건 |
 | 2026-09-29 | F4 문서 편집: Tiptap v3 추가, `DocView`(제목 · 별칭 · 태그 · 라인 · 속성 표 · 대표 이미지 · 본문 · ⋯ 분류 이동 / 삭제), `wikiActions` 문서 동작(`updateDoc` · `setDocBody` 파생 필드 · `moveDoc` · `deleteDoc`), `saveImage` · `deleteImage`, 샘플 본문 멘션 노드 표시, Vitest 4건 · Playwright 6건 |
 | 2026-09-29 | F4 템플릿: 분류 화면 탭(문서 목록 · 설정), `CategorySettings`(이름 · 상위 분류 · 색 · 템플릿 키), `PropsTable` `keysOnly`, `setTemplateProps`, Vitest 1건 · Playwright 2건 |
+| 2026-09-29 | F4 `@` 링크 · 역링크: `mention.ts`(후보 검색 `mentionCandidates` · 스파이크 C1 후보 팝업 이식), `MentionChip`(Tiptap React 노드 뷰, 현재 제목 · 깨진 링크), `Backlinks` + `mentionContext`, 속성 값 링크는 MVP 이후로, Vitest 3건 · Playwright 2건 |
 
 ## 결정됨
 | 항목 | 결정 |

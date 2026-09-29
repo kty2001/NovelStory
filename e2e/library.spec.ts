@@ -130,7 +130,12 @@ test("샘플 소설로 둘러보기", async ({ page }) => {
   await page.getByRole("link", { name: "사전" }).click();
   await page.getByRole("button", { name: "캐릭터 펼치기" }).click();
   await page.getByTestId("doc-row").filter({ hasText: "레아" }).click();
-  await expect(page.getByRole("textbox", { name: "본문" })).toContainText("@카엘");
+  await expect(
+    page
+      .getByRole("textbox", { name: "본문" })
+      .getByTestId("wiki-link")
+      .filter({ hasText: "카엘" }),
+  ).toBeVisible();
   await expect(page.getByRole("alert")).toBeHidden();
 
   await page.getByRole("link", { name: "← 서재" }).click();

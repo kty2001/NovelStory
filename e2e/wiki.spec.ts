@@ -1,5 +1,5 @@
 import { expect, test, type Page } from "@playwright/test";
-import { cdp, setComposition } from "./helpers/ime";
+import { cdp, keyDuringComposition, setComposition } from "./helpers/ime";
 
 // 분류 이름 버튼 (기본 분류는 🔒 "기본 분류"가 이름에 붙음)
 const nameButton = (page: Page, name: string) =>
@@ -291,5 +291,89 @@ test.describe("분류 설정 · 템플릿", () => {
     await expect(row(page, "사전 용어")).toHaveAttribute("data-depth", "1");
     await page.getByRole("combobox", { name: "상위 분류" }).selectOption({ label: "(최상위)" });
     await expect(row(page, "사전 용어")).toHaveAttribute("data-depth", "0");
+  });
+});
+
+test.describe("@ 링크 · 역링크", () => {
+  async function createDoc(page: Page, category: string, title: string, alias?: string) {
+    await nameButton(page, category).click();
+    await page.getByRole("button", { name: "새 문서" }).first().click();
+    const input = page.getByRole("textbox", { name: "제목" });
+    await input.fill(title);
+    await input.press("Enter");
+    await expect(page.getByTestId("doc-row").filter({ hasText: title })).toBeVisible();
+    if (alias) {
+      await page.getByRole("textbox", { name: "별칭 추가" }).fill(alias);
+      await page.getByRole("textbox", { name: "별칭 추가" }).press("Enter");
+    }
+  }
+  const body = (page: Page) => page.getByRole("textbox", { name: "본문" });
+  const candidates = (page: Page) => page.getByRole("listbox", { name: "문서 링크 후보" });
+  const link = (page: Page) => body(page).getByTestId("wiki-link");
+
+  test("한글 조합 중 Enter는 삽입 안 함 → 칩 · 역링크 · 제목 변경 반영 · 깨진 링크", async ({
+    page,
+  }) => {
+    await createDoc(page, "장소", "왕도");
+    await createDoc(page, "장소", "성벽");
+
+    await body(page).click();
+    await page.keyboard.type("@");
+    const s = await cdp(page);
+    for (const step of ["ㅇ", "와", "왕"]) await setComposition(s, step);
+    await keyDuringComposition(s, "Enter");
+    await expect(link(page)).toHaveCount(0);
+    await s.send("Input.insertText", { text: "왕" });
+    await expect(candidates(page).getByRole("option")).toHaveText([/왕도/]);
+    await page.keyboard.press("Enter");
+    await expect(link(page)).toHaveText("왕도");
+    await page.keyboard.type("을 지키는 벽");
+
+    await link(page).click();
+    await expect(page.getByRole("textbox", { name: "제목" })).toHaveValue("왕도");
+    const backlink = page.getByTestId("backlink");
+    await expect(backlink).toHaveCount(1);
+    await expect(backlink).toContainText("성벽");
+    await expect(backlink.locator("mark")).toHaveText("왕도");
+    await expect(backlink).toContainText("을 지키는 벽");
+
+    const title = page.getByRole("textbox", { name: "제목" });
+    await title.fill("왕성");
+    await title.press("Enter");
+    await expect(backlink.locator("mark")).toHaveText("왕성");
+    await backlink.click();
+    await expect(link(page)).toHaveText("왕성");
+
+    await link(page).click();
+    await page.getByRole("button", { name: "문서 메뉴" }).click();
+    await page.getByRole("menuitem", { name: "삭제" }).click();
+    await page.getByRole("dialog").getByRole("button", { name: "삭제" }).click();
+    await page.getByRole("main").getByRole("button", { name: "성벽" }).click();
+    await expect(link(page)).toHaveAttribute("data-broken", "");
+    await expect(link(page)).toHaveText("왕도"); // 삭제 시점 대신 삽입 때 저장한 label
+    await link(page).click();
+    await expect(page.getByRole("status")).toHaveText("삭제된 문서라 열 수 없어요");
+  });
+
+  test("별칭 검색 · Esc 닫기(글자 유지) · Tab 삽입, 빈 역링크", async ({ page }) => {
+    await createDoc(page, "캐릭터", "카엘", "붉은 기사");
+    await expect(page.getByTestId("backlink")).toHaveCount(0);
+    await expect(page.getByText("이 문서를 언급한 문서가 없어요")).toBeVisible();
+    await createDoc(page, "장소", "연병장");
+
+    await body(page).click();
+    await page.keyboard.type("@붉은");
+    const option = candidates(page).getByRole("option");
+    await expect(option).toHaveCount(1);
+    await expect(option).toContainText("카엘");
+    await expect(option).toContainText("별칭 붉은 기사");
+    await page.keyboard.press("Escape");
+    await expect(candidates(page)).toBeHidden();
+    await expect(body(page)).toHaveText("@붉은");
+
+    await page.keyboard.type(" @카");
+    await expect(candidates(page).getByRole("option")).toHaveCount(1);
+    await page.keyboard.press("Tab");
+    await expect(link(page)).toHaveText("카엘");
   });
 });

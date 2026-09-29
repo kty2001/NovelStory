@@ -1,5 +1,5 @@
 import { expect, it } from "vitest";
-import { deriveDoc, remapMentions } from "./wikiDerived";
+import { deriveDoc, mentionContext, remapMentions } from "./wikiDerived";
 
 const body = {
   type: "doc",
@@ -26,4 +26,27 @@ it("멘션 id 치환, 원본 유지", () => {
   const next = remapMentions(body, (id) => id.toUpperCase());
   expect(deriveDoc(next).mentions).toEqual(["A", "B"]);
   expect(deriveDoc(body).mentions).toEqual(["a", "b"]);
+});
+
+it("역링크 문맥: 첫 멘션 문단의 앞뒤 글자, 없으면 null", () => {
+  expect(mentionContext(body, "b")).toEqual({ before: "갑와 갑", after: "" });
+  const long = {
+    type: "doc",
+    content: [
+      {
+        type: "paragraph",
+        content: [
+          { type: "text", text: "가".repeat(40) },
+          { type: "mention", attrs: { id: "a", label: "갑" } },
+          { type: "text", text: "나".repeat(40) },
+        ],
+      },
+    ],
+  };
+  expect(mentionContext(long, "a")).toEqual({
+    before: `…${"가".repeat(30)}`,
+    after: `${"나".repeat(30)}…`,
+  });
+  expect(mentionContext(body, "z")).toBeNull();
+  expect(mentionContext(null, "a")).toBeNull();
 });

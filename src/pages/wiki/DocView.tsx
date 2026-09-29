@@ -7,6 +7,7 @@ import type { WikiDoc } from "../../db/types";
 import { renameDoc, setDocsLine, sortedLines } from "../../store/boardActions";
 import { useNovelStore } from "../../store/novelStore";
 import { deleteDoc, moveDoc, updateDoc } from "../../store/wikiActions";
+import Backlinks from "./Backlinks";
 import BodyEditor from "./BodyEditor";
 import { blockCount, categoryPath, familyOf, flatCategories, usedDocIds } from "./categories";
 import ChipInput from "./ChipInput";
@@ -154,6 +155,8 @@ export default function DocView({ doc }: { doc: WikiDoc }) {
       <div className="mt-8">
         <BodyEditor docId={doc.id} initial={doc.body} />
       </div>
+
+      <Backlinks docId={doc.id} title={doc.title} />
 
       {dialog === "move" && <MoveDocDialog doc={doc} onClose={() => setDialog(null)} />}
       <Dialog

@@ -1,5 +1,6 @@
 import {
   EditorContent,
+  ReactNodeViewRenderer,
   useEditor,
   useEditorState,
   type ChainedCommands,
@@ -7,12 +8,16 @@ import {
 } from "@tiptap/react";
 import Mention from "@tiptap/extension-mention";
 import StarterKit from "@tiptap/starter-kit";
-import type { ReactNode } from "react";
+import { useState, type ReactNode } from "react";
 import type { TiptapJSON } from "../../db/types";
+import { useNovelStore } from "../../store/novelStore";
 import { setDocBody } from "../../store/wikiActions";
+import { mentionCandidates, suggestionRenderer } from "./mention";
+import MentionChip from "./MentionChip";
 
-// 본문 서식: H1~H3 · 목록 · 굵게 · 기울임 · 인용 (UC-31). 명세 밖 서식은 끔
-const EXTENSIONS = [
+// 본문 서식: H1~H3 · 목록 · 굵게 · 기울임 · 인용 (UC-31). 명세 밖 서식은 끔.
+// `@` 링크: 후보는 현재 문서 제외, 칩은 대상의 현재 제목 표시 (UC-33)
+const extensions = (docId: string) => [
   StarterKit.configure({
     heading: { levels: [1, 2, 3] },
     code: false,
@@ -22,8 +27,13 @@ const EXTENSIONS = [
     link: false,
     horizontalRule: false,
   }),
-  // 저장된 멘션 노드 표시용. `@` 후보 입력은 "@ 링크" 항목에서
-  Mention.configure({ HTMLAttributes: { class: "mention" } }),
+  Mention.extend({ addNodeView: () => ReactNodeViewRenderer(MentionChip) }).configure({
+    suggestion: {
+      char: "@",
+      items: ({ query }) => mentionCandidates(useNovelStore.getState().docs, query, docId),
+      render: suggestionRenderer,
+    },
+  }),
 ];
 
 type Tool = {
@@ -67,8 +77,9 @@ export default function BodyEditor({
   docId: string;
   initial: TiptapJSON | null;
 }) {
+  const [exts] = useState(() => extensions(docId));
   const editor = useEditor({
-    extensions: EXTENSIONS,
+    extensions: exts,
     content: (initial as JSONContent | null) ?? "",
     editorProps: {
       attributes: {
