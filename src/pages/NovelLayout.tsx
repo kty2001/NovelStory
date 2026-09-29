@@ -1,14 +1,18 @@
 import { useEffect, useState } from "react";
-import { Link, NavLink, Outlet, useLocation, useParams } from "react-router";
-import { Download, Info, MoreHorizontal, Search } from "lucide-react";
+import { Link, NavLink, Outlet, useLocation, useNavigate, useParams } from "react-router";
+import { Download, Info, Keyboard, MoreHorizontal, Search } from "lucide-react";
 import Menu from "../components/Menu";
+import Toast from "../components/Toast";
 import { exportNovel } from "../db/novelExport";
 import { updateNovelInfo } from "../db/novels";
 import { patchUiState } from "../db/uiState";
 import { adoptNovel, flushSave, loadNovel, unloadNovel, useNovelStore } from "../store/novelStore";
 import BackupBanner from "./BackupBanner";
 import NovelFormDialog, { type NovelFormSubmit } from "./library/NovelFormDialog";
+import { isEditable } from "./board/tools";
 import QuickMove from "./QuickMove";
+import ShortcutHelp from "./ShortcutHelp";
+import { ShortcutHelpContext } from "./shortcutHelpContext";
 
 const SAVE_LABEL = { saving: "저장 중", saved: "저장됨", error: "저장 실패" } as const;
 
@@ -24,18 +28,38 @@ export default function NovelLayout() {
   const save = useNovelStore((s) => s.save);
   const [infoOpen, setInfoOpen] = useState(false);
   const [quickOpen, setQuickOpen] = useState(false);
+  const [helpOpen, setHelpOpen] = useState(false);
+  const [savedNotice, setSavedNotice] = useState(false);
+  const navigate = useNavigate();
 
-  // 빠른 이동 Ctrl+K (보드 · 사전 공통, B-8)
+  // 공통 단축키 (shortcuts 1장): Ctrl+K 빠른 이동(B-8) · Ctrl+S 자동 저장 안내 · Alt+1/2 탭 · ? 도움말
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => {
-      if ((e.ctrlKey || e.metaKey) && e.code === "KeyK" && !e.isComposing) {
+      if (e.isComposing || e.keyCode === 229) return;
+      const mod = e.ctrlKey || e.metaKey;
+      if (mod && e.code === "KeyK") {
         e.preventDefault();
         setQuickOpen(true);
+      } else if (mod && e.code === "KeyS") {
+        e.preventDefault(); // 브라우저 저장 대화상자 대신 (편집 중에도)
+        setSavedNotice(true);
+      } else if (e.altKey && !mod && (e.code === "Digit1" || e.code === "Digit2")) {
+        e.preventDefault();
+        void navigate(e.code === "Digit1" ? "board" : "wiki");
+      } else if (e.shiftKey && !mod && !e.altKey && e.code === "Slash" && !isEditable(e.target)) {
+        e.preventDefault();
+        setHelpOpen(true);
       }
     };
     window.addEventListener("keydown", onKey);
     return () => window.removeEventListener("keydown", onKey);
-  }, []);
+  }, [navigate]);
+
+  useEffect(() => {
+    if (!savedNotice) return;
+    const timer = setTimeout(() => setSavedNotice(false), 2000);
+    return () => clearTimeout(timer);
+  }, [savedNotice]);
 
   useEffect(() => {
     if (!novelId) return;
@@ -104,6 +128,15 @@ export default function NovelLayout() {
               빠른 이동 — 문서 · 시점
               <kbd className="ml-auto rounded-xs bg-surface-card px-1.5 font-sans">Ctrl K</kbd>
             </button>
+            <button
+              type="button"
+              aria-label="단축키 도움말"
+              title="단축키 도움말 (?)"
+              className="flex size-8 items-center justify-center rounded-full border border-hairline text-caption text-muted hover:border-muted-soft"
+              onClick={() => setHelpOpen(true)}
+            >
+              ?
+            </button>
             <Menu
               label="소설 메뉴"
               trigger={<MoreHorizontal size={18} />}
@@ -113,6 +146,11 @@ export default function NovelLayout() {
                   icon: <Download size={14} />,
                   onSelect: () => void exportCurrent(),
                 },
+                {
+                  label: "단축키 도움말",
+                  icon: <Keyboard size={14} />,
+                  onSelect: () => setHelpOpen(true),
+                },
                 { label: "소설 정보", icon: <Info size={14} />, onSelect: () => setInfoOpen(true) },
               ]}
             />
@@ -120,8 +158,16 @@ export default function NovelLayout() {
         )}
       </header>
       {status === "ready" && novelId && <BackupBanner novelId={novelId} onExport={exportCurrent} />}
-      <div className="min-h-0 flex-1">{status === "ready" && <Outlet />}</div>
+      <div className="min-h-0 flex-1">
+        {status === "ready" && (
+          <ShortcutHelpContext.Provider value={() => setHelpOpen(true)}>
+            <Outlet />
+          </ShortcutHelpContext.Provider>
+        )}
+      </div>
       {status === "ready" && <QuickMove open={quickOpen} onClose={() => setQuickOpen(false)} />}
+      <ShortcutHelp open={helpOpen} onClose={() => setHelpOpen(false)} />
+      {savedNotice && <Toast>자동 저장됨 — 따로 저장하지 않아도 돼요</Toast>}
       <NovelFormDialog
         open={infoOpen}
         novel={novel ?? undefined}

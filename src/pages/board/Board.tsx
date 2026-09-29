@@ -45,7 +45,14 @@ import {
   setLanes,
   updateItems,
 } from "../../store/boardActions";
-import { redo, setTimeScale, undo, useNovelStore } from "../../store/novelStore";
+import {
+  beginBatch,
+  endBatch,
+  redo,
+  setTimeScale,
+  undo,
+  useNovelStore,
+} from "../../store/novelStore";
 import { eventBlock } from "../wiki/boardLinks";
 import { familyOf } from "../wiki/categories";
 import { copyClip, pasteRecords, type Clip } from "./clipboard";
@@ -70,6 +77,7 @@ import {
   freeRect,
   itemNode,
   laneOrder,
+  nudgePatches,
   STATE_W,
   timePlace,
   withFrames,
@@ -95,10 +103,17 @@ import {
   type StateType,
   type Tool,
 } from "./tools";
-import ZoomControls from "./ZoomControls";
+import ZoomControls, { ZOOM_MS } from "./ZoomControls";
 
 // 스파이크 C4에서 라벨 겹침 없음을 확인한 줌 범위
 const MIN_ZOOM = 0.05;
+// 방향키 code → 이동 방향 (dx, dy)
+const ARROWS: Record<string, [number, number]> = {
+  ArrowLeft: [-1, 0],
+  ArrowRight: [1, 0],
+  ArrowUp: [0, -1],
+  ArrowDown: [0, 1],
+};
 const MAX_ZOOM = 2;
 // 이 배율 미만이면 블록 간략 표시 (C3): 노드는 `.board-simple` 아래에서 제목만 표시
 const SIMPLE_ZOOM = 0.5;
@@ -190,7 +205,8 @@ function Canvas({
   const simple = useStore((s) => s.transform[2] < SIMPLE_ZOOM);
   const items = useNovelStore((s) => s.items);
   const docs = useNovelStore((s) => s.docs);
-  const { screenToFlowPosition, setCenter, getZoom } = useReactFlow();
+  const { screenToFlowPosition, setCenter, getZoom, zoomIn, zoomOut, zoomTo, fitView } =
+    useReactFlow();
   const [filters, setFilters] = useState<Filters>(NO_FILTERS);
   const [linesOpen, setLinesOpen] = useState(false);
   const [ui, setUi] = useState<Record<string, NodeUi>>({});
@@ -750,6 +766,42 @@ function Canvas({
         return;
       }
       if (mod || e.altKey) return;
+      // 방향키 이동 (shortcuts 2.3): 누르고 있는 동안 = 실행 취소 1건 (키를 떼면 기록)
+      const dir = ARROWS[e.code];
+      if (dir) {
+        e.preventDefault(); // 페이지 스크롤 대신
+        const ids = latest.current.selectedIds;
+        if (!ids.length) return;
+        const { items: cur, board } = useNovelStore.getState();
+        const lanes = !!board?.stateLanes.enabled;
+        beginBatch();
+        updateItems(nudgePatches(ids, cur, dir[0], dir[1], e.shiftKey, timeScale, lanes));
+        return;
+      }
+      // 줌 (shortcuts 2.4): + · − = 화면 중앙 기준, Shift+0 = 100%, Shift+1 = 화면 맞춤, Shift+2 = 선택 요소에 맞춤
+      if (e.code === "Equal" || e.code === "NumpadAdd") {
+        e.preventDefault();
+        void zoomIn({ duration: ZOOM_MS });
+        return;
+      }
+      if (e.code === "Minus" || e.code === "NumpadSubtract") {
+        e.preventDefault();
+        void zoomOut({ duration: ZOOM_MS });
+        return;
+      }
+      if (e.shiftKey && e.code === "Digit0") {
+        void zoomTo(1, { duration: ZOOM_MS });
+        return;
+      }
+      if (e.shiftKey && e.code === "Digit1") {
+        void fitView({ duration: ZOOM_MS, maxZoom: 1 });
+        return;
+      }
+      if (e.shiftKey && e.code === "Digit2") {
+        const ids = latest.current.selectedIds;
+        if (ids.length) void fitView({ nodes: ids.map((id) => ({ id })), duration: ZOOM_MS });
+        return;
+      }
       if (e.key === "Delete" || e.key === "Backspace") {
         e.preventDefault();
         deleteItems(latest.current.selectedIds, latest.current.selectedEdgeIds);
@@ -769,7 +821,9 @@ function Canvas({
         else if (edgeIds.length === 1 && !ids.length) setEditId(edgeIds[0]);
         return;
       }
+      // Esc (shortcuts 1.1): 배치 · 손 도구 → 선택 도구, 선택 도구면 선택 해제
       if (e.key === "Escape") {
+        if (tool === "select") select([]);
         setTool("select");
         setPreview(null);
         return;
@@ -777,9 +831,24 @@ function Canvas({
       const next = TOOL_BY_CODE[e.code];
       if (next) chooseTool(next);
     };
+    const onKeyUp = (e: KeyboardEvent) => {
+      if (ARROWS[e.code]) endBatch();
+    };
     window.addEventListener("keydown", onKey);
-    return () => window.removeEventListener("keydown", onKey);
+    window.addEventListener("keyup", onKeyUp);
+    window.addEventListener("blur", endBatch);
+    return () => {
+      window.removeEventListener("keydown", onKey);
+      window.removeEventListener("keyup", onKeyUp);
+      window.removeEventListener("blur", endBatch);
+    };
   }, [
+    tool,
+    timeScale,
+    zoomIn,
+    zoomOut,
+    zoomTo,
+    fitView,
     chooseTool,
     group,
     ungroup,
@@ -867,6 +936,8 @@ function Canvas({
             panActivationKeyCode="Space"
             // 삭제는 보드에서 직접 처리 (프레임 자식 유지, C7)
             deleteKeyCode={null}
+            // 노드 포커스 키 처리(방향키 이동 · Esc 선택 해제) 끔 → 보드 단축키 처리기 하나로 (shortcuts 4장)
+            disableKeyboardA11y
             // 화면 밖 렌더 생략 (C3)
             onlyRenderVisibleElements
             attributionPosition="bottom-left"

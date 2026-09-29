@@ -1,7 +1,7 @@
 import { Panel, useReactFlow, useStore } from "@xyflow/react";
 import { Maximize, Minus, Plus } from "lucide-react";
 
-const ZOOM_MS = 200;
+export const ZOOM_MS = 200;
 const zoomButton = "flex h-9 min-w-9 items-center justify-center rounded-sm text-button text-ink";
 
 // 우하단 줌 컨트롤 (−, %, +, 화면 맞춤). 미니맵 왼쪽에 배치

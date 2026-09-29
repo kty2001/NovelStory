@@ -8,6 +8,8 @@ import {
   EVENT_W,
   facingSides,
   movedPlace,
+  nudgedPlace,
+  nudgePatches,
   spanPlace,
   UNDATED_GAP,
   UNDATED_ID,
@@ -172,6 +174,69 @@ describe("끌기 종료: 위치 · 프레임 소속", () => {
       true,
     );
     expect(p.st.place).toEqual({ mode: "timed", t: 3, y: 60 });
+  });
+});
+
+describe("방향키 이동", () => {
+  const st = {
+    id: "st",
+    novelId: "n1",
+    updatedAt: OLD,
+    kind: "state" as const,
+    z: 1,
+    place: { mode: "timed" as const, t: 1, y: 60 },
+    docId: "d",
+    stateType: "appear" as const,
+    changes: [],
+    note: "",
+  };
+
+  it("시간 블록 ←→ = 1 눈금 · Shift 5 눈금, 기간 유지, 0 눈금에서 멈춤", () => {
+    const e = event("e", { mode: "timed", t: 2, tEnd: 4, y: -100 });
+    expect(nudgedPlace(e, 1, 0, false)).toEqual({ mode: "timed", t: 3, tEnd: 5, y: -100 });
+    expect(nudgedPlace(e, 1, 0, true)).toEqual({ mode: "timed", t: 7, tEnd: 9, y: -100 });
+    expect(nudgedPlace(e, -1, 0, true)).toEqual({ mode: "timed", t: 0, tEnd: 2, y: -100 });
+    expect(nudgedPlace(e, 0, -1, true)).toEqual({ mode: "timed", t: 2, tEnd: 4, y: -140 });
+  });
+
+  it("자유 요소 · 미정 블록 = 8px · Shift 40px, 미정 블록은 시간축으로 넘어가지 않음", () => {
+    expect(nudgedPlace(sticky("s", "n1", 100), 1, 1, false)).toEqual({
+      mode: "free",
+      x: 108,
+      y: 8,
+    });
+    expect(nudgedPlace(sticky("s", "n1", 100), -1, 0, true)).toEqual({ mode: "free", x: 60, y: 0 });
+    const u = event("u", { mode: "undated", x: -4, y: 0 });
+    expect(nudgedPlace(u, 1, 0, false)).toEqual({ mode: "undated", x: -4, y: 0 });
+    expect(nudgedPlace(u, -1, 0, false)).toEqual({ mode: "undated", x: -12, y: 0 });
+  });
+
+  it("캐릭터별 정렬 중 상태 블록 ↑↓ 무시", () => {
+    expect(nudgedPlace(st, 0, 1, false, true)).toEqual(st.place);
+    expect(nudgedPlace(st, 1, 1, false, true)).toEqual({ mode: "timed", t: 2, y: 60 });
+  });
+
+  it("프레임 이동 → 자식도 같은 만큼, 선택된 자식은 한 번만 이동", () => {
+    const frame: FrameItem = {
+      id: "f",
+      novelId: "n1",
+      updatedAt: OLD,
+      kind: "frame",
+      z: 0,
+      place: { mode: "free", x: 0, y: -300 },
+      w: 600,
+      h: 280,
+      title: "1부",
+    };
+    const items = {
+      f: frame,
+      s: { ...sticky("s", "n1", 50), parentFrameId: "f" },
+      e: { ...event("e", { mode: "timed", t: 1, y: -200 }), parentFrameId: "f" },
+    };
+    const p = nudgePatches(["f", "s"], items, 1, 0, true, scale);
+    expect(p.f).toEqual({ place: { mode: "free", x: 40, y: -300 } });
+    expect(p.s).toEqual({ place: { mode: "free", x: 90, y: 0 } });
+    expect(p.e).toEqual({ place: { mode: "timed", t: 1 + 40 / 120, y: -200 } });
   });
 });
 

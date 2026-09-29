@@ -282,6 +282,62 @@ export function dropPatches(
   return patches;
 }
 
+// ── 방향키 이동 (shortcuts 2.3) ──
+// 시간 블록 ←→ = 눈금(0 눈금에서 멈춤), 그 외 = px. 시간축 ↔ 미정 영역은 넘나들지 않음
+const NUDGE_PX = 8;
+const NUDGE_BIG_PX = 40; // Shift
+const NUDGE_BIG_TICKS = 5; // Shift
+
+// dx · dy = 방향 (-1 · 0 · 1). lanes: 캐릭터별 정렬 중이면 상태 블록 세로 이동 무시
+export function nudgedPlace(
+  item: BoardItem,
+  dx: number,
+  dy: number,
+  big: boolean,
+  lanes = false,
+): BoardItem["place"] {
+  const px = big ? NUDGE_BIG_PX : NUDGE_PX;
+  const p = item.place;
+  const y = lanes && item.kind === "state" ? p.y : p.y + dy * px;
+  if (p.mode === "timed") {
+    const d = Math.max(dx * (big ? NUDGE_BIG_TICKS : 1), -p.t);
+    return p.tEnd === undefined
+      ? { ...p, t: p.t + d, y }
+      : { ...p, t: p.t + d, tEnd: p.tEnd + d, y };
+  }
+  const x = p.x + dx * px;
+  return { ...p, x: p.mode === "undated" && x >= 0 ? p.x : x, y };
+}
+
+// 선택 요소 방향키 이동 패치. 프레임은 자식도 같은 만큼 (시간 블록은 스냅 없이 눈금 재계산),
+// 선택된 프레임의 자식은 프레임과 함께 움직이므로 따로 옮기지 않음
+export function nudgePatches(
+  ids: string[],
+  items: Collection<BoardItem>,
+  dx: number,
+  dy: number,
+  big: boolean,
+  scale: TimeScale,
+  lanes = false,
+): Record<string, Partial<BoardItem>> {
+  const patches: Record<string, Partial<BoardItem>> = {};
+  const moving = new Set(ids);
+  for (const id of ids) {
+    const item = items[id];
+    if (!item || (item.parentFrameId && moving.has(item.parentFrameId))) continue;
+    const place = nudgedPlace(item, dx, dy, big, lanes);
+    patches[id] = { place } as Partial<BoardItem>;
+    if (item.kind !== "frame" || place.mode !== "free") continue;
+    const [fx, fy] = [place.x - item.place.x, place.y - item.place.y];
+    for (const c of Object.values(items)) {
+      if (c.parentFrameId === id) {
+        patches[c.id] = { place: shifted(c, fx, fy, scale, false) } as Partial<BoardItem>;
+      }
+    }
+  }
+  return patches;
+}
+
 // ── 연결선 ──
 // 화살촉 마커 색은 url(#id)에 들어가므로 CSS 변수 대신 토큰 값
 export const EDGE_COLOR = "#3a3a3a"; // {colors.body}

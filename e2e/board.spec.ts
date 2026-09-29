@@ -1066,3 +1066,134 @@ test.describe("보드 ↔ 사전 연동", () => {
     await expect(page.getByTestId("state-block")).toHaveCount(0);
   });
 });
+
+test.describe("단축키", () => {
+  async function sticky(page: Page, x: number, y: number, text: string) {
+    await expect(page.getByTestId("time-axis")).toBeVisible();
+    await page.keyboard.press("KeyS");
+    await page.mouse.click(x, y);
+    const input = page.getByRole("textbox", { name: "포스트잇 내용" });
+    await input.fill(text);
+    await input.press("Escape");
+    return page.getByTestId("sticky").filter({ hasText: text });
+  }
+  const selected = (page: Page) => page.locator(".react-flow__node.selected");
+
+  test("방향키: 사건 1 눈금 · 누르고 있는 동안 = 실행 취소 1건 · Shift 5 눈금 · 0 눈금에서 멈춤", async ({
+    page,
+  }) => {
+    const block = await placeEvent(page, 1, "이동");
+    await block.click();
+    for (let i = 0; i < 3; i++) await page.keyboard.down("ArrowRight"); // 반복 입력
+    await page.keyboard.up("ArrowRight");
+    const x4 = await tickX(page, 4);
+    await expect.poll(async () => Math.round((await center(block)).x - x4)).toBe(0);
+
+    await page.keyboard.press("Control+KeyZ");
+    const x1 = await tickX(page, 1);
+    await expect.poll(async () => Math.round((await center(block)).x - x1)).toBe(0);
+
+    await page.keyboard.press("Shift+ArrowLeft"); // 1 → 0 (0 눈금에서 멈춤)
+    const x0 = await tickX(page, 0);
+    await expect.poll(async () => Math.round((await center(block)).x - x0)).toBe(0);
+    await page.keyboard.press("Shift+ArrowRight");
+    const x5 = await tickX(page, 5);
+    await expect.poll(async () => Math.round((await center(block)).x - x5)).toBe(0);
+
+    const y0 = (await center(block)).y;
+    await page.keyboard.press("ArrowUp");
+    await expect.poll(async () => Math.round(y0 - (await center(block)).y)).toBe(8);
+  });
+
+  test("방향키: 포스트잇 8px · Shift 40px, 편집 중엔 무시", async ({ page }) => {
+    const s = await sticky(page, 900, 250, "메모");
+    const b0 = (await s.boundingBox())!;
+    await s.click();
+    await page.keyboard.press("ArrowRight");
+    await page.keyboard.press("Shift+ArrowDown");
+    await expect.poll(async () => Math.round((await s.boundingBox())!.x - b0.x)).toBe(8);
+    await expect.poll(async () => Math.round((await s.boundingBox())!.y - b0.y)).toBe(40);
+
+    await s.dblclick();
+    await page.getByRole("textbox", { name: "포스트잇 내용" }).press("ArrowLeft");
+    await page.getByRole("textbox", { name: "포스트잇 내용" }).press("Escape");
+    expect(Math.round((await s.boundingBox())!.x - b0.x)).toBe(8);
+  });
+
+  test("Esc: 배치 도구면 선택 도구로, 선택 도구면 선택 해제", async ({ page }) => {
+    const s = await sticky(page, 900, 250, "메모");
+    await s.click();
+    await expect(selected(page)).toHaveCount(1);
+    await page.keyboard.press("KeyE");
+    await page.keyboard.press("Escape");
+    await expect(toolButton(page, "선택")).toHaveAttribute("aria-pressed", "true");
+    await expect(selected(page)).toHaveCount(1);
+    await page.keyboard.press("Escape");
+    await expect(selected(page)).toHaveCount(0);
+  });
+
+  test("줌: + · − · Shift+0 100% · Shift+1 화면 맞춤 · Shift+2 선택 요소에 맞춤", async ({
+    page,
+  }) => {
+    const zoomLabel = page.getByRole("button", { name: "100%로 보기" });
+    await expect(page.getByTestId("time-axis")).toBeVisible();
+    await page.keyboard.press("Equal");
+    await expect(zoomLabel).toHaveText("120%");
+    await page.keyboard.press("Shift+Digit0");
+    await expect(zoomLabel).toHaveText("100%");
+    await page.keyboard.press("Minus");
+    await expect(zoomLabel).toHaveText("83%");
+    await page.keyboard.press("NumpadAdd");
+    await expect(zoomLabel).toHaveText("100%");
+
+    await page.keyboard.press("Shift+Digit1");
+    await expect(zoomLabel).not.toHaveText("100%");
+    await expect(page.getByTestId("undated-zone")).toBeInViewport();
+
+    const s = await sticky(page, 900, 250, "메모");
+    await s.click();
+    await page.keyboard.press("Shift+Digit2");
+    await expect(zoomLabel).toHaveText("200%");
+  });
+
+  test("공통: Alt+1/2 탭 전환 · Ctrl+S 자동 저장 안내", async ({ page }) => {
+    await expect(page.getByTestId("time-axis")).toBeVisible();
+    await page.keyboard.press("Alt+Digit2");
+    await expect(page).toHaveURL(/\/wiki/);
+    await page.keyboard.press("Alt+Digit1");
+    await expect(page).toHaveURL(/\/board$/);
+    await page.keyboard.press("Control+KeyS");
+    await expect(page.getByRole("status").filter({ hasText: "자동 저장됨" })).toBeVisible();
+  });
+
+  test("단축키 도움말: ? · 상단 바 버튼 · ⋯ 메뉴 · 빈 보드 안내 카드, 입력칸에서는 ? 입력", async ({
+    page,
+  }) => {
+    const help = page.getByRole("dialog", { name: "단축키" });
+    await expect(page.getByTestId("time-axis")).toBeVisible();
+    await page.keyboard.press("Shift+Slash");
+    await expect(help).toBeVisible();
+    await expect(help).toContainText("선택 요소에 맞춤");
+    await page.keyboard.press("Escape");
+    await expect(help).toBeHidden();
+
+    await page.getByRole("button", { name: "단축키 도움말" }).click();
+    await expect(help).toBeVisible();
+    await page.keyboard.press("Escape");
+
+    await page.getByRole("button", { name: "소설 메뉴" }).click();
+    await page.getByRole("menuitem", { name: "단축키 도움말" }).click();
+    await expect(help).toBeVisible();
+    await page.keyboard.press("Escape");
+
+    await page.getByRole("region", { name: "보드 시작 안내" }).getByRole("button").click();
+    await expect(help).toBeVisible();
+    await page.keyboard.press("Escape");
+
+    await page.keyboard.press("Control+KeyK");
+    const quick = page.getByLabel("빠른 이동 검색");
+    await quick.press("Shift+Slash");
+    await expect(quick).toHaveValue("?");
+    await expect(help).toBeHidden();
+  });
+});

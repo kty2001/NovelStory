@@ -1,7 +1,7 @@
 # 진행 상태 (Status)
 
 ## 현재 단계
-1단계(MVP) 진행 중 — 기반 · F0 서재 완료, F1 보드 완료(단축키 도움말 · 방향키 · 줌 단축키는 남음), F4 사전 완료(분류 트리 · 문서 편집 · 템플릿 · `@` 링크 + 역링크 · 표 보기 · 검색 · 보드 연동 · 빈 상태 안내), 다음: 데스크톱 점검 · 배포. MVP는 데스크톱 전용, 태블릿·모바일(와이어프레임·반응형·터치·실기기 확인)은 MVP 이후로 연기(확인 기기 없음)
+1단계(MVP) 진행 중 — 기반 · F0 서재 완료, F1 보드 완료, F4 사전 완료(분류 트리 · 문서 편집 · 템플릿 · `@` 링크 + 역링크 · 표 보기 · 검색 · 보드 연동 · 빈 상태 안내), 다음: 데스크톱 점검 · 배포. MVP는 데스크톱 전용, 태블릿·모바일(와이어프레임·반응형·터치·실기기 확인)은 MVP 이후로 연기(확인 기기 없음)
 
 ## 이력
 | 날짜 | 내용 |
@@ -44,6 +44,7 @@
 | 2026-09-29 | F4 표 보기 · 검색: `CategoryTable`(정렬 · 셀 수정 · `setPropValue`), `search.ts` `searchWiki` + `SearchResults`(분류 탭), 빠른 이동 `QuickMove`(`Ctrl+K`, 보드 `?tick=` 이동 · 접힌 구간 펼침), Vitest 4건 · Playwright 4건 |
 | 2026-09-29 | F4 보드 연동: `DocPanel`(사전 패널 · 문서 끌어 놓기 `placeEvent` / `addState`), `OpenDocContext`, 보드 `?focus=` · `?doc=` 처리, `boardLinks.ts` + `BoardSection`(등장 사건 · 상태 이력 · 작중 시점 · 관련 캐릭터), 표 보드 열, 문서 삭제 경고 + 연쇄 삭제(`deleteDoc`), Vitest 5건 · Playwright 3건 |
 | 2026-09-29 | F4 빈 상태 안내(W-7): `EmptyState`, 빈 분류 · 검색 0건(검색어로 문서 만들기) · 빠른 이동 0건 · 빈 역링크 · 보드 연동 0, 받침 조사 `lib/particle.ts`(서재 삭제 확인과 공용), 사전 검색어는 트리 클릭 · 연 문서 변경 시 비움(라우터 transition 중 입력 유실 수정), Vitest 1건 · Playwright 3건. F4 사전 TODO 항목 완료 |
+| 2026-09-29 | F1 단축키 마무리: `flow.ts` `nudgedPlace` · `nudgePatches`(방향키, `beginBatch`/`endBatch` 묶음 기록), 줌 단축키, `Esc` 선택 해제, `disableKeyboardA11y`, 공통 `Alt+1/2` · `Ctrl+S` 안내 · `?` `ShortcutHelp` 대화상자(`ShortcutHelpContext`), Vitest 4건 · Playwright 6건 |
 
 ## 결정됨
 | 항목 | 결정 |

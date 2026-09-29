@@ -1,3 +1,6 @@
+import { useContext } from "react";
+import { ShortcutHelpContext } from "../shortcutHelpContext";
+
 const Kbd = ({ children }: { children: string }) => (
   <kbd className="rounded-xs border font-sans border-hairline bg-surface-card px-1.5 text-caption text-body">
     {children}
@@ -25,6 +28,7 @@ const STEPS = [
 // 빈 보드 안내 카드 (B-9, onboarding.md 3장): 보드 요소가 0개일 때만. 화면에 고정.
 // 누를 요소가 없으므로 포인터 이벤트를 통과시켜 카드 아래 캔버스에도 바로 배치 · 팬 가능. 닫기 버튼 없음 (첫 요소를 놓으면 사라짐)
 export function EmptyGuide() {
+  const openHelp = useContext(ShortcutHelpContext);
   return (
     <section
       aria-label="보드 시작 안내"
@@ -49,9 +53,16 @@ export function EmptyGuide() {
           </li>
         ))}
       </ol>
-      <p className="mt-3 border-t border-hairline py-2 text-caption text-muted">
-        시점을 모르면 왼쪽 “시점 미정”에 놓으세요
-      </p>
+      <div className="mt-3 flex items-center border-t border-hairline py-2 text-caption text-muted">
+        <p>시점을 모르면 왼쪽 “시점 미정”에 놓으세요</p>
+        <button
+          type="button"
+          className="pointer-events-auto ml-auto flex items-center gap-1.5 text-button text-body hover:text-ink"
+          onClick={openHelp}
+        >
+          단축키 보기 <Kbd>?</Kbd>
+        </button>
+      </div>
     </section>
   );
 }
