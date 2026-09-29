@@ -1,4 +1,5 @@
-import type { ResizedImage } from "./novels";
+import { db } from "./db";
+import { toAsset, type ResizedImage } from "./novels";
 
 type WorkerResult = ({ ok: true } & ResizedImage) | { ok: false; message: string };
 
@@ -20,3 +21,12 @@ export function resizeImage(file: Blob): Promise<ResizedImage> {
     worker.postMessage(file);
   });
 }
+
+// 변환된 이미지를 소설 이미지로 저장. 새 ID 반환
+export async function saveImage(novelId: string, img: ResizedImage): Promise<string> {
+  const asset = toAsset(novelId, img, new Date().toISOString());
+  await db.images.put(asset);
+  return asset.id;
+}
+
+export const deleteImage = (id: string) => db.images.delete(id);

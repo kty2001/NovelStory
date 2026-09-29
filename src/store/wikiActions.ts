@@ -1,11 +1,15 @@
-import type { ColorToken, WikiCategory } from "../db/types";
+import { deleteImage } from "../db/images";
+import type { ColorToken, TiptapJSON, WikiCategory, WikiDoc } from "../db/types";
+import { deriveDoc } from "../db/wikiDerived";
 import {
+  blockCount,
   childCategories,
   deleteError,
   dropError,
   familyOf,
   movedCategories,
   subtreeDocs,
+  usedDocIds,
   type DropPos,
 } from "../pages/wiki/categories";
 import { newDoc, setDocsLine } from "./boardActions";
@@ -80,4 +84,46 @@ export function addDoc(categoryId: string): string | null {
   const doc = newDoc(novelId, category, "새 문서");
   store.setState({ docs: { ...docs, [doc.id]: doc } });
   return doc.id;
+}
+
+type DocPatch = Partial<Pick<WikiDoc, "aliases" | "tags" | "props" | "imageId">>;
+
+// 문서 필드 변경. imageId: undefined = 대표 이미지 제거
+export function updateDoc(id: string, patch: DocPatch) {
+  store.setState(({ docs }) => {
+    if (!docs[id]) return {};
+    const next = { ...docs[id], ...patch };
+    if ("imageId" in patch && !patch.imageId) delete next.imageId;
+    return { docs: { ...docs, [id]: next } };
+  });
+}
+
+// 본문 변경: 파생 필드(mentions · plainText) 함께 계산 (data_model 4.5)
+export function setDocBody(id: string, body: TiptapJSON | null) {
+  store.setState(({ docs }) =>
+    docs[id] ? { docs: { ...docs, [id]: { ...docs[id], body, ...deriveDoc(body) } } } : {},
+  );
+}
+
+// 분류 이동. 보드에 쓰인 문서는 같은 계열 안에서만, 사건 계열 밖이면 라인 제거 (data_model 5장)
+export function moveDoc(id: string, categoryId: string): string | null {
+  const { docs, categories, items } = store.getState();
+  const doc = docs[id];
+  if (!doc || !categories[categoryId] || doc.categoryId === categoryId) return null;
+  const to = familyOf(categories, categoryId);
+  if (familyOf(categories, doc.categoryId) !== to && usedDocIds(items).has(id))
+    return "보드에 쓰인 문서는 같은 계열 안에서만 옮길 수 있어요";
+  const { lineId: _line, ...rest } = doc;
+  store.setState({ docs: { ...docs, [id]: { ...(to === "event" ? doc : rest), categoryId } } });
+  return null;
+}
+
+// 문서 삭제 (보드 블록이 없는 문서만) + 대표 이미지 삭제
+export function deleteDoc(id: string) {
+  const { docs, items } = store.getState();
+  const doc = docs[id];
+  if (!doc || blockCount(items, id)) return;
+  const { [id]: _removed, ...rest } = docs;
+  store.setState({ docs: rest });
+  if (doc.imageId) void deleteImage(doc.imageId);
 }

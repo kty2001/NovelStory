@@ -18,7 +18,7 @@ const NOVEL_TABLES = [
   db.images,
 ];
 
-const toAsset = (novelId: string, img: ResizedImage, now: string): ImageAsset => ({
+export const toAsset = (novelId: string, img: ResizedImage, now: string): ImageAsset => ({
   id: crypto.randomUUID(),
   novelId,
   updatedAt: now,

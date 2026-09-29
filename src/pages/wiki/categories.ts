@@ -10,6 +10,18 @@ export const childCategories = (categories: Collection<WikiCategory>, parentId?:
     .filter((c) => c.parentId === parentId)
     .sort((a, b) => a.order - b.order);
 
+// 트리 순서로 펼친 분류 목록 (들여쓰기 단계 포함)
+export function flatCategories(
+  categories: Collection<WikiCategory>,
+  parentId?: string,
+  depth = 0,
+): { category: WikiCategory; depth: number }[] {
+  return childCategories(categories, parentId).flatMap((category) => [
+    { category, depth },
+    ...flatCategories(categories, category.id, depth + 1),
+  ]);
+}
+
 export function descendantIds(categories: Collection<WikiCategory>, id: string): Set<string> {
   const found = new Set<string>();
   const visit = (parentId: string) => {
@@ -81,6 +93,14 @@ export function deleteError(
   return n ? `문서 ${n}개 — 먼저 옮기세요` : null;
 }
 
+// 보드 블록(사건 · 상태)이 가리키는 문서
+export const usedDocIds = (items: Collection<BoardItem>) =>
+  new Set(Object.values(items).flatMap((i) => ("docId" in i ? [i.docId] : [])));
+
+// 문서에 연결된 보드 블록 수
+export const blockCount = (items: Collection<BoardItem>, docId: string) =>
+  Object.values(items).filter((i) => "docId" in i && i.docId === docId).length;
+
 type TreeState = {
   categories: Collection<WikiCategory>;
   docs: Collection<WikiDoc>;
@@ -104,7 +124,7 @@ export function dropError(
     return "자기 하위로는 옮길 수 없어요";
   const parentId = newParentOf(categories, targetId, pos);
   if (familyOf(categories, dragId) === familyOf(categories, parentId)) return null;
-  const used = new Set(Object.values(items).flatMap((i) => ("docId" in i ? [i.docId] : [])));
+  const used = usedDocIds(items);
   return subtreeDocs(categories, docs, dragId).some((d) => used.has(d.id))
     ? "보드에 쓰인 문서가 있어 다른 계열로 옮길 수 없어요"
     : null;

@@ -1,4 +1,5 @@
 import { expect, test, type Page } from "@playwright/test";
+import { cdp, setComposition } from "./helpers/ime";
 
 // 분류 이름 버튼 (기본 분류는 🔒 "기본 분류"가 이름에 붙음)
 const nameButton = (page: Page, name: string) =>
@@ -84,7 +85,7 @@ test("새 문서: 선택 분류에 생성 · 문서 열기, 문서 있는 분류
   await expect(page).toHaveURL(/\/wiki\?category=/);
   await page.getByRole("button", { name: "새 문서" }).first().click();
   await expect(page).toHaveURL(/\/wiki\/[^/?]+$/);
-  await expect(page.getByRole("heading", { name: "새 문서" })).toBeVisible();
+  await expect(page.getByRole("textbox", { name: "제목" })).toHaveValue("새 문서");
   await expect(page.getByTestId("doc-row")).toHaveText("새 문서");
   await expect(row(page, "장소")).toContainText("1");
 
@@ -95,4 +96,128 @@ test("새 문서: 선택 분류에 생성 · 문서 열기, 문서 있는 분류
   await page.waitForTimeout(800);
   await page.reload();
   await expect(page.getByTestId("doc-row")).toHaveText("새 문서");
+});
+
+test.describe("문서 편집", () => {
+  // 1×1 PNG
+  const PNG = Buffer.from(
+    "iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNk+M9QDwADhgGAWjR9awAAAABJRU5ErkJggg==",
+    "base64",
+  );
+
+  async function newDocIn(page: Page, category: string) {
+    await nameButton(page, category).click();
+    await page.getByRole("button", { name: "새 문서" }).first().click();
+    await expect(page.getByRole("textbox", { name: "제목" })).toHaveValue("새 문서");
+  }
+
+  test("제목 · 별칭 · 태그: 트리 반영, 비운 제목은 유지, 칩 추가 · 삭제", async ({ page }) => {
+    await newDocIn(page, "장소");
+    const title = page.getByRole("textbox", { name: "제목" });
+    await title.fill("왕도");
+    await title.press("Enter");
+    await expect(page.getByTestId("doc-row")).toHaveText("왕도");
+    await title.fill("");
+    await title.press("Enter");
+    await expect(title).toHaveValue("왕도");
+
+    const alias = page.getByRole("textbox", { name: "별칭 추가" });
+    await alias.fill("수도");
+    await alias.press("Enter");
+    await alias.fill("수도"); // 중복 무시
+    await alias.press("Enter");
+    await page.getByRole("textbox", { name: "태그 추가" }).fill("거점");
+    await page.getByRole("textbox", { name: "태그 추가" }).press("Enter");
+    await expect(page.getByRole("button", { name: "별칭 수도 삭제" })).toHaveCount(1);
+    await page.getByRole("button", { name: "태그 거점 삭제" }).click();
+    await expect(page.getByRole("button", { name: "태그 거점 삭제" })).toBeHidden();
+
+    await page.waitForTimeout(800); // 자동 저장 500ms
+    await page.reload();
+    await expect(page.getByRole("textbox", { name: "제목" })).toHaveValue("왕도");
+    await expect(page.getByRole("button", { name: "별칭 수도 삭제" })).toBeVisible();
+  });
+
+  test("속성: 템플릿 키 · 값 입력 · 중복 키 거부 · 끌어서 순서", async ({ page }) => {
+    await newDocIn(page, "장소");
+    const keys = page.getByRole("textbox", { name: "속성 이름" });
+    await expect(keys).toHaveCount(2);
+    expect(await keys.evaluateAll((els) => els.map((e) => (e as HTMLInputElement).value))).toEqual([
+      "지역",
+      "특징",
+    ]);
+    await page.getByRole("textbox", { name: "지역 값" }).fill("북부");
+    await page.getByRole("textbox", { name: "지역 값" }).press("Enter");
+
+    await page.getByRole("button", { name: "속성 추가" }).click();
+    await expect(keys.nth(2)).toBeFocused();
+    await page.keyboard.type("특징");
+    await page.keyboard.press("Enter");
+    await expect(page.getByRole("alert")).toHaveText("'특징' 속성이 이미 있어요");
+    await expect(keys.nth(2)).toHaveValue("새 속성");
+
+    await page
+      .getByLabel("새 속성 순서 변경")
+      .dragTo(page.getByTestId("prop-row").first(), { force: true });
+    expect(await keys.evaluateAll((els) => els.map((e) => (e as HTMLInputElement).value))).toEqual([
+      "새 속성",
+      "지역",
+      "특징",
+    ]);
+
+    await page.waitForTimeout(800);
+    await page.reload();
+    await expect(page.getByRole("textbox", { name: "지역 값" })).toHaveValue("북부");
+  });
+
+  test("본문: 서식 도구 · 한글 조합 입력, 새로고침 후 유지", async ({ page }) => {
+    await newDocIn(page, "장소");
+    const body = page.getByRole("textbox", { name: "본문" });
+    await body.click();
+    await page.getByRole("button", { name: "제목 2" }).click();
+    await expect(page.getByRole("button", { name: "제목 2" })).toHaveAttribute(
+      "aria-pressed",
+      "true",
+    );
+    const s = await cdp(page);
+    for (const step of ["ㅎ", "하", "한"]) await setComposition(s, step);
+    await s.send("Input.insertText", { text: "한" });
+    await page.keyboard.press("Enter");
+    await page.getByRole("button", { name: "굵게" }).click();
+    await page.keyboard.type("bold");
+    await expect(body.locator("h2")).toHaveText("한");
+    await expect(body.locator("strong")).toHaveText("bold");
+
+    await page.waitForTimeout(800);
+    await page.reload();
+    await expect(page.getByRole("textbox", { name: "본문" }).locator("h2")).toHaveText("한");
+    await expect(page.getByRole("textbox", { name: "본문" }).locator("strong")).toHaveText("bold");
+  });
+
+  test("대표 이미지: 업로드 → 표시 · 제거", async ({ page }) => {
+    await newDocIn(page, "장소");
+    await page
+      .getByLabel("대표 이미지")
+      .setInputFiles({ name: "a.png", mimeType: "image/png", buffer: PNG });
+    await expect(page.getByRole("img", { name: "대표 이미지" })).toBeVisible();
+    await page.getByRole("button", { name: "이미지 제거" }).click();
+    await expect(page.getByRole("img", { name: "대표 이미지" })).toBeHidden();
+  });
+
+  test("사건 문서: 라인 선택 · 분류 이동 시 라인 칸 사라짐 · 삭제", async ({ page }) => {
+    await newDocIn(page, "사건");
+    await page.getByRole("combobox", { name: "스토리 라인" }).selectOption({ label: "메인" });
+
+    await page.getByRole("button", { name: "문서 메뉴" }).click();
+    await page.getByRole("menuitem", { name: "분류 이동" }).click();
+    await page.getByRole("dialog").getByRole("button", { name: "장소" }).click();
+    await expect(page.getByRole("combobox", { name: "스토리 라인" })).toBeHidden();
+    await expect(row(page, "장소")).toContainText("1");
+
+    await page.getByRole("button", { name: "문서 메뉴" }).click();
+    await page.getByRole("menuitem", { name: "삭제" }).click();
+    await page.getByRole("dialog").getByRole("button", { name: "삭제" }).click();
+    await expect(page).toHaveURL(/\/wiki\?category=/);
+    await expect(page.getByTestId("doc-row")).toHaveCount(0);
+  });
 });

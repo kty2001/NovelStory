@@ -1,8 +1,18 @@
 import { beforeEach, describe, expect, it } from "vitest";
-import type { WikiCategory } from "../db/types";
+import type { EventItem, WikiCategory } from "../db/types";
 import { doc, OLD } from "../test/fixtures";
 import { useNovelStore } from "./novelStore";
-import { addCategory, addDoc, deleteCategory, moveCategory, setCategoryColor } from "./wikiActions";
+import {
+  addCategory,
+  addDoc,
+  deleteCategory,
+  deleteDoc,
+  moveCategory,
+  moveDoc,
+  setCategoryColor,
+  setDocBody,
+  updateDoc,
+} from "./wikiActions";
 
 const store = useNovelStore;
 
@@ -91,5 +101,58 @@ it("새 문서: 템플릿 속성 빈 값", () => {
       { key: "나이", value: "" },
       { key: "성별", value: "" },
     ],
+  });
+});
+
+describe("문서 동작", () => {
+  const eventBlock = { id: "b1", kind: "event", docId: "d1" } as unknown as EventItem;
+
+  it("본문: 파생 필드 계산, null이면 비움", () => {
+    setDocBody("d1", {
+      type: "doc",
+      content: [
+        {
+          type: "paragraph",
+          content: [
+            { type: "text", text: "만난 사람 " },
+            { type: "mention", attrs: { id: "d9", label: "카엘" } },
+          ],
+        },
+      ],
+    });
+    expect(store.getState().docs.d1).toMatchObject({
+      mentions: ["d9"],
+      plainText: "만난 사람 카엘",
+    });
+    setDocBody("d1", null);
+    expect(store.getState().docs.d1).toMatchObject({ body: null, mentions: [], plainText: "" });
+  });
+
+  it("대표 이미지 제거는 필드 삭제", () => {
+    updateDoc("d1", { imageId: "img" });
+    expect(store.getState().docs.d1.imageId).toBe("img");
+    updateDoc("d1", { imageId: undefined });
+    expect(store.getState().docs.d1).not.toHaveProperty("imageId");
+  });
+
+  it("분류 이동: 사건 계열 밖이면 라인 제거, 보드 문서는 다른 계열 불가", () => {
+    store.setState({ items: { b1: eventBlock } });
+    expect(moveDoc("d1", "place")).toMatch(/계열/);
+    expect(store.getState().docs.d1.categoryId).toBe("sub");
+    expect(moveDoc("d1", "event")).toBeNull();
+    expect(store.getState().docs.d1).toMatchObject({ categoryId: "event", lineId: "L1" });
+
+    store.setState({ items: {} });
+    expect(moveDoc("d1", "place")).toBeNull();
+    expect(store.getState().docs.d1).not.toHaveProperty("lineId");
+  });
+
+  it("삭제: 보드 블록이 있으면 무시", () => {
+    store.setState({ items: { b1: eventBlock } });
+    deleteDoc("d1");
+    expect(store.getState().docs.d1).toBeDefined();
+    store.setState({ items: {} });
+    deleteDoc("d1");
+    expect(store.getState().docs.d1).toBeUndefined();
   });
 });

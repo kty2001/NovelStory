@@ -1,8 +1,9 @@
 import { useParams, useSearchParams } from "react-router";
 import { useNovelStore } from "../store/novelStore";
-import { categoryPath, childCategories } from "./wiki/categories";
+import { childCategories } from "./wiki/categories";
 import CategoryTree from "./wiki/CategoryTree";
 import CategoryView from "./wiki/CategoryView";
+import DocView from "./wiki/DocView";
 
 // 사전: 좌측 분류 트리 240px + 우측 문서 영역 (최대 1280px 중앙)
 export default function WikiPage() {
@@ -21,15 +22,7 @@ export default function WikiPage() {
       <CategoryTree categoryId={categoryId} docId={doc?.id} />
       <main className="min-w-0 flex-1 overflow-y-auto px-10 py-8">
         {doc ? (
-          // 문서 편집은 F4 "문서 편집"에서
-          <article>
-            <p className="flex items-center gap-2 text-body-sm text-muted">
-              {categoryPath(categories, doc.categoryId)
-                .map((c) => c.name)
-                .join(" › ")}
-            </p>
-            <h2 className="mt-2 text-display text-ink">{doc.title || "제목 없음"}</h2>
-          </article>
+          <DocView key={doc.id} doc={doc} />
         ) : (
           categoryId && <CategoryView categoryId={categoryId} />
         )}

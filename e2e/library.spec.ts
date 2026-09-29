@@ -125,6 +125,14 @@ test("샘플 소설로 둘러보기", async ({ page }) => {
   await page.getByRole("button", { name: /샘플 소설로 둘러보기/ }).click();
   await expect(page).toHaveURL(/\/novel\/[^/]+\/board$/);
   await expect(page.getByRole("heading", { name: "잿빛 왕관 (샘플)" })).toBeVisible();
+
+  // 사전 본문의 멘션 노드까지 읽어 표시 (읽지 못하면 편집 막힘 안내)
+  await page.getByRole("link", { name: "사전" }).click();
+  await page.getByRole("button", { name: "캐릭터 펼치기" }).click();
+  await page.getByTestId("doc-row").filter({ hasText: "레아" }).click();
+  await expect(page.getByRole("textbox", { name: "본문" })).toContainText("@카엘");
+  await expect(page.getByRole("alert")).toBeHidden();
+
   await page.getByRole("link", { name: "← 서재" }).click();
   await expect(card(page, "잿빛 왕관 (샘플)")).toBeVisible();
 });
