@@ -1,6 +1,7 @@
 # NovelStory
 
 > 서비스명: **WhiteNoard**
+> url: https://whitenoard.tyoujungzz.workers.dev/
 
 웹소설 작가를 위한 스토리 설계 웹 서비스. 화이트보드에 쓰듯 작중 사건, 캐릭터 변화, 설정을 한 화면에서 정리.
 
