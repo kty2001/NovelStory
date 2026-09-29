@@ -7,6 +7,7 @@ export type MenuItem = {
   onSelect: () => void;
   danger?: boolean;
   disabled?: boolean;
+  hint?: string; // 오른쪽 보조 문구 (비활성 이유 등)
 };
 
 // 메뉴 목록: ⋯ 드롭다운과 우클릭 메뉴 공용. 위치는 className으로 지정
@@ -39,6 +40,7 @@ export function MenuList({
           >
             {item.icon}
             {item.label}
+            {item.hint && <span className="ml-auto pl-4 text-caption text-muted">{item.hint}</span>}
           </button>
         </li>
       ))}
