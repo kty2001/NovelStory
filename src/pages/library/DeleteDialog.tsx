@@ -1,13 +1,7 @@
 import Button from "../../components/Button";
 import Dialog from "../../components/Dialog";
 import type { Novel } from "../../db/types";
-
-// 받침 여부로 을/를 선택 (한글이 아니면 '을(를)')
-function objectParticle(word: string) {
-  const code = word.trim().charCodeAt(word.trim().length - 1) - 0xac00;
-  if (code < 0 || code > 11171) return "을(를)";
-  return code % 28 ? "을" : "를";
-}
+import { particle } from "../../lib/particle";
 
 type Props = {
   novel: Novel | null;
@@ -18,7 +12,7 @@ type Props = {
 
 // L-4 삭제 확인: 제목 표시, 보조 버튼으로 바로 내보내기
 export default function DeleteDialog({ novel, onClose, onExport, onConfirm }: Props) {
-  const title = novel ? `'${novel.title}'${objectParticle(novel.title)} 삭제할까요?` : "";
+  const title = novel ? `'${novel.title}'${particle(novel.title, "을", "를")} 삭제할까요?` : "";
   return (
     <Dialog
       open={!!novel}

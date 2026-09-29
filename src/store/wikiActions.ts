@@ -85,11 +85,11 @@ export function moveCategory(dragId: string, targetId: string, pos: DropPos): st
 }
 
 // 분류에 새 문서 (템플릿 속성 빈 값, UC-31). 문서 ID 반환
-export function addDoc(categoryId: string): string | null {
+export function addDoc(categoryId: string, title = "새 문서"): string | null {
   const { novelId, categories, docs } = store.getState();
   const category = categories[categoryId];
   if (!novelId || !category) return null;
-  const doc = newDoc(novelId, category, "새 문서");
+  const doc = newDoc(novelId, category, title);
   store.setState({ docs: { ...docs, [doc.id]: doc } });
   return doc.id;
 }

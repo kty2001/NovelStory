@@ -485,3 +485,64 @@ test.describe("표 보기 · 검색 · 빠른 이동", () => {
     await expect(tick(3)).toBeInViewport();
   });
 });
+
+test.describe("빈 상태 안내 (W-7)", () => {
+  const empty = (page: Page) => page.getByTestId("empty-state");
+
+  test("빈 분류: 캐릭터 · 사건은 보드 안내 + 보드로 가기, 그 외 템플릿 안내, 표 탭도 같은 안내", async ({
+    page,
+  }) => {
+    await expect(empty(page)).toContainText("아직 캐릭터 문서가 없어요");
+    await expect(empty(page)).toContainText("보드에 캐릭터 상태 블록을 놓으면");
+    await expect(empty(page)).toContainText("템플릿 속성(나이 · 성별 · 소속 · 능력)");
+    await page.getByRole("tab", { name: "표" }).click();
+    await expect(empty(page)).toContainText("아직 캐릭터 문서가 없어요");
+    await page.getByRole("button", { name: "보드로 가기" }).click();
+    await expect(page).toHaveURL(/\/board$/);
+
+    await page.getByRole("link", { name: "사전" }).click();
+    await nameButton(page, "장소").click();
+    await expect(empty(page)).toContainText("새 문서는 템플릿 속성(지역 · 특징)");
+    await expect(page.getByRole("button", { name: "보드로 가기" })).toHaveCount(0);
+    await nameButton(page, "세계관 설정").click();
+    await expect(empty(page)).toContainText("설정 탭에서 템플릿 속성을 정하면");
+    await page.getByRole("button", { name: "새 세계관 설정 문서" }).click();
+    await expect(page.getByRole("textbox", { name: "제목" })).toHaveValue("새 문서");
+  });
+
+  test("검색 0건: 검색어로 문서 만들기 · 검색 지우기", async ({ page }) => {
+    await nameButton(page, "장소").click();
+    const search = page.getByRole("searchbox", { name: "사전 검색" });
+    await search.fill("마탑");
+    await expect(empty(page)).toContainText("'마탑'과 일치하는 문서가 없어요");
+    await expect(empty(page)).toContainText("제목 · 별칭 · 본문에서 찾았어요");
+    await page.getByRole("button", { name: "'마탑' 문서 만들기" }).click();
+    await expect(page.getByRole("textbox", { name: "제목" })).toHaveValue("마탑");
+    await expect(page.getByText("장소", { exact: true }).first()).toBeVisible();
+
+    await search.fill("없는말");
+    await page.getByRole("button", { name: "검색 지우기" }).last().click();
+    await expect(search).toHaveValue("");
+    await expect(page.getByRole("textbox", { name: "제목" })).toHaveValue("마탑");
+  });
+
+  test("빠른 이동 0건 · 문서 하단 빈 역링크 · 보드 연동 0", async ({ page }) => {
+    await page.keyboard.press("Control+k");
+    await page.getByRole("textbox", { name: "빠른 이동 검색" }).fill("없는말");
+    await expect(page.getByRole("dialog", { name: "빠른 이동" })).toContainText(
+      "일치하는 문서 · 시점이 없어요",
+    );
+    await expect(page.getByRole("dialog", { name: "빠른 이동" })).toContainText(
+      "숫자를 입력하면 그 눈금 번호로 이동해요",
+    );
+    await page.keyboard.press("Escape");
+
+    await page.getByRole("button", { name: "새 캐릭터 문서" }).click();
+    await expect(page.getByRole("region", { name: "역링크" })).toContainText(
+      "이 문서를 언급한 문서가 없어요",
+    );
+    const board = page.getByRole("region", { name: "보드 연동" });
+    await expect(board).toContainText("보드에 아직 없어요");
+    await expect(board).toContainText("사전 패널로 열어");
+  });
+});

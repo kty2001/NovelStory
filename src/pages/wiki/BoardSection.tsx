@@ -1,4 +1,5 @@
 import type { ReactNode } from "react";
+import EmptyState from "../../components/EmptyState";
 import type { WikiDoc } from "../../db/types";
 import { useNovelStore } from "../../store/novelStore";
 import {
@@ -9,7 +10,7 @@ import {
   stateHistory,
   stateText,
 } from "./boardLinks";
-import { familyOf } from "./categories";
+import { blockCount, familyOf } from "./categories";
 import { useWikiNav } from "./useWikiNav";
 
 function Row({ at, children, onClick }: { at: string; children: ReactNode; onClick: () => void }) {
@@ -39,12 +40,21 @@ export default function BoardSection({ doc }: { doc: WikiDoc }) {
   const lines = useNovelStore((s) => s.lines);
   const categories = useNovelStore((s) => s.categories);
   const scale = useNovelStore((s) => s.board?.timeScale);
-  const { openBoard, openDoc } = useWikiNav();
+  const { openBoard, openDoc, inPanel } = useWikiNav();
   const family = familyOf(categories, doc.categoryId);
   if (!scale || (family !== "character" && family !== "event")) return null;
 
   let body: ReactNode;
-  if (family === "event") {
+  // 보드 연동 0 (W-7): 끌어 배치 안내
+  if (!blockCount(items, doc.id)) {
+    body = (
+      <EmptyState title="보드에 아직 없어요">
+        {inPanel
+          ? "위 '보드로 끌기' 손잡이를 보드에 끌어 놓으면 배치돼요"
+          : "보드에서 이 문서를 사전 패널로 열어 '보드로 끌기'로 배치할 수 있어요"}
+      </EmptyState>
+    );
+  } else if (family === "event") {
     const block = eventBlock(items, doc.id);
     const chars = relatedCharacters(items, docs, doc.id);
     body = (

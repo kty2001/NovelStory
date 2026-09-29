@@ -196,7 +196,10 @@ export default function CategoryTree({
             <button
               type="button"
               className="flex min-w-0 flex-1 items-center gap-1 text-left text-body-sm text-ink"
-              onClick={() => openCategory(c.id)}
+              onClick={() => {
+                onQuery("");
+                openCategory(c.id);
+              }}
               onDoubleClick={() => setEditingId(c.id)}
             >
               <span className="truncate">{c.name}</span>
@@ -230,7 +233,10 @@ export default function CategoryTree({
                   data-testid="doc-row"
                   className={`flex h-8 w-full items-center truncate rounded-sm pr-2 text-left text-body-sm text-body ${docId === d.id ? "bg-surface-card text-ink" : "hover:bg-surface-soft"}`}
                   style={{ paddingLeft: 4 + (depth + 1) * INDENT + 20 }}
-                  onClick={() => openDoc(d.id)}
+                  onClick={() => {
+                    onQuery("");
+                    openDoc(d.id);
+                  }}
                 >
                   {d.title || "제목 없음"}
                 </button>

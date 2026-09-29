@@ -1,3 +1,4 @@
+import EmptyState from "../../components/EmptyState";
 import { mentionContext } from "../../db/wikiDerived";
 import { useNovelStore } from "../../store/novelStore";
 import { useWikiNav } from "./useWikiNav";
@@ -18,7 +19,9 @@ export default function Backlinks({ docId, title }: { docId: string; title: stri
         <span className="text-caption text-muted">{list.length}</span>
       </h3>
       {list.length === 0 && (
-        <p className="mt-2 text-body-sm text-muted">이 문서를 언급한 문서가 없어요</p>
+        <EmptyState title="이 문서를 언급한 문서가 없어요">
+          다른 문서 본문에서 @로 이 문서를 링크하면 여기에 모여요
+        </EmptyState>
       )}
       <ul className="mt-2">
         {list.map((d) => {

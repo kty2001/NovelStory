@@ -1,5 +1,10 @@
 import { useState } from "react";
+import { Plus } from "lucide-react";
+import Button from "../../components/Button";
+import EmptyState from "../../components/EmptyState";
+import { particle } from "../../lib/particle";
 import { useNovelStore } from "../../store/novelStore";
+import { addDoc } from "../../store/wikiActions";
 import { searchWiki, type Hit } from "./search";
 import { useWikiNav } from "./useWikiNav";
 
@@ -12,7 +17,16 @@ const Mark = ({ hit }: { hit: Hit }) => (
 );
 
 // 검색 결과 (W-4): 분류별 결과 수 탭 + 제목 · 분류 · 일치 위치 · 강조 문맥. 클릭 = 문서 열기
-export default function SearchResults({ query }: { query: string }) {
+// 결과 0건 (W-7): 검색어로 새 문서(선택 분류) · 검색 지우기
+export default function SearchResults({
+  query,
+  categoryId,
+  onClear,
+}: {
+  query: string;
+  categoryId?: string;
+  onClear: () => void;
+}) {
   const docs = useNovelStore((s) => s.docs);
   const categories = useNovelStore((s) => s.categories);
   const { openDoc } = useWikiNav();
@@ -67,8 +81,10 @@ export default function SearchResults({ query }: { query: string }) {
                 type="button"
                 data-testid="search-hit"
                 className="flex w-full flex-col items-start gap-0.5 px-2 py-3 text-left hover:bg-surface-soft"
-                // 이동하면 검색어는 자동으로 비워짐 (WikiPage)
-                onClick={() => openDoc(h.doc.id)}
+                onClick={() => {
+                  onClear();
+                  openDoc(h.doc.id);
+                }}
               >
                 <span className="flex items-center gap-2 text-body-sm">
                   <span
@@ -101,7 +117,32 @@ export default function SearchResults({ query }: { query: string }) {
           );
         })}
       </ul>
-      {hits.length === 0 && <p className="mt-4 text-body-sm text-muted">일치하는 문서 없음</p>}
+      {hits.length === 0 && (
+        <EmptyState
+          boxed
+          title={`'${query.trim()}'${particle(query, "과", "와")} 일치하는 문서가 없어요`}
+          actions={
+            <>
+              {categoryId && (
+                <Button
+                  variant="primary"
+                  onClick={() => {
+                    const id = addDoc(categoryId, query.trim());
+                    if (id) openDoc(id);
+                  }}
+                >
+                  <Plus size={16} />'{query.trim()}' 문서 만들기
+                </Button>
+              )}
+              <Button variant="text" onClick={onClear}>
+                검색 지우기
+              </Button>
+            </>
+          }
+        >
+          제목 · 별칭 · 본문에서 찾았어요
+        </EmptyState>
+      )}
     </section>
   );
 }

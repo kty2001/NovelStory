@@ -2,6 +2,7 @@ import { useState } from "react";
 import { useLocation, useNavigate, useParams } from "react-router";
 import { Clock } from "lucide-react";
 import Dialog from "../components/Dialog";
+import EmptyState from "../components/EmptyState";
 import { useNovelStore } from "../store/novelStore";
 import { searchDocs } from "./board/stateCalc";
 
@@ -111,7 +112,11 @@ function Palette({ onClose }: { onClose: () => void }) {
         ))}
       </ul>
       {q && results.length === 0 && (
-        <p className="px-3 py-4 text-body-sm text-muted">일치하는 문서 · 시점 없음</p>
+        <div className="px-3">
+          <EmptyState title="일치하는 문서 · 시점이 없어요">
+            숫자를 입력하면 그 눈금 번호로 이동해요
+          </EmptyState>
+        </div>
       )}
     </div>
   );
