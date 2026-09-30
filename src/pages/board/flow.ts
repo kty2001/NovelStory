@@ -2,6 +2,7 @@ import type { Node } from "@xyflow/react";
 import type {
   BoardItem,
   EventItem,
+  ShapeKind,
   StateItem,
   TimedPlace,
   TimeScale,
@@ -109,10 +110,26 @@ export const STICKY_SIZE = 160;
 export const TEXT_W = 240;
 const TEXT_H = 40;
 export const FRAME_SIZE = { w: 400, h: 300 };
+// 도형 기본 크기 (모양을 바꿔도 크기는 유지)
+export const SHAPE_SIZE: Record<ShapeKind, { w: number; h: number }> = {
+  rect: { w: 160, h: 100 },
+  ellipse: { w: 120, h: 120 },
+  diamond: { w: 140, h: 140 },
+};
 
-// 포스트잇 · 텍스트 배치 위치: 포인터가 가운데
-export function freeRect(kind: "sticky" | "text", x: number, y: number) {
-  const [w, h] = kind === "sticky" ? [STICKY_SIZE, STICKY_SIZE] : [TEXT_W, TEXT_H];
+// 포스트잇 · 텍스트 · 도형 배치 위치: 포인터가 가운데
+export function freeRect(
+  kind: "sticky" | "text" | "shape",
+  x: number,
+  y: number,
+  shape: ShapeKind = "rect",
+) {
+  const { w, h } =
+    kind === "sticky"
+      ? { w: STICKY_SIZE, h: STICKY_SIZE }
+      : kind === "text"
+        ? { w: TEXT_W, h: TEXT_H }
+        : SHAPE_SIZE[shape];
   return { x: x - w / 2, y: y - h / 2, w, h };
 }
 
@@ -167,8 +184,8 @@ export function itemNode(
     return { ...base, type: "event", position: { x, y: p.y }, origin: [0.5, 0] };
   }
   const { x, y } = item.place;
-  if (item.kind === "sticky") {
-    return { ...base, type: "sticky", position: { x, y }, width: item.w, height: item.h };
+  if (item.kind === "sticky" || item.kind === "shape") {
+    return { ...base, type: item.kind, position: { x, y }, width: item.w, height: item.h };
   }
   if (item.kind === "text") return { ...base, type: "text", position: { x, y }, width: item.w };
   // 프레임은 자식보다 아래 (z 순서와 무관하게 맨 아래 층)

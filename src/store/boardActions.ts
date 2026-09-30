@@ -4,6 +4,7 @@ import type {
   BoardItem,
   EventItem,
   FrameItem,
+  ShapeItem,
   StateItem,
   StickyItem,
   TextItem,
@@ -90,14 +91,19 @@ export function moveItems(places: Record<string, BoardItem["place"]>) {
   store.setState({ items: next });
 }
 
-// 요소 일부 필드 변경 (색 등)
-export function patchItems(ids: string[], patch: Partial<Pick<EventItem, "color">>) {
+// 요소 일부 필드 변경 (색 · 도형 모양). 색은 사건 · 포스트잇 · 도형만, 도형 color: undefined = 채움 없음
+export function patchItems(ids: string[], patch: { color?: string; shape?: ShapeItem["shape"] }) {
   store.setState(({ items }) => {
     const next = { ...items };
-    // 색은 사건 · 포스트잇만
     for (const id of ids) {
       const item = next[id];
-      if (item?.kind === "event" || item?.kind === "sticky") next[id] = { ...item, ...patch };
+      if (item?.kind === "shape") {
+        const shape = { ...item, ...patch };
+        if ("color" in patch && !patch.color) delete shape.color;
+        next[id] = shape;
+      } else if ((item?.kind === "event" || item?.kind === "sticky") && patch.color) {
+        next[id] = { ...item, color: patch.color };
+      }
     }
     return { items: next };
   });
@@ -228,10 +234,10 @@ export function setLanes(patch: Partial<Board["stateLanes"]>) {
   );
 }
 
-// ── 포스트잇 · 텍스트 · 프레임 (UC-17 · 18) ──
+// ── 포스트잇 · 텍스트 · 도형 · 프레임 (UC-17 · 18) ──
 type FreeFields<T extends BoardItem> = Omit<T, "id" | "novelId" | "updatedAt" | "z" | "kind">;
 
-function addFree<T extends StickyItem | TextItem | FrameItem>(
+function addFree<T extends StickyItem | TextItem | ShapeItem | FrameItem>(
   kind: T["kind"],
   fields: FreeFields<T>,
   z?: number,
@@ -261,6 +267,10 @@ export const addSticky = (x: number, y: number, w = 160, h = 160, text = "") =>
 
 export const addText = (x: number, y: number, w = 240) =>
   addFree<TextItem>("text", { place: { mode: "free", x, y }, w, text: "" });
+
+// 도형: 기본 채움 없음 (ui_guide `board-shape`)
+export const addShape = (x: number, y: number, w: number, h: number, shape: ShapeItem["shape"]) =>
+  addFree<ShapeItem>("shape", { place: { mode: "free", x, y }, w, h, shape, text: "" });
 
 // 프레임 + 안에 든 요소 소속 지정 (1건). 프레임은 다른 요소보다 아래 (z 최소 - 1)
 export function addFrame(

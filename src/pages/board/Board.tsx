@@ -31,7 +31,7 @@ import { PanelLeft, Route } from "lucide-react";
 import Toast from "../../components/Toast";
 import { db } from "../../db/db";
 import { UNDO_MS } from "../../db/novels";
-import type { BoardEdge, BoardItem, TimeScale, UiState } from "../../db/types";
+import type { BoardEdge, BoardItem, ShapeKind, TimeScale, UiState } from "../../db/types";
 import { patchUiState } from "../../db/uiState";
 import {
   addEdge,
@@ -40,6 +40,7 @@ import {
   addState,
   insertRecords,
   nextZ,
+  addShape,
   addSticky,
   addText,
   adopt,
@@ -96,7 +97,7 @@ import {
   withFrames,
   type Dropped,
 } from "./flow";
-import { FrameNode, StickyNode, TextNode } from "./FreeNodes";
+import { FrameNode, ShapeNode, StickyNode, TextNode } from "./FreeNodes";
 import Lanes from "./Lanes";
 import Leaders, { type Rect } from "./Leaders";
 import LineEditDialog from "./LineEditDialog";
@@ -111,6 +112,7 @@ import Toolbar from "./Toolbar";
 import {
   isEditable,
   isPlaceTool,
+  SHAPE_CYCLE,
   STATE_CYCLE,
   TOOL_BY_CODE,
   type PlaceTool,
@@ -144,6 +146,7 @@ const nodeTypes = {
   state: StateNode,
   sticky: StickyNode,
   text: TextNode,
+  shape: ShapeNode,
   frame: FrameNode,
 };
 
@@ -202,7 +205,8 @@ const union = (rects: Rect[]) => {
 };
 
 const minimapColor = (item: BoardItem | undefined) => {
-  if (item?.kind === "event" || item?.kind === "sticky") return `var(--color-${item.color})`;
+  if (item?.kind === "event" || item?.kind === "sticky" || (item?.kind === "shape" && item.color))
+    return `var(--color-${item.color})`;
   if (item?.kind === "state") return STATE_COLOR[item.stateType];
   return "var(--color-surface-strong)";
 };
@@ -228,6 +232,7 @@ function Canvas({
   const [ui, setUi] = useState<Record<string, NodeUi>>({});
   const [tool, setTool] = useState<Tool>("select");
   const [stateType, setStateType] = useState<StateType>("appear");
+  const [shapeKind, setShapeKind] = useState<ShapeKind>("rect");
   const [preview, setPreview] = useState<Preview | null>(null);
   const [editId, setEditId] = useState<string | null>(null);
   // 상태 도구로 놓은 자리: 캐릭터를 고르면 블록 생성 (B-3 ①)
@@ -485,17 +490,33 @@ function Canvas({
     setTool("select");
   }, []);
 
-  // 도구 선택: C를 다시 누르면 상태 유형 순환
+  // 도구 선택: C를 다시 누르면 상태 유형, R을 다시 누르면 도형 모양 순환
   const chooseTool = useCallback(
     (next: Tool) => {
       if (next === "state" && tool === "state") {
         setStateType((t) => STATE_CYCLE[(STATE_CYCLE.indexOf(t) + 1) % STATE_CYCLE.length]);
+      }
+      if (next === "shape" && tool === "shape") {
+        setShapeKind((k) => SHAPE_CYCLE[(SHAPE_CYCLE.indexOf(k) + 1) % SHAPE_CYCLE.length]);
       }
       setTool(next);
       setPreview(null);
     },
     [tool],
   );
+
+  // 선택 바꾸기 (전체 선택 · 붙여넣은 요소 · 배치한 도형 선택 · Tab 이동). 연결선 선택은 해제
+  const select = useCallback((ids: string[]) => {
+    const on = new Set(ids);
+    setUi((u) => {
+      const next = { ...u };
+      for (const id of new Set([...Object.keys(u), ...ids])) {
+        if (!!next[id]?.selected !== on.has(id)) next[id] = { ...next[id], selected: on.has(id) };
+      }
+      return next;
+    });
+    setEdgeSel({});
+  }, []);
 
   // 화면 좌표에 배치 → 선택 도구로 복귀. 프레임 안에 놓으면 그 프레임 소속
   const place = useCallback(
@@ -506,9 +527,17 @@ function Canvas({
       const frame = frameAt(p, useNovelStore.getState().items);
       let id: string | null = null;
       // 사건: 배치 직후 제목 입력 (UC-10) / 상태: 캐릭터 선택 후 생성 (UC-12) / 포스트잇 · 텍스트: 바로 편집 (UC-17)
+      // 도형: 선택만 (글자는 더블클릭 · F2 · Enter)
       if (placeTool === "event") id = addEvent(at);
       else if (placeTool === "state") setPending({ place: at, client, type: stateType });
-      else {
+      else if (placeTool === "shape") {
+        const r = freeRect("shape", p.x, p.y, shapeKind);
+        const shapeId = addShape(r.x, r.y, r.w, r.h, shapeKind);
+        if (shapeId) {
+          adopt([shapeId], frame);
+          select([shapeId]);
+        }
+      } else {
         const r = freeRect(placeTool, p.x, p.y);
         id = placeTool === "sticky" ? addSticky(r.x, r.y) : addText(r.x, r.y);
       }
@@ -519,15 +548,21 @@ function Canvas({
       setTool("select");
       setPreview(null);
     },
-    [screenToFlowPosition, timeScale, stateType],
+    [screenToFlowPosition, timeScale, stateType, shapeKind, select],
   );
 
   const showPreview = useCallback(
     (placeTool: PlaceTool, client: XYPosition, alt: boolean) => {
       const p = screenToFlowPosition(client);
-      setPreview({ tool: placeTool, x: p.x, y: p.y, snap: timeScale.snap && !alt });
+      setPreview({
+        tool: placeTool,
+        x: p.x,
+        y: p.y,
+        snap: timeScale.snap && !alt,
+        shape: shapeKind,
+      });
     },
-    [screenToFlowPosition, timeScale.snap],
+    [screenToFlowPosition, timeScale.snap, shapeKind],
   );
 
   // 도구 모음에서 끌어 놓기 (Pointer Events). 4px 미만 이동은 클릭(도구 선택)으로 처리
@@ -615,19 +650,6 @@ function Canvas({
   const ungroup = useCallback(() => {
     const cur = useNovelStore.getState().items;
     deleteItems(latest.current.selectedIds.filter((id) => cur[id]?.kind === "frame"));
-  }, []);
-
-  // 선택 바꾸기 (전체 선택 · 붙여넣은 요소 선택 · Tab 이동). 연결선 선택은 해제
-  const select = useCallback((ids: string[]) => {
-    const on = new Set(ids);
-    setUi((u) => {
-      const next = { ...u };
-      for (const id of new Set([...Object.keys(u), ...ids])) {
-        if (!!next[id]?.selected !== on.has(id)) next[id] = { ...next[id], selected: on.has(id) };
-      }
-      return next;
-    });
-    setEdgeSel({});
   }, []);
 
   // 블록들이 보이게 화면 이동: 모두 들어오도록 가운데 맞춤, 확대는 하지 않음
@@ -885,6 +907,13 @@ function Canvas({
         setPreview(null);
         return;
       }
+      // O = 도형 도구 · 원으로 바로 (shortcuts 2.1)
+      if (e.code === "KeyO") {
+        setShapeKind("ellipse");
+        setTool("shape");
+        setPreview(null);
+        return;
+      }
       const next = TOOL_BY_CODE[e.code];
       if (next) chooseTool(next);
     };
@@ -1073,6 +1102,7 @@ function Canvas({
             <Toolbar
               tool={tool}
               stateType={stateType}
+              shapeKind={shapeKind}
               snap={timeScale.snap}
               onTool={chooseTool}
               onDragStart={startToolDrag}

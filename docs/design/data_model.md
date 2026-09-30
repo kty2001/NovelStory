@@ -193,8 +193,16 @@ type FrameItem = BoardItemBase & {
   parentFrameId?: never;
 };
 
-type BoardItem = EventItem | StateItem | StickyItem | TextItem | FrameItem;
-// MVP 이후: ShapeItem { kind: 'shape'; place: FreePlace; w; h; shape: 'rect' | 'ellipse' | 'diamond'; color; text }
+type ShapeItem = BoardItemBase & {  // MVP 이후 (보드 도형)
+  kind: 'shape';
+  place: FreePlace;
+  w: number; h: number;
+  shape: 'rect' | 'ellipse' | 'diamond';
+  color?: ColorToken;             // 없음 = 채움 없음 (기본), 포스트잇 색
+  text: string;                   // 가운데 글자
+};
+
+type BoardItem = EventItem | StateItem | StickyItem | TextItem | ShapeItem | FrameItem;
 
 type BoardEdge = NovelScoped & {
   source: string; target: string;              // BoardItem.id

@@ -1,15 +1,31 @@
 import { useStore, ViewportPortal } from "@xyflow/react";
-import type { TimeScale } from "../../db/types";
+import type { ShapeKind, TimeScale } from "../../db/types";
 import { EVENT_H, EVENT_W, freeRect, timePlace } from "./flow";
+import { ShapeOutline } from "./FreeNodes";
 import { tickToX } from "./timeAxis";
 import type { PlaceTool } from "./tools";
 
-export type Preview = { tool: PlaceTool; x: number; y: number; snap: boolean };
+export type Preview = { tool: PlaceTool; x: number; y: number; snap: boolean; shape: ShapeKind };
 
 // 배치 미리보기 (B-1 메모 13): 반투명 요소 + (시간 블록이면) 스냅될 눈금까지 세로 가이드 + 눈금 번호
 export default function PlacePreview({ preview, scale }: { preview: Preview; scale: TimeScale }) {
   const zoom = useStore((s) => s.transform[2]);
   const border = { borderWidth: 1.5 / zoom };
+
+  if (preview.tool === "shape") {
+    const r = freeRect("shape", preview.x, preview.y, preview.shape);
+    return (
+      <ViewportPortal>
+        <div
+          data-testid="place-preview"
+          className="absolute"
+          style={{ transform: `translate(${r.x}px, ${r.y}px)`, width: r.w, height: r.h }}
+        >
+          <ShapeOutline shape={preview.shape} w={r.w} h={r.h} stroke={1.5 / zoom} dashed />
+        </div>
+      </ViewportPortal>
+    );
+  }
 
   if (preview.tool === "sticky" || preview.tool === "text") {
     const r = freeRect(preview.tool, preview.x, preview.y);

@@ -1,6 +1,6 @@
 import { useRef } from "react";
 import { NodeResizer, type NodeProps } from "@xyflow/react";
-import type { FrameItem, StickyItem, TextItem } from "../../db/types";
+import type { FrameItem, ShapeItem, ShapeKind, StickyItem, TextItem } from "../../db/types";
 import { updateItems } from "../../store/boardActions";
 import { useNovelStore } from "../../store/novelStore";
 import { useBoardUi } from "./boardContext";
@@ -122,6 +122,99 @@ export function TextNode({ id, selected }: NodeProps) {
             {item.text || "텍스트"}
           </p>
         )}
+      </div>
+    </>
+  );
+}
+
+// 도형 윤곽 (ui_guide `board-shape`): 노드 크기(px) 그대로 그려 선 굵기 일정. 배치 미리보기에서도 사용
+export function ShapeOutline({
+  shape,
+  w,
+  h,
+  stroke = 2,
+  fill = "none",
+  dashed = false,
+}: {
+  shape: ShapeKind;
+  w: number;
+  h: number;
+  stroke?: number;
+  fill?: string;
+  dashed?: boolean;
+}) {
+  const i = stroke / 2;
+  const paint = {
+    fill,
+    stroke: "var(--color-ink)",
+    strokeWidth: stroke,
+    strokeLinejoin: "round" as const,
+    strokeDasharray: dashed ? `${stroke * 4} ${stroke * 3}` : undefined,
+  };
+  return (
+    <svg className="absolute inset-0 overflow-visible" width={w} height={h} aria-hidden>
+      {shape === "rect" && <rect x={i} y={i} width={w - stroke} height={h - stroke} {...paint} />}
+      {shape === "ellipse" && (
+        <ellipse cx={w / 2} cy={h / 2} rx={w / 2 - i} ry={h / 2 - i} {...paint} />
+      )}
+      {shape === "diamond" && (
+        <polygon
+          points={`${w / 2},${i} ${w - i},${h / 2} ${w / 2},${h - i} ${i},${h / 2}`}
+          {...paint}
+        />
+      )}
+    </svg>
+  );
+}
+
+// 글자 영역: 도형 안쪽 (원 = 내접 사각형 ≈ 70%, 마름모 = 50%)
+const SHAPE_PAD: Record<ShapeKind, string> = {
+  rect: "p-2",
+  ellipse: "px-[15%] py-[15%]",
+  diamond: "px-[25%] py-[25%]",
+};
+
+// 도형: 사각형 · 원 · 마름모 + 가운데 글자. 크기는 노드 width · height (크기 조절 중에도 따라감)
+export function ShapeNode({ id, selected, width, height }: NodeProps) {
+  const item = useNovelStore((s) => s.items[id]) as ShapeItem | undefined;
+  const { editId, setEditId } = useBoardUi();
+  if (item?.kind !== "shape") return null;
+  const editing = editId === id;
+  const w = width ?? item.w;
+  const h = height ?? item.h;
+  return (
+    <>
+      <Resizer id={id} visible={selected && !editing} min={[40, 40]} />
+      <Ports />
+      <div
+        data-testid="shape"
+        data-shape={item.shape}
+        className={`relative flex h-full w-full items-center justify-center text-body-sm break-keep text-ink ${selected ? "outline-2 outline-offset-2 outline-brand-teal" : ""}`}
+        onDoubleClick={() => setEditId(id)}
+      >
+        <ShapeOutline
+          shape={item.shape}
+          w={w}
+          h={h}
+          fill={item.color ? `var(--color-${item.color})` : "none"}
+        />
+        <div
+          className={`relative flex h-full w-full items-center justify-center text-center ${SHAPE_PAD[item.shape]}`}
+        >
+          {editing ? (
+            <InlineText
+              label="도형 글자"
+              initial={item.text}
+              className="field-sizing-content max-h-full w-full resize-none text-center"
+              onDone={(text) => {
+                updateItems({ [id]: { text } });
+                setEditId(null);
+              }}
+            />
+          ) : (
+            <p className="max-h-full overflow-hidden whitespace-pre-wrap">{item.text}</p>
+          )}
+        </div>
       </div>
     </>
   );

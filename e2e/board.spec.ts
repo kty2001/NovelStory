@@ -755,6 +755,89 @@ test.describe("포스트잇 · 텍스트 · 프레임", () => {
   });
 });
 
+test.describe("도형", () => {
+  const shape = (page: Page) => page.getByTestId("shape");
+  const outline = (page: Page) => shape(page).locator("svg > *");
+
+  test("R 반복 = 모양 순환 · O = 원 · 클릭 배치 후 선택 · 선택 도구 복귀", async ({ page }) => {
+    await expect(page.getByTestId("time-axis")).toBeVisible();
+    await page.keyboard.press("KeyR");
+    await expect(toolButton(page, "도형: 사각형")).toHaveAttribute("aria-pressed", "true");
+    await page.keyboard.press("KeyR");
+    await expect(toolButton(page, "도형: 원")).toHaveAttribute("aria-pressed", "true");
+    await page.keyboard.press("KeyR");
+    await expect(toolButton(page, "도형: 마름모")).toHaveAttribute("aria-pressed", "true");
+    await page.mouse.move(900, 250);
+    await expect(page.getByTestId("place-preview")).toBeVisible();
+    await page.mouse.click(900, 250);
+    await expect(shape(page)).toHaveAttribute("data-shape", "diamond");
+    await expect(page.getByRole("button", { name: "모양: 마름모" })).toHaveAttribute(
+      "aria-pressed",
+      "true",
+    );
+    await expect(toolButton(page, "선택")).toHaveAttribute("aria-pressed", "true");
+
+    // O = 원으로 바로 (마지막 모양은 기억)
+    await page.keyboard.press("KeyO");
+    await expect(toolButton(page, "도형: 원")).toHaveAttribute("aria-pressed", "true");
+    await page.mouse.click(600, 250);
+    const circle = page.locator('[data-shape="ellipse"]');
+    await expect(circle).toHaveCount(1);
+    const bb = (await circle.boundingBox())!;
+    expect(Math.round(bb.width)).toBe(120);
+    expect(Math.round(bb.height)).toBe(120);
+  });
+
+  test("글자 · 채움 · 모양 변경(크기 유지) · 크기 조절 · 새로고침 유지", async ({ page }) => {
+    await expect(page.getByTestId("time-axis")).toBeVisible();
+    await page.keyboard.press("KeyR");
+    await page.mouse.click(900, 250);
+    await expect(shape(page)).toHaveAttribute("data-shape", "rect");
+    await expect(outline(page)).toHaveAttribute("fill", "none");
+
+    await page.keyboard.press("Enter");
+    const input = page.getByRole("textbox", { name: "도형 글자" });
+    await expect(input).toBeFocused();
+    await input.fill("관문");
+    await input.press("Escape");
+    await expect(shape(page)).toHaveText("관문");
+
+    await shape(page).click();
+    await page.getByRole("button", { name: "채움: 분홍" }).click();
+    await expect(outline(page)).toHaveAttribute("fill", "var(--color-sticky-pink)");
+    const before = (await shape(page).boundingBox())!;
+    await page.getByRole("button", { name: "모양: 원" }).click();
+    await expect(shape(page)).toHaveAttribute("data-shape", "ellipse");
+    expect(Math.round((await shape(page).boundingBox())!.width)).toBe(Math.round(before.width));
+
+    const handle = page.locator(".react-flow__resize-control.handle.bottom.right");
+    await dragTo(page, handle, before.x + before.width + 60, before.y + before.height + 40);
+    await expect
+      .poll(async () => Math.round((await shape(page).boundingBox())!.width))
+      .toBe(Math.round(before.width + 60));
+    await page.getByRole("button", { name: "채움: 없음" }).click();
+    await expect(outline(page)).toHaveAttribute("fill", "none");
+
+    await page.waitForTimeout(800);
+    await page.reload();
+    await expect(shape(page)).toHaveText("관문");
+    await expect(shape(page)).toHaveAttribute("data-shape", "ellipse");
+    expect(Math.round((await shape(page).boundingBox())!.width)).toBe(
+      Math.round(before.width + 60),
+    );
+  });
+
+  test("도구 모음에서 끌어 놓기 · Delete · Ctrl+Z", async ({ page }) => {
+    await dragTool(page, "도형: 사각형", 900, 250);
+    await expect(shape(page)).toHaveCount(1);
+    await expect(toolButton(page, "선택")).toHaveAttribute("aria-pressed", "true");
+    await page.keyboard.press("Delete");
+    await expect(shape(page)).toHaveCount(0);
+    await page.keyboard.press("Control+KeyZ");
+    await expect(shape(page)).toHaveCount(1);
+  });
+});
+
 test.describe("연결선", () => {
   const edges = (page: Page) => page.locator(".react-flow__edge");
   // 제목이 title인 사건 블록의 side 면 핸들

@@ -1,13 +1,23 @@
-import { useCallback, useRef, useState } from "react";
+import { useCallback, useRef, useState, type ReactNode } from "react";
 import { NodeToolbar, Position } from "@xyflow/react";
-import { ChevronDown, ListOrdered, NotebookPen, PanelRight, Trash2 } from "lucide-react";
+import {
+  ChevronDown,
+  Circle,
+  Diamond,
+  ListOrdered,
+  NotebookPen,
+  PanelRight,
+  Square,
+  Trash2,
+} from "lucide-react";
 import { useShallow } from "zustand/react/shallow";
 import { MenuList, type MenuItem } from "../../components/Menu";
 import { useDismiss } from "../../components/useDismiss";
-import type { BoardItem, ColorToken } from "../../db/types";
+import type { BoardItem, ColorToken, ShapeKind } from "../../db/types";
 import { deleteItems, patchItems, setDocsLine, sortedLines } from "../../store/boardActions";
 import { useNovelStore } from "../../store/novelStore";
 import { lineBorder } from "./lines";
+import { SHAPE_CYCLE, SHAPE_LABEL } from "./tools";
 
 // 블록 메뉴 색: 사건 = 브랜드 색 중 잉크 글자가 읽히는 것, 포스트잇 = 포스트잇 색 (ui_guide)
 const EVENT_COLORS: { token: ColorToken; label: string }[] = [
@@ -26,17 +36,29 @@ const STICKY_COLORS: { token: ColorToken; label: string }[] = [
   { token: "sticky-peach", label: "살구" },
 ];
 
+const SHAPE_ICON: Record<ShapeKind, ReactNode> = {
+  rect: <Square size={15} />,
+  ellipse: <Circle size={15} />,
+  diamond: <Diamond size={15} />,
+};
+
 const Sample = ({ index }: { index?: number }) => (
   <span className="h-3 w-5 rounded-xs bg-surface-card" style={lineBorder(index)} />
 );
 
 const Sep = () => <span className="mx-1 h-5 w-px bg-hairline" />;
 
+// 도형 채움 없음 = ""
 const colorOf = (i: BoardItem | undefined) =>
-  i?.kind === "event" || i?.kind === "sticky" ? i.color : "";
+  i?.kind === "event" || i?.kind === "sticky"
+    ? i.color
+    : i?.kind === "shape"
+      ? (i.color ?? "")
+      : "";
 
 // 블록 메뉴 (B-2): 선택한 요소 위에 뜨는 바. 여러 개 선택이면 공통 항목만 한꺼번에 적용
-// 사건 = 색 · 라인, 포스트잇 = 색 · 메모로(F5), 사건 · 상태 하나 = 상세(사전 패널), 공통 = 삭제
+// 사건 = 색 · 라인, 포스트잇 = 색 · 메모로(F5), 도형 = 채움(없음 · 포스트잇 색) · 모양,
+// 사건 · 상태 하나 = 상세(사전 패널), 공통 = 삭제
 export default function BlockMenu({
   itemIds,
   onEditLines,
@@ -57,7 +79,10 @@ export default function BlockMenu({
   useDismiss(ref, open, close);
 
   const kind = new Set(items.map((i) => i?.kind)).size === 1 ? items[0]?.kind : undefined;
-  const colors = kind === "event" ? EVENT_COLORS : kind === "sticky" ? STICKY_COLORS : [];
+  const colors =
+    kind === "event" ? EVENT_COLORS : kind === "sticky" || kind === "shape" ? STICKY_COLORS : [];
+  const shapes = new Set(items.map((i) => (i?.kind === "shape" ? i.shape : undefined)));
+  const shape = shapes.size === 1 ? [...shapes][0] : undefined;
   const color = new Set(items.map(colorOf)).size === 1 ? colorOf(items[0]) : undefined;
 
   const docIds = items.flatMap((i) => (i?.kind === "event" ? [i.docId] : []));
@@ -83,11 +108,20 @@ export default function BlockMenu({
         aria-label="블록 메뉴"
         className="flex items-center gap-1 rounded-md border border-hairline bg-canvas p-1 shadow-float"
       >
+        {kind === "shape" && (
+          <button
+            type="button"
+            aria-label="채움: 없음"
+            aria-pressed={color === ""}
+            className={`size-6 rounded-full border border-ink/30 bg-[linear-gradient(135deg,transparent_45%,var(--color-brand-coral)_45%,var(--color-brand-coral)_55%,transparent_55%)] ${color === "" ? "ring-2 ring-ink ring-offset-1" : ""}`}
+            onClick={() => patchItems(itemIds, { color: undefined })}
+          />
+        )}
         {colors.map((c) => (
           <button
             key={c.token}
             type="button"
-            aria-label={`색: ${c.label}`}
+            aria-label={`${kind === "shape" ? "채움" : "색"}: ${c.label}`}
             aria-pressed={color === c.token}
             className={`size-6 rounded-full ${color === c.token ? "ring-2 ring-ink ring-offset-1" : ""}`}
             style={{ background: `var(--color-${c.token})` }}
@@ -116,6 +150,23 @@ export default function BlockMenu({
                 />
               )}
             </div>
+          </>
+        )}
+        {kind === "shape" && (
+          <>
+            <Sep />
+            {SHAPE_CYCLE.map((k) => (
+              <button
+                key={k}
+                type="button"
+                aria-label={`모양: ${SHAPE_LABEL[k]}`}
+                aria-pressed={shape === k}
+                className={`flex size-7 items-center justify-center rounded-sm text-ink ${shape === k ? "bg-surface-card" : "hover:bg-surface-card"}`}
+                onClick={() => patchItems(itemIds, { shape: k })}
+              >
+                {SHAPE_ICON[k]}
+              </button>
+            ))}
           </>
         )}
         {colors.length > 0 && <Sep />}

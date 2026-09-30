@@ -134,7 +134,19 @@ export type FrameItem = BoardItemBase & {
   parentFrameId?: never;
 };
 
-export type BoardItem = EventItem | StateItem | StickyItem | TextItem | FrameItem;
+export type ShapeKind = "rect" | "ellipse" | "diamond";
+
+export type ShapeItem = BoardItemBase & {
+  kind: "shape";
+  place: FreePlace;
+  w: number;
+  h: number;
+  shape: ShapeKind;
+  color?: ColorToken; // 없음 = 채움 없음
+  text: string;
+};
+
+export type BoardItem = EventItem | StateItem | StickyItem | TextItem | ShapeItem | FrameItem;
 
 export type BoardEdge = NovelScoped & {
   source: string;

@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import type { EventItem, FrameItem } from "../../db/types";
+import type { EventItem, FrameItem, ShapeItem } from "../../db/types";
 import { board, OLD, sticky } from "../../test/fixtures";
 import {
   AXIS_ID,
@@ -7,9 +7,12 @@ import {
   dropPatches,
   EVENT_W,
   facingSides,
+  freeRect,
+  itemNode,
   movedPlace,
   nudgedPlace,
   nudgePatches,
+  SHAPE_SIZE,
   spanPlace,
   UNDATED_GAP,
   UNDATED_ID,
@@ -247,5 +250,35 @@ describe("연결선 면 자동 선택", () => {
     expect(facingSides(box(300, 0), box(0, 40))).toEqual(["left", "right"]);
     expect(facingSides(box(0, 0), box(20, 200))).toEqual(["bottom", "top"]);
     expect(facingSides(box(0, 200), box(20, 0))).toEqual(["top", "bottom"]);
+  });
+});
+
+describe("도형", () => {
+  it("기본 크기: 모양별, 포인터가 가운데", () => {
+    expect(freeRect("shape", 100, 100, "rect")).toEqual({ x: 20, y: 50, w: 160, h: 100 });
+    expect(freeRect("shape", 100, 100, "ellipse")).toEqual({ x: 40, y: 40, w: 120, h: 120 });
+    expect(freeRect("shape", 100, 100, "diamond")).toEqual({ x: 30, y: 30, ...SHAPE_SIZE.diamond });
+  });
+
+  it("노드 = 자유 위치 · 저장된 크기", () => {
+    const shape: ShapeItem = {
+      id: "s",
+      novelId: "n1",
+      updatedAt: OLD,
+      kind: "shape",
+      z: 3,
+      place: { mode: "free", x: 10, y: 20 },
+      w: 200,
+      h: 80,
+      shape: "diamond",
+      text: "",
+    };
+    expect(itemNode(shape, scale)).toMatchObject({
+      type: "shape",
+      position: { x: 10, y: 20 },
+      width: 200,
+      height: 80,
+      zIndex: 3,
+    });
   });
 });

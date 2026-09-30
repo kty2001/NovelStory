@@ -1,6 +1,8 @@
 import type { PointerEvent as ReactPointerEvent, ReactNode } from "react";
 import { Panel } from "@xyflow/react";
 import {
+  Circle,
+  Diamond,
   Frame,
   Hand,
   Magnet,
@@ -8,11 +10,13 @@ import {
   MousePointer2,
   RectangleHorizontal,
   Spline,
+  Square,
   StickyNote,
   Type,
   UserRound,
 } from "lucide-react";
-import { isPlaceTool, STATE_LABEL, type StateType, type Tool } from "./tools";
+import type { ShapeKind } from "../../db/types";
+import { isPlaceTool, SHAPE_LABEL, STATE_LABEL, type StateType, type Tool } from "./tools";
 
 type ToolDef = { tool: Tool; label: string; key: string; icon: ReactNode };
 const GROUPS: ToolDef[][] = [
@@ -25,10 +29,18 @@ const GROUPS: ToolDef[][] = [
     { tool: "state", label: "캐릭터 상태", key: "C", icon: <UserRound size={18} /> },
     { tool: "sticky", label: "포스트잇", key: "S", icon: <StickyNote size={18} /> },
     { tool: "text", label: "텍스트", key: "T", icon: <Type size={18} /> },
+    { tool: "shape", label: "도형", key: "R", icon: null },
     { tool: "frame", label: "프레임", key: "F", icon: <Frame size={18} /> },
     { tool: "line", label: "연결선", key: "L", icon: <Spline size={18} /> },
   ],
 ];
+
+// 도형 버튼 아이콘 = 지금 고른 모양
+const SHAPE_ICON: Record<ShapeKind, ReactNode> = {
+  rect: <Square size={18} />,
+  ellipse: <Circle size={18} />,
+  diamond: <Diamond size={18} />,
+};
 
 const Sep = () => <span className="mx-1 h-6 w-px bg-hairline" />;
 
@@ -39,6 +51,7 @@ const LABEL = "@max-3xl:sr-only";
 export default function Toolbar({
   tool,
   stateType,
+  shapeKind,
   snap,
   lanes,
   hint = false,
@@ -50,6 +63,7 @@ export default function Toolbar({
 }: {
   tool: Tool;
   stateType: StateType;
+  shapeKind: ShapeKind;
   snap: boolean;
   lanes: boolean;
   hint?: boolean;
@@ -68,7 +82,12 @@ export default function Toolbar({
         <div key={i} className="flex items-center gap-0.5">
           {i > 0 && <Sep />}
           {group.map((d) => {
-            const label = d.tool === "state" ? `${d.label}: ${STATE_LABEL[stateType]}` : d.label;
+            const label =
+              d.tool === "state"
+                ? `${d.label}: ${STATE_LABEL[stateType]}`
+                : d.tool === "shape"
+                  ? `${d.label}: ${SHAPE_LABEL[shapeKind]}`
+                  : d.label;
             const on = tool === d.tool;
             return (
               <button
@@ -87,7 +106,7 @@ export default function Toolbar({
                   if (e.button === 0 && isPlaceTool(d.tool)) onDragStart(d.tool, e);
                 }}
               >
-                {d.icon}
+                {d.tool === "shape" ? SHAPE_ICON[shapeKind] : d.icon}
               </button>
             );
           })}
