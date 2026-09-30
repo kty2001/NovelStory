@@ -456,6 +456,41 @@ test.describe("스토리 라인", () => {
     await expect(block).toHaveCSS("border-top-width", "1px");
   });
 
+  test("라인 색: 테두리 색 · 배지 점 · 새로고침 유지 · 기본으로 되돌리기", async ({ page }) => {
+    const block = await placeEvent(page, 2, "왕도 습격");
+    await setLine(page, block, "메인");
+    await expect(block.getByTestId("line-dot")).toHaveCount(0);
+    await block.click();
+    await lineButton(page).click();
+    await page.getByRole("menuitem", { name: "라인 편집…" }).click();
+    const dialog = page.getByRole("dialog", { name: "스토리 라인 편집" });
+    await dialog.getByRole("button", { name: "메인 색" }).click();
+    await dialog.getByRole("button", { name: "색: 코랄" }).click();
+    await expect(dialog.getByRole("button", { name: "색: 코랄" })).toHaveAttribute(
+      "aria-pressed",
+      "true",
+    );
+    await dialog.getByRole("button", { name: "완료" }).click();
+
+    await expect(block).toHaveCSS("border-top-color", "rgb(255, 107, 90)");
+    await expect(block).toHaveCSS("border-top-width", "2px");
+    await expect(block.getByTestId("line-dot")).toBeVisible();
+
+    await page.waitForTimeout(800);
+    await page.reload();
+    const again = page.getByTestId("event-block").filter({ hasText: "왕도 습격" });
+    await expect(again).toHaveCSS("border-top-color", "rgb(255, 107, 90)");
+
+    await again.click();
+    await lineButton(page).click();
+    await page.getByRole("menuitem", { name: "라인 편집…" }).click();
+    await dialog.getByRole("button", { name: "메인 색" }).click();
+    await dialog.getByRole("button", { name: "색: 기본" }).click();
+    await dialog.getByRole("button", { name: "완료" }).click();
+    await expect(again).toHaveCSS("border-top-color", "rgb(10, 10, 10)");
+    await expect(again.getByTestId("line-dot")).toHaveCount(0);
+  });
+
   test("여러 블록 선택(Shift+클릭) 후 한꺼번에 지정", async ({ page }) => {
     const a = await placeEvent(page, 1, "가");
     const b = await placeEvent(page, 3, "나");

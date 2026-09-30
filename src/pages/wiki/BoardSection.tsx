@@ -2,6 +2,7 @@ import type { ReactNode } from "react";
 import EmptyState from "../../components/EmptyState";
 import type { WikiDoc } from "../../db/types";
 import { useNovelStore } from "../../store/novelStore";
+import { lineDotColor } from "../board/lines";
 import { docEpisodes, MODE_LABEL } from "../narrative/narrative";
 import {
   characterEvents,
@@ -111,7 +112,13 @@ export default function BoardSection({ doc }: { doc: WikiDoc }) {
                 >
                   <span className="truncate">{ev?.title}</span>
                   {line && (
-                    <span className="rounded-full bg-surface-card px-2 text-caption">
+                    <span className="inline-flex items-center gap-1 rounded-full bg-surface-card px-2 text-caption">
+                      {lineDotColor(line.color) && (
+                        <span
+                          className="size-2 shrink-0 rounded-full"
+                          style={{ background: lineDotColor(line.color) }}
+                        />
+                      )}
                       {line.name}
                     </span>
                   )}

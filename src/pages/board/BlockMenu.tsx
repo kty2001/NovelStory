@@ -42,8 +42,8 @@ const SHAPE_ICON: Record<ShapeKind, ReactNode> = {
   diamond: <Diamond size={15} />,
 };
 
-const Sample = ({ index }: { index?: number }) => (
-  <span className="h-3 w-5 rounded-xs bg-surface-card" style={lineBorder(index)} />
+const Sample = ({ index, color }: { index?: number; color?: ColorToken }) => (
+  <span className="h-3 w-5 rounded-xs bg-surface-card" style={lineBorder(index, color)} />
 );
 
 const Sep = () => <span className="mx-1 h-5 w-px bg-hairline" />;
@@ -94,7 +94,7 @@ export default function BlockMenu({
   const lineMenu: MenuItem[] = [
     ...lines.map((l, i) => ({
       label: l.name,
-      icon: <Sample index={i} />,
+      icon: <Sample index={i} color={l.color} />,
       onSelect: () => setDocsLine(docIds, l.id),
     })),
     { label: "미지정", icon: <Sample />, onSelect: () => setDocsLine(docIds, undefined) },

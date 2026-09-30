@@ -156,6 +156,12 @@ export function renameLine(id: string, name: string) {
   );
 }
 
+export function setLineColor(id: string, color: string) {
+  store.setState(({ lines }) =>
+    lines[id] ? { lines: { ...lines, [id]: { ...lines[id], color } } } : {},
+  );
+}
+
 // 끌어서 바꾼 순서대로 order 재지정
 export function reorderLines(ids: string[]) {
   store.setState(({ lines }) => {

@@ -2,6 +2,7 @@ import { useNavigate } from "react-router";
 import Button from "../components/Button";
 import EmptyState from "../components/EmptyState";
 import { setSynopsisBody, useNovelStore } from "../store/novelStore";
+import { lineDotColor } from "./board/lines";
 import { storyFlow } from "./overview/storyFlow";
 import BodyEditor from "./wiki/BodyEditor";
 import { placeText } from "./wiki/boardLinks";
@@ -71,7 +72,13 @@ export default function OverviewPage() {
                 <div className="grid gap-4 md:grid-cols-2">
                   {section.lines.map(({ line, events }) => (
                     <div key={line?.id ?? "none"}>
-                      <h4 className="mb-1 text-caption font-semibold text-muted">
+                      <h4 className="mb-1 flex items-center gap-1.5 text-caption font-semibold text-muted">
+                        {lineDotColor(line?.color) && (
+                          <span
+                            className="size-2 rounded-full"
+                            style={{ background: lineDotColor(line?.color) }}
+                          />
+                        )}
                         {line?.name ?? "라인 미지정"} · {events.length}
                       </h4>
                       <ol>

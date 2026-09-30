@@ -31,8 +31,13 @@ export default function FilterMenu({
     counts.set(key, (counts.get(key) ?? 0) + 1);
   }
   const rows = [
-    ...lines.map((l, i) => ({ key: l.id, name: l.name, index: i as number | undefined })),
-    { key: NO_LINE, name: "미지정", index: undefined },
+    ...lines.map((l, i) => ({
+      key: l.id,
+      name: l.name,
+      index: i as number | undefined,
+      color: l.color as string | undefined,
+    })),
+    { key: NO_LINE, name: "미지정", index: undefined, color: undefined },
   ];
   const hidden = new Set(hiddenLineIds);
   const toggle = (key: string) =>
@@ -79,7 +84,7 @@ export default function FilterMenu({
                   />
                   <span
                     className="h-3 w-5 rounded-xs bg-surface-card"
-                    style={lineBorder(r.index)}
+                    style={lineBorder(r.index, r.color)}
                   />
                   <span className="flex-1">{r.name}</span>
                   <span className="text-caption text-muted tabular-nums">

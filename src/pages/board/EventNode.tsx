@@ -5,7 +5,7 @@ import { moveItems, renameDoc, sortedLines } from "../../store/boardActions";
 import { beginBatch, endBatch, useNovelStore } from "../../store/novelStore";
 import { useBoardUi } from "./boardContext";
 import { EVENT_W, spanPlace } from "./flow";
-import { lineBorder } from "./lines";
+import { lineBorder, lineDotColor } from "./lines";
 import Ports from "./Ports";
 import { snapTick, xToTick } from "./timeAxis";
 import { useFocusWhenVisible } from "./useFocusWhenVisible";
@@ -101,6 +101,8 @@ export default function EventNode({ id, data, selected }: NodeProps<EventNodeTyp
     doc?.lineId ? sortedLines(s.lines).findIndex((l) => l.id === doc.lineId) : -1,
   );
   const lineName = useNovelStore((s) => (doc?.lineId ? s.lines[doc.lineId]?.name : undefined));
+  const lineColor = useNovelStore((s) => (doc?.lineId ? s.lines[doc.lineId]?.color : undefined));
+  const dot = lineDotColor(lineColor);
   const { editId, setEditId } = useBoardUi();
   const resize = useSpanResize(id);
   if (item?.kind !== "event") return null;
@@ -117,7 +119,7 @@ export default function EventNode({ id, data, selected }: NodeProps<EventNodeTyp
         style={{
           width: data.span ? "100%" : EVENT_W,
           background: `var(--color-${item.color})`,
-          ...lineBorder(lineIndex < 0 ? undefined : lineIndex),
+          ...lineBorder(lineIndex < 0 ? undefined : lineIndex, lineColor),
         }}
         onDoubleClick={() => setEditId(id)}
       >
@@ -132,7 +134,14 @@ export default function EventNode({ id, data, selected }: NodeProps<EventNodeTyp
           </p>
         )}
         {lineName && !editing && (
-          <span className="line-badge mt-1 inline-block rounded-full bg-canvas/70 px-2 text-caption text-ink">
+          <span className="line-badge mt-1 inline-flex items-center gap-1 rounded-full bg-canvas/70 px-2 text-caption text-ink">
+            {dot && (
+              <span
+                data-testid="line-dot"
+                className="size-2 shrink-0 rounded-full"
+                style={{ background: dot }}
+              />
+            )}
             {lineName}
           </span>
         )}

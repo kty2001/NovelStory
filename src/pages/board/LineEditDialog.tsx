@@ -7,12 +7,13 @@ import {
   deleteLine,
   renameLine,
   reorderLines,
+  setLineColor,
   sortedLines,
 } from "../../store/boardActions";
 import { useNovelStore } from "../../store/novelStore";
-import { lineBorder } from "./lines";
+import { LINE_COLORS, lineBorder } from "./lines";
 
-// 라인 편집 (B-6): 이름 바로 수정 · ⋮⋮ 끌어서 순서 변경(테두리 모양이 순서를 따름) · 추가 · 삭제
+// 라인 편집 (B-6): 이름 바로 수정 · 견본 = 색 선택 · ⋮⋮ 끌어서 순서 변경(테두리 모양이 순서를 따름) · 추가 · 삭제
 export default function LineEditDialog({
   open,
   onClose,
@@ -27,6 +28,7 @@ export default function LineEditDialog({
   const items = useNovelStore((s) => s.items);
   const [dragId, setDragId] = useState<string | null>(null);
   const [confirmId, setConfirmId] = useState<string | null>(null);
+  const [colorId, setColorId] = useState<string | null>(null);
 
   // 라인별 사건 수 (보드 블록이 없는 사건 문서도 포함)
   const eventDocIds = new Set(
@@ -84,10 +86,18 @@ export default function LineEditDialog({
                 >
                   <GripVertical size={16} />
                 </span>
-                <span
-                  className="h-3 w-5 shrink-0 rounded-xs bg-surface-card"
-                  style={lineBorder(i)}
-                />
+                <button
+                  type="button"
+                  aria-label={`${l.name} 색`}
+                  aria-expanded={colorId === l.id}
+                  className="flex size-7 shrink-0 items-center justify-center rounded-sm hover:bg-surface-card"
+                  onClick={() => setColorId((id) => (id === l.id ? null : l.id))}
+                >
+                  <span
+                    className="h-3 w-5 rounded-xs bg-surface-card"
+                    style={lineBorder(i, l.color)}
+                  />
+                </button>
                 <input
                   key={l.name}
                   aria-label={`라인 ${i + 1} 이름`}
@@ -115,6 +125,31 @@ export default function LineEditDialog({
                   <Trash2 size={16} />
                 </button>
               </div>
+              {colorId === l.id && (
+                <div
+                  role="group"
+                  aria-label={`${l.name} 색 선택`}
+                  className="mb-1 flex items-center gap-1.5 rounded-sm bg-surface-card px-3 py-2"
+                >
+                  {LINE_COLORS.map((c, ci) => (
+                    <button
+                      key={c.token}
+                      type="button"
+                      title={c.label}
+                      aria-label={`색: ${c.label}`}
+                      aria-pressed={l.color === c.token}
+                      className={`flex size-6 items-center justify-center rounded-full ${l.color === c.token ? "ring-2 ring-ink ring-offset-1" : ""}`}
+                      // 기본 = 순서별 테두리 견본, 그 외 = 색 원
+                      style={ci === 0 ? undefined : { background: `var(--color-${c.token})` }}
+                      onClick={() => setLineColor(l.id, c.token)}
+                    >
+                      {ci === 0 && (
+                        <span className="h-3 w-5 rounded-xs bg-canvas" style={lineBorder(i)} />
+                      )}
+                    </button>
+                  ))}
+                </div>
+              )}
               {confirmId === l.id && (
                 <div
                   role="alert"
@@ -145,7 +180,7 @@ export default function LineEditDialog({
         라인 추가
       </button>
       <p className="mt-3 text-caption text-muted">
-        4번째 라인부터는 실선 테두리 + 배지로 구분돼요. 라인 색 지정은 추후 지원.
+        4번째 라인부터는 실선 테두리 + 배지로 구분돼요. 견본을 누르면 라인 색을 고를 수 있어요.
       </p>
     </Dialog>
   );
