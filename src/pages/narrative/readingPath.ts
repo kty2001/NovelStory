@@ -72,3 +72,26 @@ export function stepLabels(steps: Step[]): Map<string, string[]> {
 
 // 범위 안에서 서술된 사건 문서 (나머지 사건 블록은 흐리게)
 export const narratedDocIds = (steps: Step[]) => new Set(steps.map((s) => s.slot.eventDocId));
+
+type Box = { x: number; y: number; w: number; h: number };
+
+const MIN_LIFT = 70;
+
+// 경로 곡선: 출발 블록 윗변의 진행 방향 쪽 ¼ 지점 → 도착 블록 윗변의 들어오는 쪽 ¼ 지점.
+// 들어오는 선 · 나가는 선이 다른 점을 쓰고, 가까운 블록도 최소 높이로 위로 휨 (역행은 더 높게)
+export function arcPath(from: Box, to: Box, kind: SegmentKind) {
+  const right = to.x + to.w / 2 >= from.x + from.w / 2;
+  const sx = from.x + from.w * (right ? 0.75 : 0.25);
+  const ex = to.x + to.w * (right ? 0.25 : 0.75);
+  const [sy, ey] = [from.y, to.y];
+  const lift =
+    Math.max(MIN_LIFT, 40 + Math.min(Math.abs(ex - sx) * 0.2, 160)) *
+    (kind === "forward" ? 1 : 1.6);
+  const cx = (sx + ex) / 2;
+  const cy = Math.min(sy, ey) - lift;
+  return { sx, sy, ex, ey, cx, cy, d: `M ${sx} ${sy} Q ${cx} ${cy} ${ex} ${ey}` };
+}
+
+// 배지 칩: 2개까지 그대로, 3개 이상은 첫 라벨 + "+N"
+export const badgeChips = (labels: string[]) =>
+  labels.length <= 2 ? labels : [labels[0], `+${labels.length - 1}`];

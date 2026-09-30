@@ -1,7 +1,15 @@
 import { describe, expect, it } from "vitest";
 import type { Episode, EventItem, NarrativeMode, NarrativeSlot } from "../../db/types";
 import { OLD } from "../../test/fixtures";
-import { narratedDocIds, pathSegments, readingSteps, stepLabels, type Step } from "./readingPath";
+import {
+  arcPath,
+  badgeChips,
+  narratedDocIds,
+  pathSegments,
+  readingSteps,
+  stepLabels,
+  type Step,
+} from "./readingPath";
 
 const episode = (id: string, number: number): Episode => ({
   id,
@@ -95,4 +103,26 @@ it("배지 라벨 · 서술된 문서", () => {
     "b-b": ["2화·1"],
   });
   expect([...narratedDocIds(list)].sort()).toEqual(["a", "b", "none"]);
+});
+
+describe("arcPath", () => {
+  const box = (x: number, y: number) => ({ x, y, w: 160, h: 56 });
+
+  it("진행 방향 쪽 ¼ 지점끼리 연결 (오른쪽 · 왼쪽)", () => {
+    expect(arcPath(box(0, 0), box(400, 0), "forward")).toMatchObject({ sx: 120, ex: 440 });
+    expect(arcPath(box(400, 0), box(0, 0), "reverse")).toMatchObject({ sx: 440, ex: 120 });
+  });
+
+  it("같은 x에 쌓인 블록도 끝점이 폭의 절반 떨어지고 최소 높이로 휨, 역행은 더 높게", () => {
+    const p = arcPath(box(0, 100), box(0, 0), "forward");
+    expect(Math.abs(p.ex - p.sx)).toBeGreaterThanOrEqual(80);
+    expect(p.cy).toBeLessThanOrEqual(0 - 70);
+    expect(arcPath(box(0, 100), box(0, 0), "reverse").cy).toBeLessThan(p.cy);
+  });
+});
+
+it("badgeChips: 2개까지 그대로, 3개 이상은 첫 라벨 + N", () => {
+  expect(badgeChips(["1화·1"])).toEqual(["1화·1"]);
+  expect(badgeChips(["1화·1", "2화·1"])).toEqual(["1화·1", "2화·1"]);
+  expect(badgeChips(["1화·1", "2화·1", "5화·3"])).toEqual(["1화·1", "+2"]);
 });
