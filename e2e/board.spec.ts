@@ -838,6 +838,97 @@ test.describe("도형", () => {
   });
 });
 
+test.describe("정렬 보조선", () => {
+  async function sticky(page: Page, x: number, y: number, text: string) {
+    await expect(page.getByTestId("time-axis")).toBeVisible();
+    await page.keyboard.press("KeyS");
+    await page.mouse.click(x, y);
+    const input = page.getByRole("textbox", { name: "포스트잇 내용" });
+    await input.fill(text);
+    await input.press("Escape");
+    return page.getByTestId("sticky").filter({ hasText: text });
+  }
+  const top = async (l: import("@playwright/test").Locator) => (await l.boundingBox())!.y;
+  const guide = (page: Page) => page.getByTestId("align-guide");
+
+  // b를 윗변이 a보다 off px 아래가 되도록 끌기 (놓기 전 확인용 콜백)
+  async function dragNear(
+    page: Page,
+    a: import("@playwright/test").Locator,
+    b: import("@playwright/test").Locator,
+    off: number,
+    beforeUp?: () => Promise<void>,
+  ) {
+    const c = await center(b);
+    const dy = (await top(a)) + off - (await top(b));
+    await page.mouse.move(c.x, c.y);
+    await page.mouse.down();
+    // React Flow는 끌기 시작 전 첫 이동량을 버리므로 2px 먼저 움직인 뒤 목표로
+    await page.mouse.move(c.x, c.y + 2);
+    await page.mouse.move(c.x, c.y + 2 + dy, { steps: 10 });
+    await beforeUp?.();
+    await page.mouse.up();
+  }
+
+  test("가까이 끌면 윗변에 붙고 끄는 동안 보조선 표시", async ({ page }) => {
+    const a = await sticky(page, 700, 250, "기준");
+    const b = await sticky(page, 1000, 450, "이동");
+    await dragNear(page, a, b, 3, async () => {
+      await expect(guide(page).first()).toBeVisible();
+    });
+    await expect(guide(page)).toHaveCount(0);
+    await expect.poll(async () => Math.round((await top(b)) - (await top(a)))).toBe(0);
+
+    await page.waitForTimeout(800);
+    await page.reload();
+    const [ra, rb] = [page.getByTestId("sticky").first(), page.getByTestId("sticky").nth(1)];
+    expect(Math.round((await top(rb)) - (await top(ra)))).toBe(0);
+  });
+
+  test("Alt 누른 채 끌면 붙지 않음", async ({ page }) => {
+    const a = await sticky(page, 700, 250, "기준");
+    const b = await sticky(page, 1000, 450, "이동");
+    await page.keyboard.down("Alt");
+    await dragNear(page, a, b, 3, async () => {
+      await expect(guide(page)).toHaveCount(0);
+    });
+    await page.keyboard.up("Alt");
+    await expect.poll(async () => Math.round((await top(b)) - (await top(a)))).toBe(3);
+  });
+
+  test("'정렬' 끄면 붙지 않음 · 새로고침 후 유지", async ({ page }) => {
+    const a = await sticky(page, 700, 250, "기준");
+    const b = await sticky(page, 1000, 450, "이동");
+    const button = toolButton(page, "정렬");
+    await expect(button).toHaveAttribute("aria-pressed", "true");
+    await button.click();
+    await expect(button).toHaveAttribute("aria-pressed", "false");
+    await dragNear(page, a, b, 3, async () => {
+      await expect(guide(page)).toHaveCount(0);
+    });
+    await expect.poll(async () => Math.round((await top(b)) - (await top(a)))).toBe(3);
+
+    await page.waitForTimeout(800);
+    await page.reload();
+    await expect(toolButton(page, "정렬")).toHaveAttribute("aria-pressed", "false");
+  });
+
+  test("사건 블록: 세로만 정렬, 가로는 눈금 스냅", async ({ page }) => {
+    const a = await sticky(page, 1100, 220, "기준");
+    const block = await placeEvent(page, 2, "습격");
+    const x2 = await tickX(page, 2);
+    const c = await center(block);
+    const dy = (await top(a)) + 3 - (await top(block));
+    await page.mouse.move(c.x, c.y);
+    await page.mouse.down();
+    await page.mouse.move(c.x, c.y + 2);
+    await page.mouse.move(c.x + 20, c.y + 2 + dy, { steps: 10 });
+    await page.mouse.up();
+    await expect.poll(async () => Math.round((await top(block)) - (await top(a)))).toBe(0);
+    await expect.poll(async () => Math.round((await center(block)).x - x2)).toBe(0);
+  });
+});
+
 test.describe("연결선", () => {
   const edges = (page: Page) => page.locator(".react-flow__edge");
   // 제목이 title인 사건 블록의 side 면 핸들

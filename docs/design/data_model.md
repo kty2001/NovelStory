@@ -138,6 +138,7 @@ type Board = BaseRecord & {       // id = novelId
     enabled: boolean;
     order: string[];              // 캐릭터 docId 순서 (새 캐릭터는 끝에 추가)
   };
+  align?: boolean;                // 정렬 보조선 (MVP 이후). false = 끔, 없음 = 켬
 };
 
 // 블록 위치: 3가지 방식

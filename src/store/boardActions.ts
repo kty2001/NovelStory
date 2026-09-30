@@ -234,6 +234,11 @@ export function setLanes(patch: Partial<Board["stateLanes"]>) {
   );
 }
 
+// 정렬 보조선 켜기 · 끄기 (보드 기록 대상, 스냅 토글과 같음)
+export function setAlign(on: boolean) {
+  store.setState(({ board }) => (board ? { board: { ...board, align: on } } : {}));
+}
+
 // ── 포스트잇 · 텍스트 · 도형 · 프레임 (UC-17 · 18) ──
 type FreeFields<T extends BoardItem> = Omit<T, "id" | "novelId" | "updatedAt" | "z" | "kind">;
 

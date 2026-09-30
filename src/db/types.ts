@@ -79,6 +79,7 @@ export type Board = BaseRecord & {
   novelId: string; // id = novelId
   timeScale: TimeScale;
   stateLanes: { enabled: boolean; order: string[] };
+  align?: boolean; // 정렬 보조선. false = 끔, 없음 = 켬
 };
 
 export type TimedPlace = { mode: "timed"; t: number; tEnd?: number; y: number };

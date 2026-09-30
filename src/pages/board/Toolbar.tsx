@@ -1,6 +1,7 @@
 import type { PointerEvent as ReactPointerEvent, ReactNode } from "react";
 import { Panel } from "@xyflow/react";
 import {
+  AlignCenterVertical,
   Circle,
   Diamond,
   Frame,
@@ -53,11 +54,13 @@ export default function Toolbar({
   stateType,
   shapeKind,
   snap,
+  align,
   lanes,
   hint = false,
   onTool,
   onDragStart,
   onSnap,
+  onAlign,
   onLanes,
   children,
 }: {
@@ -65,11 +68,13 @@ export default function Toolbar({
   stateType: StateType;
   shapeKind: ShapeKind;
   snap: boolean;
+  align: boolean;
   lanes: boolean;
   hint?: boolean;
   onTool: (tool: Tool) => void;
   onDragStart: (tool: Tool, e: ReactPointerEvent) => void;
   onSnap: () => void;
+  onAlign: () => void;
   onLanes: () => void;
   children?: ReactNode;
 }) {
@@ -132,6 +137,16 @@ export default function Toolbar({
       >
         <Magnet size={16} />
         <span className={LABEL}>스냅</span>
+      </button>
+      <button
+        type="button"
+        aria-pressed={align}
+        title="정렬 보조선 (Alt 누른 채 끌면 일시 해제)"
+        className={`flex h-10 items-center gap-1.5 rounded-md px-3 text-button ${align ? "bg-surface-card text-ink" : "text-muted hover:bg-surface-card"}`}
+        onClick={onAlign}
+      >
+        <AlignCenterVertical size={16} />
+        <span className={LABEL}>정렬</span>
       </button>
       {children}
     </Panel>

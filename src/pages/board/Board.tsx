@@ -46,6 +46,7 @@ import {
   adopt,
   deleteItems,
   placeEvent,
+  setAlign,
   setLanes,
   updateItems,
 } from "../../store/boardActions";
@@ -68,6 +69,8 @@ import {
 import { eventBlock } from "../wiki/boardLinks";
 import { familyOf } from "../wiki/categories";
 import { copyClip, pasteRecords, type Clip } from "./clipboard";
+import { alignSnap, type Guide } from "./align";
+import AlignGuides from "./AlignGuides";
 import Axis from "./Axis";
 import BlockMenu from "./BlockMenu";
 import CompareBar from "./CompareBar";
@@ -136,6 +139,8 @@ const SIMPLE_ZOOM = 0.5;
 const MULTI_SELECT_KEYS = ["Shift", "Control", "Meta"];
 // Ctrl+G 로 만드는 프레임의 여백 (제목 자리 포함)
 const GROUP_PAD = 24;
+// 정렬 보조선: 화면에서 이 거리(px) 안이면 붙음
+const ALIGN_PX = 6;
 
 const edgeTypes = { board: EdgeView };
 
@@ -204,6 +209,9 @@ const union = (rects: Rect[]) => {
   return { x, y, w, h };
 };
 
+const overlaps = (a: Rect, b: Rect) =>
+  a.x < b.x + b.w && a.x + a.w > b.x && a.y < b.y + b.h && a.y + a.h > b.y;
+
 const minimapColor = (item: BoardItem | undefined) => {
   if (item?.kind === "event" || item?.kind === "sticky" || (item?.kind === "shape" && item.color))
     return `var(--color-${item.color})`;
@@ -223,8 +231,16 @@ function Canvas({
   const simple = useStore((s) => s.transform[2] < SIMPLE_ZOOM);
   const items = useNovelStore((s) => s.items);
   const docs = useNovelStore((s) => s.docs);
-  const { screenToFlowPosition, setCenter, getZoom, zoomIn, zoomOut, zoomTo, fitView } =
-    useReactFlow();
+  const {
+    screenToFlowPosition,
+    setCenter,
+    getZoom,
+    getViewport,
+    zoomIn,
+    zoomOut,
+    zoomTo,
+    fitView,
+  } = useReactFlow();
   const [filters, setFilters] = useState<Filters>(NO_FILTERS);
   const [linesOpen, setLinesOpen] = useState(false);
   // 문서 목록 사이드바: 기본 닫힘, 사전 패널과 동시 표시 가능
@@ -447,10 +463,46 @@ function Canvas({
     latest.current = { selectedIds, selectedEdgeIds, rects };
   }, [selectedIds, selectedEdgeIds, rects]);
 
-  const onNodesChange = useCallback(
-    (changes: NodeChange[]) => setUi((u) => applyUi(u, changes)),
-    [],
-  );
+  // 정렬 보조선: 끌기 시작 때 기준 사각형 · 후보를 잡아 두고, 끌기 중 위치 변경마다 붙기 계산
+  const drag = useRef<{
+    start: Map<string, XYPosition>;
+    box: Rect;
+    others: Rect[];
+    threshold: number;
+    axes: { x: boolean; y: boolean };
+  } | null>(null);
+  const alignOffset = useRef({ dx: 0, dy: 0 });
+  const altDown = useRef(false);
+  const [guides, setGuides] = useState<Guide[]>([]);
+
+  const onNodesChange = useCallback((changes: NodeChange[]) => {
+    const d = drag.current;
+    const first = d
+      ? changes.find((c) => c.type === "position" && c.dragging && d.start.has(c.id))
+      : undefined;
+    if (d && first?.type === "position" && first.position) {
+      const s = d.start.get(first.id)!;
+      const box = {
+        ...d.box,
+        x: d.box.x + first.position.x - s.x,
+        y: d.box.y + first.position.y - s.y,
+      };
+      // Alt = 일시 해제 (눈금 스냅과 같음)
+      const r = altDown.current
+        ? { dx: 0, dy: 0, guides: [] }
+        : alignSnap(box, d.others, d.threshold, d.axes);
+      alignOffset.current = { dx: r.dx, dy: r.dy };
+      setGuides(r.guides);
+      if (r.dx || r.dy) {
+        changes = changes.map((c) =>
+          c.type === "position" && c.dragging && c.position
+            ? { ...c, position: { x: c.position.x + r.dx, y: c.position.y + r.dy } }
+            : c,
+        );
+      }
+    }
+    setUi((u) => applyUi(u, changes));
+  }, []);
   const clearUi = useCallback((ids: string[], keys: (keyof NodeUi)[]) => {
     setUi((u) => {
       const next = { ...u };
@@ -946,16 +998,61 @@ function Canvas({
     openPanel,
   ]);
 
-  // 끌기 종료: 눈금 스냅(Alt = 해제) · 미정 영역 · 프레임 소속 판정 후 스토어에 1건으로 기록
+  // 끌기 시작: 정렬 후보 = 화면에 보이는 다른 요소 (숨긴 것 · 장식 · 끄는 프레임의 자식 제외).
+  // 시간 블록은 눈금 스냅이 켜져 있으면 가로 정렬 안 함, 캐릭터별 정렬 중 상태 블록은 세로 정렬 안 함
+  const align = useNovelStore((s) => s.board?.align !== false);
+  const onNodeDragStart = useCallback<OnNodeDrag>(
+    (e, _node, dragged) => {
+      altDown.current = e.altKey;
+      alignOffset.current = { dx: 0, dy: 0 };
+      drag.current = null;
+      if (!align) return;
+      const rs = latest.current.rects;
+      const cur = useNovelStore.getState().items;
+      const ids = new Set(dragged.map((n) => n.id));
+      const boxes = [...ids].flatMap((id) => rs.get(id) ?? []);
+      if (!boxes.length) return;
+      const { x: vx, y: vy, zoom } = getViewport();
+      const view = { x: -vx / zoom, y: -vy / zoom, w: viewW / zoom, h: viewH / zoom };
+      const others = [...rs]
+        .filter(
+          ([id, r]) =>
+            cur[id] &&
+            !ids.has(id) &&
+            !ids.has(cur[id].parentFrameId ?? "") &&
+            !hiddenIds.has(id) &&
+            overlaps(r, view),
+        )
+        .map(([, r]) => r);
+      const kinds = [...ids].map((id) => cur[id]?.kind);
+      drag.current = {
+        start: new Map(dragged.map((n) => [n.id, n.position])),
+        box: union(boxes),
+        others,
+        threshold: ALIGN_PX / zoom,
+        axes: {
+          x: !(timeScale.snap && kinds.some((k) => k === "event" || k === "state")),
+          y: !(stateLanes?.enabled && kinds.includes("state")),
+        },
+      };
+    },
+    [align, getViewport, viewW, viewH, hiddenIds, timeScale.snap, stateLanes?.enabled],
+  );
+
+  // 끌기 종료: 눈금 스냅(Alt = 해제) · 미정 영역 · 프레임 소속 판정 후 스토어에 1건으로 기록.
+  // React Flow가 넘겨주는 위치는 정렬 붙기 전 값이라 붙은 만큼 더함
   const onNodeDragStop = useCallback<OnNodeDrag>(
     (e, _node, dragged) => {
+      const { dx, dy } = drag.current && !e.altKey ? alignOffset.current : { dx: 0, dy: 0 };
+      drag.current = null;
+      setGuides([]);
       const byId = new Map(nodes.map((n) => [n.id, n]));
       const dropped: Dropped[] = dragged.map((n) => {
         const parent = n.parentId ? byId.get(n.parentId)?.position : undefined;
         return {
           id: n.id,
-          x: n.position.x + (parent?.x ?? 0),
-          y: n.position.y + (parent?.y ?? 0),
+          x: n.position.x + (parent?.x ?? 0) + dx,
+          y: n.position.y + (parent?.y ?? 0) + dy,
           w: n.measured?.width ?? n.width ?? EVENT_W,
           h: n.measured?.height ?? n.height ?? EVENT_H,
           ox: n.origin?.[0] ?? 0,
@@ -1000,6 +1097,8 @@ function Canvas({
             // 핸들 종류 구분 없이 아무 면끼리 연결
             connectionMode={ConnectionMode.Loose}
             onEdgeDoubleClick={(_, edge) => setEditId(edge.id)}
+            onNodeDragStart={onNodeDragStart}
+            onNodeDrag={(e) => (altDown.current = e.altKey)}
             onNodeDragStop={onNodeDragStop}
             onPointerDown={startFrameDraw}
             // 붙여넣기 위치용 마우스 위치 (캔버스 밖이면 없음)
@@ -1088,6 +1187,7 @@ function Canvas({
               />
             )}
             <Axis scale={timeScale} />
+            {guides.length > 0 && <AlignGuides guides={guides} />}
             {preview && <PlacePreview preview={preview} scale={timeScale} />}
             {draft && (
               <FrameDraft
@@ -1107,6 +1207,8 @@ function Canvas({
               onTool={chooseTool}
               onDragStart={startToolDrag}
               onSnap={() => setTimeScale({ snap: !timeScale.snap })}
+              align={align}
+              onAlign={() => setAlign(!align)}
               lanes={!!stateLanes?.enabled}
               hint={empty}
               onLanes={() =>
