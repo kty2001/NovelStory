@@ -4,6 +4,7 @@ import { useNovelStore } from "../store/novelStore";
 import { childCategories } from "./wiki/categories";
 import CategoryTree from "./wiki/CategoryTree";
 import CategoryView from "./wiki/CategoryView";
+import CheckView from "./wiki/CheckView";
 import DocView from "./wiki/DocView";
 import SearchResults from "./wiki/SearchResults";
 
@@ -22,19 +23,33 @@ export default function WikiPage() {
     setOpenedDoc(docId);
     setQuery("");
   }
-  // 선택 분류: 열린 문서의 분류 > ?category= > 첫 최상위 분류 (onboarding 사전 첫 진입)
+  // 선택 분류: 열린 문서의 분류 > ?category= > 첫 최상위 분류 (onboarding 사전 첫 진입). 설정 점검 중엔 없음
+  const checking = !doc && params.get("view") === "check";
   const param = params.get("category");
   const categoryId =
-    doc?.categoryId ?? (param && categories[param] ? param : childCategories(categories)[0]?.id);
+    doc?.categoryId ??
+    (checking
+      ? undefined
+      : param && categories[param]
+        ? param
+        : childCategories(categories)[0]?.id);
 
   return (
     <div className="mx-auto flex h-full max-w-7xl">
-      <CategoryTree categoryId={categoryId} docId={doc?.id} query={query} onQuery={setQuery} />
+      <CategoryTree
+        categoryId={categoryId}
+        docId={doc?.id}
+        checking={checking}
+        query={query}
+        onQuery={setQuery}
+      />
       <main className="min-w-0 flex-1 overflow-y-auto px-10 py-8">
         {query.trim() ? (
           <SearchResults query={query} categoryId={categoryId} onClear={() => setQuery("")} />
         ) : doc ? (
           <DocView key={doc.id} doc={doc} />
+        ) : checking ? (
+          <CheckView />
         ) : (
           categoryId && <CategoryView key={categoryId} categoryId={categoryId} />
         )}

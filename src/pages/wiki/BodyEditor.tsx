@@ -11,13 +11,12 @@ import StarterKit from "@tiptap/starter-kit";
 import { useState, type ReactNode } from "react";
 import type { TiptapJSON } from "../../db/types";
 import { useNovelStore } from "../../store/novelStore";
-import { setDocBody } from "../../store/wikiActions";
 import { mentionCandidates, suggestionRenderer } from "./mention";
 import MentionChip from "./MentionChip";
 
 // 본문 서식: H1~H3 · 목록 · 굵게 · 기울임 · 인용 (UC-31). 명세 밖 서식은 끔.
 // `@` 링크: 후보는 현재 문서 제외, 칩은 대상의 현재 제목 표시 (UC-33)
-const extensions = (docId: string) => [
+const extensions = (excludeId?: string) => [
   StarterKit.configure({
     heading: { levels: [1, 2, 3] },
     code: false,
@@ -30,7 +29,7 @@ const extensions = (docId: string) => [
   Mention.extend({ addNodeView: () => ReactNodeViewRenderer(MentionChip) }).configure({
     suggestion: {
       char: "@",
-      items: ({ query }) => mentionCandidates(useNovelStore.getState().docs, query, docId),
+      items: ({ query }) => mentionCandidates(useNovelStore.getState().docs, query, excludeId),
       render: suggestionRenderer,
     },
   }),
@@ -69,15 +68,19 @@ const TOOLS: Tool[] = [
   { label: "인용", node: "❝", active: ["blockquote"], cmd: (c) => c.toggleBlockquote() },
 ];
 
-// 사전 본문 (Tiptap). 실행 취소는 Tiptap 자체 기록, 빈 본문은 null 저장
+// 서식 본문 (Tiptap): 사전 문서 본문 · 개요 시놉시스. 실행 취소는 Tiptap 자체 기록, 빈 본문은 null
 export default function BodyEditor({
-  docId,
+  excludeId,
   initial,
+  onChange,
+  label = "본문",
 }: {
-  docId: string;
+  excludeId?: string; // `@` 후보에서 뺄 문서 (현재 문서)
   initial: TiptapJSON | null;
+  onChange: (body: TiptapJSON | null) => void;
+  label?: string;
 }) {
-  const [exts] = useState(() => extensions(docId));
+  const [exts] = useState(() => extensions(excludeId));
   const editor = useEditor({
     extensions: exts,
     content: (initial as JSONContent | null) ?? "",
@@ -85,14 +88,14 @@ export default function BodyEditor({
       attributes: {
         role: "textbox",
         "aria-multiline": "true",
-        "aria-label": "본문",
+        "aria-label": label,
         class: "min-h-40 py-2",
       },
     },
     // 읽지 못한 본문은 편집을 막아 원본을 덮어쓰지 않음
     enableContentCheck: true,
     onContentError: ({ editor }) => editor.setEditable(false),
-    onUpdate: ({ editor }) => setDocBody(docId, editor.isEmpty ? null : editor.getJSON()),
+    onUpdate: ({ editor }) => onChange(editor.isEmpty ? null : editor.getJSON()),
   });
   const active = useEditorState({
     editor,
@@ -106,7 +109,7 @@ export default function BodyEditor({
     <div>
       <div
         role="toolbar"
-        aria-label="본문 서식"
+        aria-label={`${label} 서식`}
         className="flex w-fit gap-0.5 rounded-sm border border-hairline p-0.5"
       >
         {TOOLS.map((t, i) => (

@@ -12,6 +12,7 @@ import type {
   NovelScoped,
   StoryLine,
   TimeScale,
+  TiptapJSON,
   WikiCategory,
   WikiDoc,
 } from "../db/types";
@@ -191,6 +192,11 @@ export function setTimeScale(patch: Partial<TimeScale>) {
   useNovelStore.setState(({ board }) =>
     board ? { board: { ...board, timeScale: { ...board.timeScale, ...patch } } } : {},
   );
+}
+
+// 개요 시놉시스 본문 (F7). 소설 레코드 교체 → 자동 저장, 실행 취소 기록 밖
+export function setSynopsisBody(synopsisBody: TiptapJSON | null) {
+  useNovelStore.setState(({ novel }) => (novel ? { novel: { ...novel, synopsisBody } } : {}));
 }
 
 // at 앞에 눈금 삽입: 블록·라벨·접힌 구간을 한 번에 이동 (실행 취소 1건)

@@ -12,7 +12,7 @@ const states = (items: Collection<BoardItem>) =>
 
 // 시점순 정렬 키: 눈금 → 세로 위치, 미정 영역은 뒤
 const order = (p: Place) => (p.mode === "timed" ? p.t : Infinity);
-const byPlace = (a: { place: Place; z: number }, b: { place: Place; z: number }) =>
+export const byPlace = (a: { place: Place; z: number }, b: { place: Place; z: number }) =>
   order(a.place) - order(b.place) || a.place.y - b.place.y || a.z - b.z;
 
 export const eventBlock = (items: Collection<BoardItem>, docId: string) =>

@@ -21,6 +21,10 @@ export const router = createBrowserRouter([
         path: "wiki/:docId?",
         lazy: async () => ({ Component: (await import("./pages/WikiPage")).default }),
       },
+      {
+        path: "overview",
+        lazy: async () => ({ Component: (await import("./pages/OverviewPage")).default }),
+      },
     ],
   },
   { path: "*", element: <Navigate to="/" replace /> },

@@ -4,8 +4,10 @@ import type { WikiDoc } from "../../db/types";
 import { setDocsLine, sortedLines } from "../../store/boardActions";
 import { useNovelStore } from "../../store/novelStore";
 import { setPropValue } from "../../store/wikiActions";
+import { stateAt, stateTicks } from "../board/stateCalc";
 import { eventBlock, placeText, relatedCharacters } from "./boardLinks";
 import { familyOf, subtreeDocs } from "./categories";
+import TimePick from "./TimePick";
 import { useWikiNav } from "./useWikiNav";
 
 type Column = {
@@ -33,7 +35,8 @@ const th =
 const td = "border-b border-hairline px-3 py-1.5 text-body-sm whitespace-nowrap";
 
 // 표 보기 (W-3, UC-34): 문서 = 행, 속성 키 = 열, 셀 바로 수정, 열 머리 클릭 = 정렬.
-// 첫 열(제목) 고정, 사건 계열은 라인 열 + 라인 순서 기본 정렬
+// 첫 열(제목) 고정, 사건 계열은 라인 열 + 라인 순서 기본 정렬.
+// 캐릭터 계열은 시점 선택 시 속성 열 = 그 시점 상태(읽기 전용, 기본값과 다르면 강조)
 export default function CategoryTable({ categoryId }: { categoryId: string }) {
   const categories = useNovelStore((s) => s.categories);
   const docs = useNovelStore((s) => s.docs);
@@ -42,16 +45,27 @@ export default function CategoryTable({ categoryId }: { categoryId: string }) {
   const scale = useNovelStore((s) => s.board?.timeScale);
   const { openDoc } = useWikiNav();
   const category = categories[categoryId];
-  const isEvent = familyOf(categories, categoryId) === "event";
+  const family = familyOf(categories, categoryId);
+  const isEvent = family === "event";
   const [sort, setSort] = useState<{ id: string; dir: 1 | -1 }>({
     id: isEvent ? "line" : "title",
     dir: 1,
   });
 
+  const [time, setTime] = useState<number | null>(null);
+
   const rows = subtreeDocs(categories, docs, categoryId);
-  // 속성 열: 템플릿 키 → 문서들에 쓰인 키 (처음 나온 순서)
+  const ticks = family === "character" ? stateTicks(items, new Set(rows.map((d) => d.id))) : [];
+  const t = time !== null && ticks.includes(time) ? time : null;
+  const states =
+    t === null ? null : Object.fromEntries(rows.map((d) => [d.id, stateAt(d.id, t, items, docs)]));
+  // 속성 열: 템플릿 키 → 문서들에 쓰인 키 → 시점 상태가 더한 키 (처음 나온 순서)
   const keys = [
-    ...new Set([...category.templateProps, ...rows.flatMap((d) => d.props.map((p) => p.key))]),
+    ...new Set([
+      ...category.templateProps,
+      ...rows.flatMap((d) => d.props.map((p) => p.key)),
+      ...Object.values(states ?? {}).flatMap(Object.keys),
+    ]),
   ];
   const lineOrder = new Map(lines.map((l, i) => [l.id, i]));
 
@@ -65,9 +79,21 @@ export default function CategoryTable({ categoryId }: { categoryId: string }) {
   const propColumn = (key: string): Column => ({
     id: `prop:${key}`,
     label: key,
-    sortKey: (d) => valueOf(d, key),
+    sortKey: (d) => (states ? (states[d.id][key] ?? "") : valueOf(d, key)),
     cell: (d, row) => {
       const value = valueOf(d, key);
+      if (states) {
+        const at = states[d.id][key] ?? "";
+        return (
+          <span
+            aria-label={`${d.title} ${key}`}
+            data-changed={at !== value || undefined}
+            className="block rounded-xs px-1 py-0.5 text-ink data-changed:bg-sticky-yellow"
+          >
+            {at}
+          </span>
+        );
+      }
       return (
         <input
           key={value}
@@ -201,6 +227,11 @@ export default function CategoryTable({ categoryId }: { categoryId: string }) {
 
   return (
     <div>
+      {ticks.length > 0 && (
+        <div className="mb-3">
+          <TimePick ticks={ticks} value={t} onChange={setTime} />
+        </div>
+      )}
       <div className="overflow-x-auto rounded-md border border-hairline">
         <table aria-label={`${category.name} 표`} className="w-full border-collapse">
           <thead>
@@ -247,7 +278,11 @@ export default function CategoryTable({ categoryId }: { categoryId: string }) {
           </tbody>
         </table>
       </div>
-      <p className="mt-2 text-caption text-muted">셀을 눌러 바로 수정 · 열 머리를 눌러 정렬</p>
+      <p className="mt-2 text-caption text-muted">
+        {states
+          ? "시점 상태는 읽기 전용 · 열 머리를 눌러 정렬"
+          : "셀을 눌러 바로 수정 · 열 머리를 눌러 정렬"}
+      </p>
     </div>
   );
 }

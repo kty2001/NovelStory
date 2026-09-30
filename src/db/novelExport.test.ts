@@ -82,6 +82,17 @@ async function richNovel() {
     dashed: false,
   });
   await db.boards.update(id, { stateLanes: { enabled: true, order: ["hero"] } });
+  await db.novels.update(id, {
+    synopsisBody: {
+      type: "doc",
+      content: [
+        {
+          type: "paragraph",
+          content: [{ type: "mention", attrs: { id: "hero", label: "주인공" } }],
+        },
+      ],
+    },
+  });
   return id;
 }
 
@@ -138,6 +149,10 @@ describe("importExport", () => {
     expect(ev.mentions).toEqual([hero.id]);
     expect(JSON.stringify(ev.body)).toContain(hero.id);
     expect(ev.plainText).toBe("주인공 주인공");
+    // 개요 시놉시스 멘션도 치환
+    const novel = await db.novels.get(id);
+    expect(JSON.stringify(novel?.synopsisBody)).toContain(hero.id);
+    expect(JSON.stringify(novel?.synopsisBody)).not.toContain('"hero"');
   });
 
   it("가져온 소설은 새로 만든 것으로 취급 (lastExportedAt 없음)", async () => {

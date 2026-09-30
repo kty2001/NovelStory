@@ -14,7 +14,7 @@ const LIMIT = 8;
 export function mentionCandidates(
   docs: Collection<WikiDoc>,
   query: string,
-  excludeId: string,
+  excludeId?: string,
 ): Candidate[] {
   const q = query.trim().toLowerCase();
   const rank = (d: WikiDoc) => (d.title.toLowerCase().startsWith(q) ? 0 : 1);

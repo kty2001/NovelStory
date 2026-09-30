@@ -1,5 +1,14 @@
 import { useCallback, useRef, useState, type DragEvent } from "react";
-import { ChevronDown, ChevronRight, Lock, MoreHorizontal, Plus, Search, X } from "lucide-react";
+import {
+  ChevronDown,
+  ChevronRight,
+  ListChecks,
+  Lock,
+  MoreHorizontal,
+  Plus,
+  Search,
+  X,
+} from "lucide-react";
 import Button from "../../components/Button";
 import { MenuList, type MenuItem } from "../../components/Menu";
 import Toast from "../../components/Toast";
@@ -21,6 +30,7 @@ import {
   dropError,
   type DropPos,
 } from "./categories";
+import { issueCount, settingIssues } from "./check";
 import { useWikiNav } from "./useWikiNav";
 
 const INDENT = 16;
@@ -65,19 +75,22 @@ function NameInput({ initial, onDone }: { initial: string; onDone: (name: string
 export default function CategoryTree({
   categoryId,
   docId,
+  checking = false,
   query,
   onQuery,
 }: {
   categoryId?: string; // 선택 분류 (문서를 열었으면 그 문서의 분류)
   docId?: string;
+  checking?: boolean; // 설정 점검 화면
   query: string; // 사전 검색어 (W-4)
   onQuery: (query: string) => void;
 }) {
   const categories = useNovelStore((s) => s.categories);
   const docs = useNovelStore((s) => s.docs);
   const items = useNovelStore((s) => s.items);
-  const { openCategory, openDoc } = useWikiNav();
+  const { openCategory, openDoc, openCheck } = useWikiNav();
   const counts = docCounts(categories, docs);
+  const issues = issueCount(settingIssues({ categories, docs, items }));
 
   // 펼침: 직접 누른 상태 우선, 없으면 선택 항목의 상위 분류만 펼침
   const [toggled, setToggled] = useState<Record<string, boolean>>({});
@@ -294,6 +307,16 @@ export default function CategoryTree({
           분류
         </Button>
       </div>
+      <button
+        type="button"
+        aria-current={checking ? "page" : undefined}
+        className={`flex h-8 items-center gap-2 rounded-sm px-2 text-body-sm ${checking ? "bg-surface-card text-ink" : "text-body hover:bg-surface-soft"}`}
+        onClick={openCheck}
+      >
+        <ListChecks size={14} />
+        설정 점검
+        <span className="ml-auto text-caption text-muted tabular-nums">{issues}</span>
+      </button>
       {/* 검색 중에도 위치 감각을 위해 트리는 흐리게 유지 */}
       <ul aria-label="분류 트리" className={query.trim() ? "opacity-45" : ""}>
         {childCategories(categories).map((c) => renderCategory(c, 0))}

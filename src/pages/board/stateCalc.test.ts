@@ -1,7 +1,7 @@
 import { describe, expect, it } from "vitest";
 import type { StateItem, WikiCategory } from "../../db/types";
 import { doc, OLD } from "../../test/fixtures";
-import { afterExit, categoryFamily, searchDocs, stateAt } from "./stateCalc";
+import { afterExit, categoryFamily, searchDocs, stateAt, stateTicks } from "./stateCalc";
 
 const state = (
   id: string,
@@ -50,6 +50,11 @@ describe("시점별 상태 누적", () => {
 
   it("미정 블록 · 입력 중인 자기 자신은 제외", () => {
     expect(stateAt("kael", 9, items, docs, "c")).toEqual({ 소속: "반란군", 나이: "17" });
+  });
+
+  it("시점 선택 후보: 시점 있는 블록 눈금만, 중복 제거 · 오름차순", () => {
+    expect(stateTicks(items, new Set(["kael"]))).toEqual([1, 4]);
+    expect(stateTicks(items, new Set(["other"]))).toEqual([]);
   });
 });
 

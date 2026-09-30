@@ -14,7 +14,8 @@ export type TiptapJSON = { type?: string; [key: string]: unknown };
 export type Novel = BaseRecord & {
   title: string;
   genre?: string;
-  synopsis?: string;
+  synopsis?: string; // 서재용 짧은 소개
+  synopsisBody?: TiptapJSON | null; // 개요 탭 시놉시스 본문 (F7)
   coverImageId?: string;
   createdAt: ISODate;
   lastExportedAt?: ISODate;
@@ -148,7 +149,7 @@ export type BoardEdge = NovelScoped & {
 export type UiState = {
   novelId: string;
   viewport?: { x: number; y: number; zoom: number }; // 보드를 처음 열기 전에는 없음
-  lastTab: "board" | "wiki";
+  lastTab: "board" | "wiki" | "overview";
   wikiPanelDocId?: string;
   backupSnoozedUntil?: ISODate;
   filters?: {

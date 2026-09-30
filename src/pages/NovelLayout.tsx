@@ -16,6 +16,8 @@ import { ShortcutHelpContext } from "./shortcutHelpContext";
 
 const SAVE_LABEL = { saving: "저장 중", saved: "저장됨", error: "저장 실패" } as const;
 
+const TAB_KEYS = { Digit1: "board", Digit2: "wiki", Digit3: "overview" } as const;
+
 const tabClass = ({ isActive }: { isActive: boolean }) =>
   `rounded-full px-4 py-2 text-button ${isActive ? "bg-surface-card text-ink" : "text-muted"}`;
 
@@ -32,7 +34,7 @@ export default function NovelLayout() {
   const [savedNotice, setSavedNotice] = useState(false);
   const navigate = useNavigate();
 
-  // 공통 단축키 (shortcuts 1장): Ctrl+K 빠른 이동(B-8) · Ctrl+S 자동 저장 안내 · Alt+1/2 탭 · ? 도움말
+  // 공통 단축키 (shortcuts 1장): Ctrl+K 빠른 이동(B-8) · Ctrl+S 자동 저장 안내 · Alt+1~3 탭 · ? 도움말
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => {
       if (e.isComposing || e.keyCode === 229) return;
@@ -43,9 +45,9 @@ export default function NovelLayout() {
       } else if (mod && e.code === "KeyS") {
         e.preventDefault(); // 브라우저 저장 대화상자 대신 (편집 중에도)
         setSavedNotice(true);
-      } else if (e.altKey && !mod && (e.code === "Digit1" || e.code === "Digit2")) {
+      } else if (e.altKey && !mod && e.code in TAB_KEYS) {
         e.preventDefault();
-        void navigate(e.code === "Digit1" ? "board" : "wiki");
+        void navigate(TAB_KEYS[e.code as keyof typeof TAB_KEYS]);
       } else if (e.shiftKey && !mod && !e.altKey && e.code === "Slash" && !isEditable(e.target)) {
         e.preventDefault();
         setHelpOpen(true);
@@ -68,7 +70,11 @@ export default function NovelLayout() {
   }, [novelId]);
 
   // 마지막으로 보던 탭 (UC-02: 서재에서 다시 열 때 복귀)
-  const tab = pathname.includes("/wiki") ? "wiki" : "board";
+  const tab = pathname.includes("/wiki")
+    ? "wiki"
+    : pathname.includes("/overview")
+      ? "overview"
+      : "board";
   useEffect(() => {
     if (novelId && status === "ready") void patchUiState(novelId, { lastTab: tab });
   }, [novelId, status, tab]);
@@ -109,6 +115,9 @@ export default function NovelLayout() {
           </NavLink>
           <NavLink className={tabClass} to="wiki">
             사전
+          </NavLink>
+          <NavLink className={tabClass} to="overview">
+            개요
           </NavLink>
         </nav>
         {status === "ready" && (

@@ -34,6 +34,16 @@ export function stateAt(
   return out;
 }
 
+// 시점 선택 보기 후보: 캐릭터들의 시점 있는 상태 블록 눈금 (중복 제거, 오름차순)
+export function stateTicks(items: Collection<BoardItem>, docIds: Set<string>): number[] {
+  const ticks = Object.values(items).flatMap((i) =>
+    i.kind === "state" && docIds.has(i.docId) && i.place.mode === "timed"
+      ? [Math.round(i.place.t)]
+      : [],
+  );
+  return [...new Set(ticks)].sort((a, b) => a - b);
+}
+
 // 같은 캐릭터가 이 블록보다 앞선 시점에 퇴장했는지 (막지 않고 경고만, UC-12)
 export function afterExit(item: StateItem, items: Collection<BoardItem>): boolean {
   if (item.place.mode !== "timed") return false;

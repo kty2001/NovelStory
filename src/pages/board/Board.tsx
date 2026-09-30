@@ -27,6 +27,7 @@ import {
   type XYPosition,
 } from "@xyflow/react";
 import { useSearchParams } from "react-router";
+import { PanelLeft } from "lucide-react";
 import { db } from "../../db/db";
 import type { BoardItem, TimeScale, UiState } from "../../db/types";
 import { patchUiState } from "../../db/uiState";
@@ -62,6 +63,7 @@ import { BoardUiContext } from "./boardContext";
 import { AxisTrack, MiniMapNode, UndatedZone } from "./DecorNodes";
 import EdgeView from "./EdgeView";
 import DocPanel, { DOC_MIME } from "./DocPanel";
+import DocSidebar from "./DocSidebar";
 import EventNode from "./EventNode";
 import FilterMenu from "./FilterMenu";
 import {
@@ -209,6 +211,8 @@ function Canvas({
     useReactFlow();
   const [filters, setFilters] = useState<Filters>(NO_FILTERS);
   const [linesOpen, setLinesOpen] = useState(false);
+  // 문서 목록 사이드바: 기본 닫힘, 사전 패널과 동시 표시 가능
+  const [sidebar, setSidebar] = useState(false);
   const [ui, setUi] = useState<Record<string, NodeUi>>({});
   const [tool, setTool] = useState<Tool>("select");
   const [stateType, setStateType] = useState<StateType>("appear");
@@ -895,6 +899,7 @@ function Canvas({
   return (
     <BoardUiContext.Provider value={boardUi}>
       <div className="flex h-full">
+        {sidebar && <DocSidebar onOpen={openPanel} onClose={() => setSidebar(false)} />}
         <div
           // @container: 좁은 캔버스(사전 패널 열림)에서 도구 모음 글자 숨김
           className="@container relative h-full min-w-0 flex-1"
@@ -1024,6 +1029,16 @@ function Canvas({
                 })
               }
             >
+              <button
+                type="button"
+                aria-pressed={sidebar}
+                title="문서 목록 (캐릭터 · 사건 끌어 배치)"
+                className={`flex h-10 items-center gap-1.5 rounded-md px-3 text-button whitespace-nowrap ${sidebar ? "bg-surface-card text-ink" : "text-muted hover:bg-surface-card"}`}
+                onClick={() => setSidebar((v) => !v)}
+              >
+                <PanelLeft size={16} />
+                <span className="@max-3xl:sr-only">문서 목록</span>
+              </button>
               <FilterMenu
                 hiddenLineIds={filters.hiddenLineIds}
                 onChange={(hiddenLineIds) => changeFilters({ hiddenLineIds })}

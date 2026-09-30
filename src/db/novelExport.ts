@@ -138,6 +138,9 @@ export async function importExport(raw: unknown, opts: { titleSuffix?: string } 
     id: novelId,
     title: data.novel.title + (opts.titleSuffix ?? ""),
     coverImageId: opt(data.novel.coverImageId),
+    ...(data.novel.synopsisBody && {
+      synopsisBody: remapMentions(data.novel.synopsisBody, map),
+    }),
     createdAt: now,
     updatedAt: now,
   };

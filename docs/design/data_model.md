@@ -72,7 +72,8 @@ type ColorToken = string; // ui_guide.md 토큰 이름 (예: 'brand-peach', 'sti
 type Novel = BaseRecord & {
   title: string;
   genre?: string;
-  synopsis?: string;
+  synopsis?: string;              // 서재용 짧은 소개
+  synopsisBody?: TiptapJSON | null; // 개요 탭 시놉시스 본문 (F7), 가져오기 시 mention id 치환
   coverImageId?: string;          // ImageAsset.id
   createdAt: ISODate;
   lastExportedAt?: ISODate;       // 마지막 JSON 내보내기 (A9 백업 알림)
@@ -206,7 +207,7 @@ type BoardEdge = NovelScoped & {
 type UiState = {
   novelId: string;                // 기본 키
   viewport?: { x: number; y: number; zoom: number }; // 보드를 처음 열기 전에는 없음 → 0 눈금이 화면 중앙
-  lastTab: 'board' | 'wiki';
+  lastTab: 'board' | 'wiki' | 'overview';
   wikiPanelDocId?: string;
   backupSnoozedUntil?: ISODate;   // 백업 알림 "나중에"
   filters?: { hiddenDocIds: string[]; hiddenTags: string[]; hiddenCategoryIds: string[]; hiddenLineIds: string[] }; // hiddenLineIds의 'none' = 미지정
@@ -326,7 +327,7 @@ type NovelExport = {
 - **가져오기** (UC-05)
   1. `format` 확인, `schemaVersion`이 현재보다 크면 거부
   2. 낮으면 `migrations[v]`(v → v+1)를 차례로 적용
-  3. 모든 ID 재발급 → 참조 필드(`novelId`·`docId`·`parentFrameId`·`source`·`target`·`linkedEventItemId`·`categoryId`·`parentId`·`lineId`·`imageId`·`coverImageId`·`stateLanes.order`)와 **본문 mention `attrs.id`** 일괄 치환
+  3. 모든 ID 재발급 → 참조 필드(`novelId`·`docId`·`parentFrameId`·`source`·`target`·`linkedEventItemId`·`categoryId`·`parentId`·`lineId`·`imageId`·`coverImageId`·`stateLanes.order`)와 **본문 · 시놉시스 mention `attrs.id`** 일괄 치환
   4. 파생 필드 다시 계산, 1개 트랜잭션으로 저장 → 항상 새 소설로 추가
 
 ## 8. 유스케이스 대조

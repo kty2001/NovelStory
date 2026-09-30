@@ -6,7 +6,8 @@ import Menu from "../../components/Menu";
 import type { WikiDoc } from "../../db/types";
 import { renameDoc, setDocsLine, sortedLines } from "../../store/boardActions";
 import { useNovelStore } from "../../store/novelStore";
-import { deleteDoc, moveDoc, updateDoc } from "../../store/wikiActions";
+import { deleteDoc, moveDoc, setDocBody, updateDoc } from "../../store/wikiActions";
+import { stateTicks } from "../board/stateCalc";
 import Backlinks from "./Backlinks";
 import BodyEditor from "./BodyEditor";
 import BoardSection from "./BoardSection";
@@ -14,6 +15,7 @@ import { blockCount, categoryPath, familyOf, flatCategories, usedDocIds } from "
 import ChipInput from "./ChipInput";
 import DocImage from "./DocImage";
 import PropsTable from "./PropsTable";
+import TimePick, { StateAtTable } from "./TimePick";
 import { useWikiNav } from "./useWikiNav";
 
 // 분류 이동: 트리 순서 목록. 보드에 쓰인 문서는 다른 계열 분류 비활성 (data_model 5장)
@@ -128,10 +130,15 @@ export default function DocView({ doc, onDeleted }: { doc: WikiDoc; onDeleted?: 
   const items = useNovelStore((s) => s.items);
   const { openCategory, openBoard, inPanel } = useWikiNav();
   const [dialog, setDialog] = useState<"move" | "delete" | null>(null);
+  // 시점 선택 보기 (F3, 캐릭터 계열): 블록이 옮겨져 없어진 눈금은 기본값으로
+  const [time, setTime] = useState<number | null>(null);
 
   const path = categoryPath(categories, doc.categoryId);
   const category = path.at(-1);
   const blocks = blockCount(items, doc.id);
+  const family = familyOf(categories, doc.categoryId);
+  const ticks = family === "character" ? stateTicks(items, new Set([doc.id])) : [];
+  const t = time !== null && ticks.includes(time) ? time : null;
 
   return (
     <article aria-label={`${doc.title} 문서`}>
@@ -196,7 +203,7 @@ export default function DocView({ doc, onDeleted }: { doc: WikiDoc; onDeleted?: 
           values={doc.tags}
           onChange={(tags) => updateDoc(doc.id, { tags })}
         />
-        {familyOf(categories, doc.categoryId) === "event" && (
+        {family === "event" && (
           <label className="flex items-center gap-1.5">
             <span className="w-12 shrink-0 text-caption text-muted">라인</span>
             <select
@@ -214,17 +221,22 @@ export default function DocView({ doc, onDeleted }: { doc: WikiDoc; onDeleted?: 
             </select>
           </label>
         )}
+        <TimePick ticks={ticks} value={t} onChange={setTime} />
       </div>
 
       <div className="mt-6 flex flex-wrap items-start gap-8">
         <div className="min-w-64 flex-1">
-          <PropsTable props={doc.props} onChange={(props) => updateDoc(doc.id, { props })} />
+          {t !== null ? (
+            <StateAtTable doc={doc} t={t} />
+          ) : (
+            <PropsTable props={doc.props} onChange={(props) => updateDoc(doc.id, { props })} />
+          )}
         </div>
         <DocImage doc={doc} />
       </div>
 
       <div className="mt-8">
-        <BodyEditor docId={doc.id} initial={doc.body} />
+        <BodyEditor excludeId={doc.id} initial={doc.body} onChange={(b) => setDocBody(doc.id, b)} />
       </div>
 
       <BoardSection doc={doc} />

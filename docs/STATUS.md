@@ -48,6 +48,7 @@
 | 2026-09-29 | 데스크톱 점검 1차: Chrome 수동(미리보기 빌드) + Edge e2e 84/84(msedge 채널) + 1024 · 1366px 화면 캡처. 구간 접기 안내(눈금 툴팁 · "끝 눈금을 클릭" 칩 · 도움말 "시간축", shortcuts 2.5), `Dialog` `data-autofocus`(새 소설 제목 포커스), e2e 분류 클릭을 트리 안으로 한정(flaky 수정) |
 | 2026-09-29 | 데스크톱 점검 2차: 도구 모음 글자 캔버스 < 768px이면 숨김(`@container` · `@max-3xl:sr-only`), `<mark>` · `MentionChip` 여백 축소, 보드 · 사전 라우트 `lazy`(1.19MB → 최대 462kB, `server.warmup`), `ZoomControls` 배율 메뉴(직접 입력 · 25~200% 프리셋, 5~200% 제한), e2e 화면 밖 눈금 클릭 제거 |
 | 2026-09-30 | MVP 이후 기능 4건 기획 반영: 사전 시점 선택 보기(F3 통합) · F7 개요 탭 · 보드 문서 목록 사이드바 · 설정 점검 ([features_spec.md](./design/features_spec.md)) |
+| 2026-09-30 | MVP 이후 기능 4건 구현: 사전 시점 선택 보기(`stateTicks` · `TimePick`, 문서 · 표), F7 개요 탭(`Novel.synopsisBody` · `setSynopsisBody`, `BodyEditor` `onChange` 일반화, `storyFlow`, `Alt+3`), 보드 문서 목록 사이드바(`DocSidebar`, `DOC_MIME` 재사용), 설정 점검(`settingIssues` · `CheckView`, `?view=check`), Vitest 3건 · Playwright 4건(`e2e/sample.spec.ts`) |
 
 ## 결정됨
 | 항목 | 결정 |
