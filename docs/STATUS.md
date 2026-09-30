@@ -1,7 +1,7 @@
 # 진행 상태 (Status)
 
 ## 현재 단계
-MVP 이후 — 1단계(MVP: F0 서재 · F1 보드 · F4 사전 · F6 로컬 저장, 데스크톱 전용) 배포 완료. MVP 이후 기능: 사전 시점 선택 보기 · F7 개요 · 보드 문서 목록 사이드바 · 설정 점검 · F2 서술 순서 1차 완료, 다음: F2 2차(보드 비교 오버레이). 태블릿·모바일은 기기 확보 후
+MVP 이후 — 1단계(MVP: F0 서재 · F1 보드 · F4 사전 · F6 로컬 저장, 데스크톱 전용) 배포 완료. MVP 이후 기능: 사전 시점 선택 보기 · F7 개요 · 보드 문서 목록 사이드바 · 설정 점검 · F2 서술 순서(1차 회차 · 배치, 2차 보드 비교 오버레이) 완료, 다음: 남은 MVP 이후 항목(F5 메모 · 도형 · 정렬 보조선 등). 태블릿·모바일은 기기 확보 후
 
 ## 이력
 | 날짜 | 내용 |
@@ -50,6 +50,7 @@ MVP 이후 — 1단계(MVP: F0 서재 · F1 보드 · F4 사전 · F6 로컬 저
 | 2026-09-30 | MVP 이후 기능 4건 기획 반영: 사전 시점 선택 보기(F3 통합) · F7 개요 탭 · 보드 문서 목록 사이드바 · 설정 점검 ([features_spec.md](./design/features_spec.md)) |
 | 2026-09-30 | MVP 이후 기능 4건 구현: 사전 시점 선택 보기(`stateTicks` · `TimePick`, 문서 · 표), F7 개요 탭(`Novel.synopsisBody` · `setSynopsisBody`, `BodyEditor` `onChange` 일반화, `storyFlow`, `Alt+3`), 보드 문서 목록 사이드바(`DocSidebar`, `DOC_MIME` 재사용), 설정 점검(`settingIssues` · `CheckView`, `?view=check`), Vitest 3건 · Playwright 4건(`e2e/sample.spec.ts`) |
 | 2026-09-30 | F2 서술 순서 1차: 결정(별도 "서술" 탭 `Alt+4` · 1차/2차 분할 · HTML 끌어 놓기, dnd kit 제외) 문서 반영, `Episode` · `NarrativeSlot`(Dexie v2 · 내보내기 v2 + v1 변환), `narrativeActions`(회차 추가 · 삽입 · 삭제 재번호, 슬롯 배치 · 이동 · 방식 · 메모, 문서 삭제 · 계열 이탈 연쇄), `NarrativePage`, 사건 문서 "배치된 회차", Vitest 11건 · Playwright 2건(`e2e/narrative.spec.ts`) |
+| 2026-09-30 | F2 서술 순서 2차: 결정(읽기 경로 · 직전 배치 대비 역행 + 회상 도착 · 예고 복귀는 의도된 역행 · 범위 전체/회차) 문서 반영, `readingPath.ts`(`readingSteps` · `pathSegments` · `stepLabels` · `narratedDocIds`), `ReadingPath`(`ViewportPortal` SVG 곡선 · 배지) · `CompareBar`, 도구 모음 "서술 비교", 미서술 사건 `narr-dim`, 서술 탭 "보드에서 비교" · `?compare=`, Vitest 4건 · Playwright 1건 |
 
 ## 결정됨
 | 항목 | 결정 |

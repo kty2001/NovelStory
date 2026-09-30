@@ -92,3 +92,54 @@ test("사건 문서 '배치된 회차' → 서술 탭 그 회차, 회차 삭제 
   await expect(page.getByRole("button", { name: "첫 회차 만들기" })).toBeVisible();
   await expect(eventRow(page, "재의 불꽃 각성")).toContainText("미서술");
 });
+
+test("보드 서술 비교: 읽기 경로 · 역행 강조 · 배지 · 미서술 흐림 · 범위 선택", async ({ page }) => {
+  await page.getByRole("link", { name: "서술" }).click();
+  await page.getByRole("button", { name: "첫 회차 만들기" }).click();
+  await page.getByRole("button", { name: "회차", exact: true }).click();
+  // 회차 머리에 놓기 = 끝에 추가. 각성(뒤 시점) → 서거(앞 시점)
+  const head = (n: number) => episode(page, n).getByText(`${n + 1}화`, { exact: true });
+  for (const n of [0, 1]) {
+    await eventRow(page, "재의 불꽃 각성").dragTo(head(n));
+    await eventRow(page, "왕의 서거").dragTo(head(n));
+    await expect(episode(page, n).getByTestId("slot-row")).toHaveCount(2);
+  }
+  await episode(page, 1)
+    .getByTestId("slot-row")
+    .nth(1)
+    .getByRole("combobox", { name: "서술 방식" })
+    .selectOption("회상");
+
+  await page.getByRole("button", { name: "보드에서 비교" }).click();
+  await expect(page).toHaveURL(/\/board$/);
+  await expect(page.getByRole("button", { name: "서술 비교", exact: true })).toHaveAttribute(
+    "aria-pressed",
+    "true",
+  );
+  const paths = page.getByTestId("reading-path");
+  // 1화 각성 → 서거(표시 없는 역행) → 2화 각성(정방향) → 서거(회상 = 의도된 역행)
+  await expect(paths).toHaveCount(3);
+  await expect(paths.nth(0)).toHaveAttribute("data-kind", "reverse");
+  await expect(paths.nth(1)).toHaveAttribute("data-kind", "forward");
+  await expect(paths.nth(2)).toHaveAttribute("data-kind", "intended");
+  await expect(page.getByTestId("reverse-count")).toContainText("역행 1곳");
+  await expect(page.getByTestId("reading-badges").filter({ hasText: "1화·1" })).toHaveText(
+    "1화·12화·1",
+  );
+
+  // 서술되지 않은 사건은 흐리게
+  const node = (title: string) => page.locator(".react-flow__node").filter({ hasText: title });
+  await expect(node("예언서의 발견")).toHaveClass(/narr-dim/);
+  await expect(node("왕의 서거")).not.toHaveClass(/narr-dim/);
+
+  await page.getByRole("combobox", { name: "비교 범위" }).selectOption({ label: "2화" });
+  await expect(paths).toHaveCount(1);
+  await expect(paths.first()).toHaveAttribute("data-kind", "intended");
+  await expect(page.getByTestId("reverse-count")).toContainText("역행 0곳");
+
+  await page.getByRole("button", { name: "서술 비교 닫기" }).click();
+  await expect(paths).toHaveCount(0);
+  await expect(node("예언서의 발견")).not.toHaveClass(/narr-dim/);
+  await page.getByRole("button", { name: "서술 비교", exact: true }).click();
+  await expect(paths).toHaveCount(3);
+});

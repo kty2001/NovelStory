@@ -27,7 +27,7 @@ import {
   type XYPosition,
 } from "@xyflow/react";
 import { useSearchParams } from "react-router";
-import { PanelLeft } from "lucide-react";
+import { PanelLeft, Route } from "lucide-react";
 import { db } from "../../db/db";
 import type { BoardItem, TimeScale, UiState } from "../../db/types";
 import { patchUiState } from "../../db/uiState";
@@ -54,11 +54,19 @@ import {
   undo,
   useNovelStore,
 } from "../../store/novelStore";
+import {
+  narratedDocIds,
+  pathSegments,
+  readingSteps,
+  stepLabels,
+  type CompareScope,
+} from "../narrative/readingPath";
 import { eventBlock } from "../wiki/boardLinks";
 import { familyOf } from "../wiki/categories";
 import { copyClip, pasteRecords, type Clip } from "./clipboard";
 import Axis from "./Axis";
 import BlockMenu from "./BlockMenu";
+import CompareBar from "./CompareBar";
 import { BoardUiContext } from "./boardContext";
 import { AxisTrack, MiniMapNode, UndatedZone } from "./DecorNodes";
 import EdgeView from "./EdgeView";
@@ -92,6 +100,7 @@ import LineEditDialog from "./LineEditDialog";
 import { AllHiddenNotice, EmptyGuide } from "./EmptyGuide";
 import { NO_LINE } from "./lines";
 import PlacePreview, { FrameDraft, type Preview } from "./PlacePreview";
+import ReadingPath from "./ReadingPath";
 import StateNode from "./StateNode";
 import StatePanel, { CharacterPicker } from "./StatePanel";
 import { tickToX } from "./timeAxis";
@@ -232,6 +241,20 @@ function Canvas({
   // 빠른 이동으로 온 시점 (?tick=N, B-8): 접힌 구간 안이면 펼치고 그 눈금을 화면 가운데로
   const [params, setParams] = useSearchParams();
   const tickParam = params.get("tick");
+  // 서술 비교 (F2 2차): null = 꺼짐, 저장 안 함. 서술 탭에서 오면 ?compare=all · 회차 ID로 켠 채 시작
+  // (탭 이동마다 보드를 새로 그리므로 첫 값만 읽고 주소에서 지움)
+  const compareParam = params.get("compare");
+  const [compare, setCompare] = useState<CompareScope | null>(compareParam);
+  useEffect(() => {
+    if (compareParam === null) return;
+    setParams(
+      (p) => {
+        p.delete("compare");
+        return p;
+      },
+      { replace: true },
+    );
+  }, [compareParam, setParams]);
   useEffect(() => {
     if (tickParam === null) return;
     const t = Number(tickParam);
@@ -303,10 +326,24 @@ function Canvas({
     [stateLanes?.enabled, laneIds],
   );
 
+  // 서술 비교: 없어진 회차면 전체로. 범위 안 배치 → 읽기 경로 · 배지, 범위 밖 미서술 사건은 흐리게
+  const episodes = useNovelStore((s) => s.episodes);
+  const slots = useNovelStore((s) => s.slots);
+  const scope = compare !== null && compare !== "all" && !episodes[compare] ? "all" : compare;
+  const steps = useMemo(
+    () => (scope === null ? [] : readingSteps(episodes, slots, items, scope)),
+    [scope, episodes, slots, items],
+  );
+  const narrated = useMemo(() => (scope === null ? null : narratedDocIds(steps)), [scope, steps]);
+  const segments = useMemo(() => pathSegments(steps, hiddenIds), [steps, hiddenIds]);
+
   const nodes = useMemo(() => {
     const blocks = Object.values(items).flatMap((item) => {
-      const n = itemNode(item, timeScale, laneMap);
-      return n ? [hiddenIds.has(item.id) ? { ...n, hidden: true } : n] : [];
+      let n = itemNode(item, timeScale, laneMap);
+      if (!n) return [];
+      if (narrated && item.kind === "event" && !narrated.has(item.docId))
+        n = { ...n, className: "narr-dim" };
+      return [hiddenIds.has(item.id) ? { ...n, hidden: true } : n];
     });
     const all: Node[] = [
       ...decorNodes(timeScale, items, (item) => ui[item.id]?.measured?.height ?? EVENT_H),
@@ -323,7 +360,7 @@ function Canvas({
         ...(u.size ?? {}),
       };
     });
-  }, [timeScale, items, ui, hiddenIds, laneMap]);
+  }, [timeScale, items, ui, hiddenIds, laneMap, narrated]);
 
   // 노드 사각형 (보드 절대 좌표, 왼쪽 위 기준): 지시선 · 연결 · 묶기 · 패널 위치용
   const rects = useMemo(() => {
@@ -974,6 +1011,9 @@ function Canvas({
               lanes={!!stateLanes?.enabled}
               rectOf={rectOf}
             />
+            {scope !== null && (
+              <ReadingPath segments={segments} labels={stepLabels(steps)} rectOf={rectOf} />
+            )}
             {editState && (
               <StatePanel
                 key={editState}
@@ -1039,12 +1079,31 @@ function Canvas({
                 <PanelLeft size={16} />
                 <span className="@max-3xl:sr-only">문서 목록</span>
               </button>
+              <button
+                type="button"
+                aria-pressed={scope !== null}
+                title="서술 비교 (읽는 순서 · 시간 역행)"
+                className={`flex h-10 items-center gap-1.5 rounded-md px-3 text-button whitespace-nowrap ${scope !== null ? "bg-surface-card text-ink" : "text-muted hover:bg-surface-card"}`}
+                onClick={() => setCompare((v) => (v === null ? "all" : null))}
+              >
+                <Route size={16} />
+                <span className="@max-3xl:sr-only">서술 비교</span>
+              </button>
               <FilterMenu
                 hiddenLineIds={filters.hiddenLineIds}
                 onChange={(hiddenLineIds) => changeFilters({ hiddenLineIds })}
                 onEditLines={() => setLinesOpen(true)}
               />
             </Toolbar>
+            {scope !== null && (
+              <CompareBar
+                scope={scope}
+                reverse={segments.filter((s) => s.kind === "reverse").length}
+                unplaced={steps.filter((s) => !s.block).length}
+                onScope={setCompare}
+                onClose={() => setCompare(null)}
+              />
+            )}
             <ZoomControls />
             {empty && <EmptyGuide />}
             {allHidden && (

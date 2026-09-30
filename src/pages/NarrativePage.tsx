@@ -1,6 +1,6 @@
 import { Fragment, useEffect, useState, type DragEvent, type KeyboardEvent } from "react";
 import { useNavigate, useSearchParams } from "react-router";
-import { GripVertical, MoreHorizontal, Plus, X } from "lucide-react";
+import { GripVertical, MoreHorizontal, Plus, Route, X } from "lucide-react";
 import Button from "../components/Button";
 import Dialog from "../components/Dialog";
 import EmptyState from "../components/EmptyState";
@@ -72,6 +72,8 @@ export default function NarrativePage() {
   const focusEpisode = params.get("episode");
   const navigate = useNavigate();
   const { openDoc } = useWikiNav();
+  // 보드 서술 비교 (F2 2차): 전체 또는 회차 하나
+  const compareOnBoard = (scope: string) => navigate(`/novel/${novelId}/board?compare=${scope}`);
 
   // 사전 사건 문서 "배치된 회차"에서 이동: 그 회차 카드로 스크롤
   useEffect(() => {
@@ -258,6 +260,11 @@ export default function NarrativePage() {
           </EmptyState>
         ) : (
           <>
+            <div className="mb-3 flex justify-end">
+              <Button size="sm" onClick={() => compareOnBoard("all")}>
+                <Route size={14} /> 보드에서 비교
+              </Button>
+            </div>
             <ol className="flex flex-col gap-3">
               {list.map((ep) => {
                 const inEp = episodeSlots(slots, ep.id);
@@ -294,6 +301,7 @@ export default function NarrativePage() {
                         trigger={<MoreHorizontal size={16} />}
                         items={[
                           { label: "앞에 회차 삽입", onSelect: () => addEpisode(ep.id) },
+                          { label: "보드에서 비교", onSelect: () => compareOnBoard(ep.id) },
                           {
                             label: "회차 삭제",
                             danger: true,

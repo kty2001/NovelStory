@@ -145,6 +145,11 @@
   display: none;
 }
 
+/* 서술 비교 (F2 2차): 범위 안에서 서술되지 않은 사건 블록 */
+.react-flow__node.narr-dim {
+  opacity: 0.35;
+}
+
 /* 연결 핸들 (UC-19): 마우스를 올리거나 선택했거나 연결 중일 때만 표시 */
 .react-flow__handle.board-port {
   width: 9px;
