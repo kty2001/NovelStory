@@ -158,11 +158,14 @@ export type NarrativeSlot = NovelScoped & {
   note?: string; // 부분 공개 범위 메모
 };
 
+// ── 메모 (F5) ──
+export type Memo = NovelScoped & { body: string; pinned: boolean; createdAt: ISODate }; // body = 평문 (포스트잇 text와 같은 형식)
+
 // ── 로컬 전용 (동기화·내보내기 제외) ──
 export type UiState = {
   novelId: string;
   viewport?: { x: number; y: number; zoom: number }; // 보드를 처음 열기 전에는 없음
-  lastTab: "board" | "wiki" | "overview" | "narrative";
+  lastTab: "board" | "wiki" | "overview" | "narrative" | "memo";
   wikiPanelDocId?: string;
   backupSnoozedUntil?: ISODate;
   filters?: {

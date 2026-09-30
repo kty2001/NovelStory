@@ -94,6 +94,14 @@ async function richNovel() {
     mode: "flashback",
     note: "일부만",
   });
+  await db.memos.add({
+    id: "memo1",
+    novelId: id,
+    updatedAt: OLD,
+    createdAt: OLD,
+    body: "떠오른 생각",
+    pinned: true,
+  });
   await db.novels.update(id, {
     synopsisBody: {
       type: "doc",
@@ -133,6 +141,7 @@ describe("importExport", () => {
       "edge",
       "ep1",
       "slot1",
+      "memo1",
     ]);
     const items = await db.boardItems.where({ novelId: id }).toArray();
     const docs = await db.wikiDocs.where({ novelId: id }).toArray();
@@ -141,8 +150,9 @@ describe("importExport", () => {
     const [edge] = await db.boardEdges.where({ novelId: id }).toArray();
     const [episode] = await db.episodes.where({ novelId: id }).toArray();
     const [slot] = await db.narrativeSlots.where({ novelId: id }).toArray();
+    const [memo] = await db.memos.where({ novelId: id }).toArray();
     const board = await db.boards.get(id);
-    for (const r of [...items, ...docs, ...cats, ...lines, edge, episode, slot])
+    for (const r of [...items, ...docs, ...cats, ...lines, edge, episode, slot, memo])
       expect(origIds.has(r.id)).toBe(false);
 
     const byOld = <T extends { id: string }>(list: T[], pick: (r: T) => boolean) =>
@@ -164,6 +174,7 @@ describe("importExport", () => {
       mode: "flashback",
       note: "일부만",
     });
+    expect(memo).toMatchObject({ body: "떠오른 생각", pinned: true });
     expect(cats.some((c) => c.id === ev.categoryId)).toBe(true);
     expect(lines.some((l) => l.id === ev.lineId)).toBe(true);
     const sub = byOld(cats, (c) => c.name === "도시");

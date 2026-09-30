@@ -34,6 +34,7 @@ export async function buildExport(novelId: string): Promise<NovelExport> {
       db.storyLines,
       db.episodes,
       db.narrativeSlots,
+      db.memos,
       db.images,
     ],
     async () => {
@@ -51,6 +52,7 @@ export async function buildExport(novelId: string): Promise<NovelExport> {
         storyLines: live(await db.storyLines.where(byNovel).toArray()),
         episodes: live(await db.episodes.where(byNovel).toArray()),
         narrativeSlots: live(await db.narrativeSlots.where(byNovel).toArray()),
+        memos: live(await db.memos.where(byNovel).toArray()),
         images: await db.images.where(byNovel).toArray(),
       };
     },
@@ -103,6 +105,7 @@ export async function importExport(raw: unknown, opts: { titleSuffix?: string } 
       data.storyLines,
       data.episodes,
       data.narrativeSlots,
+      data.memos,
       data.images,
     ].every(Array.isArray)
   ) {
@@ -124,6 +127,7 @@ export async function importExport(raw: unknown, opts: { titleSuffix?: string } 
     data.storyLines,
     data.episodes,
     data.narrativeSlots,
+    data.memos,
     data.images,
   ]) {
     for (const r of list) fresh(r.id);
@@ -181,6 +185,7 @@ export async function importExport(raw: unknown, opts: { titleSuffix?: string } 
     episodeId: map(s.episodeId),
     eventDocId: map(s.eventDocId),
   }));
+  const memos = data.memos.map(base);
   const wikiDocs: WikiDoc[] = data.wikiDocs.map((d) => {
     const body = remapMentions(d.body, map);
     return {
@@ -205,6 +210,7 @@ export async function importExport(raw: unknown, opts: { titleSuffix?: string } 
       db.storyLines,
       db.episodes,
       db.narrativeSlots,
+      db.memos,
       db.images,
     ],
     async () => {
@@ -217,6 +223,7 @@ export async function importExport(raw: unknown, opts: { titleSuffix?: string } 
       await db.storyLines.bulkAdd(storyLines);
       await db.episodes.bulkAdd(episodes);
       await db.narrativeSlots.bulkAdd(narrativeSlots);
+      await db.memos.bulkAdd(memos);
       await db.images.bulkAdd(images);
     },
   );

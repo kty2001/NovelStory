@@ -6,6 +6,7 @@ import type {
   BoardItem,
   Episode,
   ImageAsset,
+  Memo,
   NarrativeSlot,
   Novel,
   StoryLine,
@@ -26,6 +27,7 @@ export const db = new Dexie("whitenoard") as Dexie & {
   images: EntityTable<ImageAsset, "id">;
   episodes: EntityTable<Episode, "id">;
   narrativeSlots: EntityTable<NarrativeSlot, "id">;
+  memos: EntityTable<Memo, "id">;
   uiState: EntityTable<UiState, "novelId">;
   meta: Table<AppMeta, AppMeta["key"]>; // 유니온 타입이라 EntityTable 대신 Table
 };
@@ -48,3 +50,6 @@ db.version(2).stores({
   episodes: "id, novelId",
   narrativeSlots: "id, novelId, episodeId, eventDocId",
 });
+
+// F5 메모: 테이블 추가만
+db.version(3).stores({ memos: "id, novelId" });

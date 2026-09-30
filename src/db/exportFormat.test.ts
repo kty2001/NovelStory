@@ -39,14 +39,20 @@ describe("upgradeExport", () => {
     });
   });
 
-  it("v1 → v2: 서술 순서 빈 목록 추가", () => {
+  it("v1 → v2: 서술 순서 빈 목록 추가 (이어서 v3까지)", () => {
     const raw = { format: EXPORT_FORMAT, schemaVersion: 1, novel: { id: "n1" } };
     expect(upgradeExport(raw, migrations)).toEqual({
       ...raw,
-      schemaVersion: 2,
+      schemaVersion: 3,
       episodes: [],
       narrativeSlots: [],
+      memos: [],
     });
+  });
+
+  it("v2 → v3: 메모 빈 목록 추가", () => {
+    const raw = { format: EXPORT_FORMAT, schemaVersion: 2, novel: { id: "n1" } };
+    expect(upgradeExport(raw, migrations)).toEqual({ ...raw, schemaVersion: 3, memos: [] });
   });
 
   it("변환이 빠져 있으면 거부", () => {

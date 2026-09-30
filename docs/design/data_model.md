@@ -207,7 +207,7 @@ type BoardEdge = NovelScoped & {
 type UiState = {
   novelId: string;                // 기본 키
   viewport?: { x: number; y: number; zoom: number }; // 보드를 처음 열기 전에는 없음 → 0 눈금이 화면 중앙
-  lastTab: 'board' | 'wiki' | 'overview' | 'narrative';
+  lastTab: 'board' | 'wiki' | 'overview' | 'narrative' | 'memo';
   wikiPanelDocId?: string;
   backupSnoozedUntil?: ISODate;   // 백업 알림 "나중에"
   filters?: { hiddenDocIds: string[]; hiddenTags: string[]; hiddenCategoryIds: string[]; hiddenLineIds: string[] }; // hiddenLineIds의 'none' = 미지정
@@ -228,8 +228,8 @@ type NarrativeSlot = NovelScoped & {
   note?: string;                  // 부분 공개 범위 메모
 };
 
-// ── MVP 이후 ──
-type Memo = NovelScoped & { body: string; pinned: boolean; createdAt: ISODate };
+// ── 메모 (F5) ──
+type Memo = NovelScoped & { body: string; pinned: boolean; createdAt: ISODate }; // body = 평문 (포스트잇 text와 같은 형식)
 ```
 
 ## 4. 계산 규칙
@@ -307,6 +307,7 @@ db.version(2).stores({                                    // F2 서술 순서 (�
   episodes:       'id, novelId',
   narrativeSlots: 'id, novelId, episodeId, eventDocId',
 });
+db.version(3).stores({ memos: 'id, novelId' });           // F5 메모 (테이블 추가만)
 ```
 - 소설 1개 분량(블록 수백~천 개)은 `novelId`로 한 번에 읽어 스토어에 올림 → 필터·검색은 메모리에서
 - DB 구조 변경은 `db.version(n).upgrade()`로 처리. **DB 버전과 내보내기 `schemaVersion`은 별개**
@@ -317,7 +318,7 @@ db.version(2).stores({                                    // F2 서술 순서 (�
 ```ts
 type NovelExport = {
   format: 'whitenoard-novel';
-  schemaVersion: 2;
+  schemaVersion: 3;
   exportedAt: ISODate;
   novel: Novel;
   board: Board;
@@ -328,11 +329,13 @@ type NovelExport = {
   storyLines: StoryLine[];
   episodes: Episode[];            // v2
   narrativeSlots: NarrativeSlot[]; // v2
+  memos: Memo[];                  // v3
   images: (Omit<ImageAsset, 'blob'> & { dataUrl: string })[]; // Blob → base64 data URL
 };
 ```
 - 삭제 기록(`deletedAt` 있는 레코드), `UiState`, `AppMeta`, 파생 필드 제외
 - v1 → v2: `episodes` · `narrativeSlots` 빈 배열 추가
+- v2 → v3: `memos` 빈 배열 추가
 - 내보내기 성공 시 `Novel.lastExportedAt` 갱신
 - **가져오기** (UC-05)
   1. `format` 확인, `schemaVersion`이 현재보다 크면 거부
@@ -365,6 +368,7 @@ type NovelExport = {
 | UC-34 표·검색 | `WikiDoc.props`·`plainText` |
 | UC-35 문서 삭제 | 5장 연쇄 삭제 규칙 |
 | UC-50 서술 순서 | `Episode`, `NarrativeSlot`, 5장 슬롯 규칙, `UiState.lastTab` `narrative` |
+| UC-52 메모 | `Memo`, `StickyItem.text`, `WikiDoc.title`·`body`, `UiState.lastTab` `memo` |
 | UC-40~42 저장 | `updatedAt` 규칙, Dexie 트랜잭션, `Novel.lastExportedAt`, `UiState.backupSnoozedUntil` |
 
 ## 9. 기본값으로 정한 사항 (변경 가능)
@@ -374,3 +378,4 @@ type NovelExport = {
 - 좌표는 절대 좌표로 저장 (React Flow 상대 좌표는 스토어에서 변환)
 - 백업 알림: 마지막 내보내기 후 7일, "나중에" = 3일
 - 스토리 라인: 새 사건은 미지정, 라인은 사건 문서에 저장(블록 아님), 테두리 모양은 이름이 아닌 순서(`order`)로 결정, 라인 색 지정은 MVP 이후
+- 메모: 평문, 실행 취소 기록 밖. 변환(포스트잇 ↔ 메모, 메모 → 사전 문서)은 이동(원본 삭제) + 되돌리기 알림. 사전 문서 변환 = 첫 줄 제목(50자, 넘치면 첫 줄 전체도 본문에) · 나머지 줄 문단. 포스트잇 → 메모 후 `Ctrl+Z`로 포스트잇을 되살리면 메모도 남음

@@ -26,10 +26,12 @@ import {
   type Viewport,
   type XYPosition,
 } from "@xyflow/react";
-import { useSearchParams } from "react-router";
+import { useNavigate, useSearchParams } from "react-router";
 import { PanelLeft, Route } from "lucide-react";
+import Toast from "../../components/Toast";
 import { db } from "../../db/db";
-import type { BoardItem, TimeScale, UiState } from "../../db/types";
+import { UNDO_MS } from "../../db/novels";
+import type { BoardEdge, BoardItem, TimeScale, UiState } from "../../db/types";
 import { patchUiState } from "../../db/uiState";
 import {
   addEdge,
@@ -46,6 +48,7 @@ import {
   setLanes,
   updateItems,
 } from "../../store/boardActions";
+import { deleteMemos, stickiesToMemos } from "../../store/memoActions";
 import {
   beginBatch,
   endBatch,
@@ -237,6 +240,19 @@ function Canvas({
   const [draft, setDraft] = useState<{ x0: number; y0: number; x1: number; y1: number } | null>(
     null,
   );
+
+  // 포스트잇 → 메모 (F5): 되돌리기 = 만든 메모 삭제 + 지운 포스트잇 · 연결선 복원
+  const navigate = useNavigate();
+  const [moved, setMoved] = useState<{
+    memoIds: string[];
+    items: BoardItem[];
+    edges: BoardEdge[];
+  } | null>(null);
+  useEffect(() => {
+    if (!moved) return;
+    const timer = setTimeout(() => setMoved(null), UNDO_MS);
+    return () => clearTimeout(timer);
+  }, [moved]);
 
   // 빠른 이동으로 온 시점 (?tick=N, B-8): 접힌 구간 안이면 펼치고 그 눈금을 화면 가운데로
   const [params, setParams] = useSearchParams();
@@ -1039,6 +1055,7 @@ function Canvas({
                 itemIds={selectedIds}
                 onEditLines={() => setLinesOpen(true)}
                 onDetail={(docId) => openPanel(docId)}
+                onToMemo={() => setMoved(stickiesToMemos(selectedIds))}
               />
             )}
             <Axis scale={timeScale} />
@@ -1123,6 +1140,34 @@ function Canvas({
         </div>
         {panelId && <DocPanel docId={panelId} onOpen={openPanel} onClose={() => openPanel(null)} />}
       </div>
+      {moved && (
+        <Toast
+          action={
+            <>
+              <button
+                type="button"
+                className="text-button underline"
+                onClick={() => void navigate(`/novel/${novelId}/memo?memo=${moved.memoIds[0]}`)}
+              >
+                메모 보기
+              </button>
+              <button
+                type="button"
+                className="text-button underline"
+                onClick={() => {
+                  deleteMemos(moved.memoIds);
+                  insertRecords({ items: moved.items, edges: moved.edges, docs: [] });
+                  setMoved(null);
+                }}
+              >
+                되돌리기
+              </button>
+            </>
+          }
+        >
+          메모 {moved.memoIds.length}개로 옮김
+        </Toast>
+      )}
     </BoardUiContext.Provider>
   );
 }

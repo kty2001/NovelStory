@@ -250,12 +250,12 @@ function addFree<T extends StickyItem | TextItem | FrameItem>(
   return item.id;
 }
 
-export const addSticky = (x: number, y: number, w = 160, h = 160) =>
+export const addSticky = (x: number, y: number, w = 160, h = 160, text = "") =>
   addFree<StickyItem>("sticky", {
     place: { mode: "free", x, y },
     w,
     h,
-    text: "",
+    text,
     color: "sticky-yellow",
   });
 

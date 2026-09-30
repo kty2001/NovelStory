@@ -5,6 +5,7 @@ import type {
   Episode,
   ImageAsset,
   ISODate,
+  Memo,
   NarrativeSlot,
   Novel,
   StoryLine,
@@ -14,7 +15,7 @@ import type {
 
 // data_model.md 7장
 export const EXPORT_FORMAT = "whitenoard-novel";
-export const SCHEMA_VERSION = 2;
+export const SCHEMA_VERSION = 3;
 
 export type NovelExport = {
   format: typeof EXPORT_FORMAT;
@@ -29,6 +30,7 @@ export type NovelExport = {
   storyLines: StoryLine[];
   episodes: Episode[]; // v2
   narrativeSlots: NarrativeSlot[]; // v2
+  memos: Memo[]; // v3
   images: (Omit<ImageAsset, "blob"> & { dataUrl: string })[];
 };
 
@@ -38,6 +40,8 @@ type RawExport = Record<string, unknown> & { schemaVersion: number };
 export const migrations: Record<number, (data: RawExport) => RawExport> = {
   // v2: F2 서술 순서
   1: (data) => ({ ...data, schemaVersion: 2, episodes: [], narrativeSlots: [] }),
+  // v3: F5 메모
+  2: (data) => ({ ...data, schemaVersion: 3, memos: [] }),
 };
 
 export class ExportFormatError extends Error {

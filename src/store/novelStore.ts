@@ -9,6 +9,7 @@ import type {
   BoardEdge,
   BoardItem,
   Episode,
+  Memo,
   NarrativeSlot,
   Novel,
   NovelScoped,
@@ -34,6 +35,7 @@ export type NovelData = {
   lines: Collection<StoryLine>;
   episodes: Collection<Episode>; // 서술 순서 (F2), 실행 취소 기록 밖
   slots: Collection<NarrativeSlot>;
+  memos: Collection<Memo>; // 메모 (F5), 실행 취소 기록 밖
 };
 
 export type NovelState = Omit<NovelData, "novel" | "board"> & {
@@ -64,6 +66,7 @@ const initialState: NovelState = {
   lines: {},
   episodes: {},
   slots: {},
+  memos: {},
   novelId: null,
   status: "idle",
   save: "saved",
@@ -109,6 +112,7 @@ async function readNovel(novelId: string): Promise<NovelData | null> {
     db.storyLines,
     db.episodes,
     db.narrativeSlots,
+    db.memos,
   ];
   return db.transaction("rw", tables, async () => {
     const novel = await db.novels.get(novelId);
@@ -148,6 +152,7 @@ async function readNovel(novelId: string): Promise<NovelData | null> {
       lines: await live(db.storyLines),
       episodes: await live(db.episodes),
       slots,
+      memos: await live(db.memos),
     };
   });
 }

@@ -29,6 +29,10 @@ export const router = createBrowserRouter([
         path: "narrative",
         lazy: async () => ({ Component: (await import("./pages/NarrativePage")).default }),
       },
+      {
+        path: "memo",
+        lazy: async () => ({ Component: (await import("./pages/MemoPage")).default }),
+      },
     ],
   },
   { path: "*", element: <Navigate to="/" replace /> },

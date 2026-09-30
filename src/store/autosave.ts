@@ -13,6 +13,7 @@ const COLLECTIONS = {
   lines: db.storyLines,
   episodes: db.episodes,
   slots: db.narrativeSlots,
+  memos: db.memos,
 } as const;
 type CollectionKey = keyof typeof COLLECTIONS;
 const KEYS = Object.keys(COLLECTIONS) as CollectionKey[];
@@ -29,6 +30,7 @@ const snapshotOf = (s: NovelState | NovelData): Snapshot => ({
   lines: s.lines,
   episodes: s.episodes,
   slots: s.slots,
+  memos: s.memos,
 });
 
 const isDirty = (base: Snapshot, s: NovelState) =>

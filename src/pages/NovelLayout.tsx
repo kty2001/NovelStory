@@ -21,6 +21,7 @@ const TAB_KEYS = {
   Digit2: "wiki",
   Digit3: "overview",
   Digit4: "narrative",
+  Digit5: "memo",
 } as const;
 
 const tabClass = ({ isActive }: { isActive: boolean }) =>
@@ -39,7 +40,7 @@ export default function NovelLayout() {
   const [savedNotice, setSavedNotice] = useState(false);
   const navigate = useNavigate();
 
-  // 공통 단축키 (shortcuts 1장): Ctrl+K 빠른 이동(B-8) · Ctrl+S 자동 저장 안내 · Alt+1~4 탭 · ? 도움말
+  // 공통 단축키 (shortcuts 1장): Ctrl+K 빠른 이동(B-8) · Ctrl+S 자동 저장 안내 · Alt+1~5 탭 · ? 도움말
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => {
       if (e.isComposing || e.keyCode === 229) return;
@@ -81,7 +82,9 @@ export default function NovelLayout() {
       ? "overview"
       : pathname.includes("/narrative")
         ? "narrative"
-        : "board";
+        : pathname.includes("/memo")
+          ? "memo"
+          : "board";
   useEffect(() => {
     if (novelId && status === "ready") void patchUiState(novelId, { lastTab: tab });
   }, [novelId, status, tab]);
@@ -128,6 +131,9 @@ export default function NovelLayout() {
           </NavLink>
           <NavLink className={tabClass} to="narrative">
             서술
+          </NavLink>
+          <NavLink className={tabClass} to="memo">
+            메모
           </NavLink>
         </nav>
         {status === "ready" && (
