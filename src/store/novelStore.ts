@@ -8,6 +8,8 @@ import type {
   Board,
   BoardEdge,
   BoardItem,
+  Episode,
+  NarrativeSlot,
   Novel,
   NovelScoped,
   StoryLine,
@@ -30,6 +32,8 @@ export type NovelData = {
   categories: Collection<WikiCategory>;
   docs: Collection<WikiDoc>;
   lines: Collection<StoryLine>;
+  episodes: Collection<Episode>; // 서술 순서 (F2), 실행 취소 기록 밖
+  slots: Collection<NarrativeSlot>;
 };
 
 export type NovelState = Omit<NovelData, "novel" | "board"> & {
@@ -58,6 +62,8 @@ const initialState: NovelState = {
   categories: {},
   docs: {},
   lines: {},
+  episodes: {},
+  slots: {},
   novelId: null,
   status: "idle",
   save: "saved",
@@ -101,6 +107,8 @@ async function readNovel(novelId: string): Promise<NovelData | null> {
     db.wikiCategories,
     db.wikiDocs,
     db.storyLines,
+    db.episodes,
+    db.narrativeSlots,
   ];
   return db.transaction("rw", tables, async () => {
     const novel = await db.novels.get(novelId);
@@ -115,9 +123,13 @@ async function readNovel(novelId: string): Promise<NovelData | null> {
         .then(toCollection);
     const items = await live(db.boardItems);
     const docs = await live(db.wikiDocs);
-    // 블록과 함께 자동 생성된 뒤 비어 있는 사건 문서: 블록이 없으면 정리 (UC-20).
+    const slots = await live(db.narrativeSlots);
+    // 블록과 함께 자동 생성된 뒤 비어 있는 사건 문서: 블록 · 서술 배치가 없으면 정리 (UC-20).
     // 삭제 시점이 아니라 여기서 하는 이유: 같은 세션의 실행 취소로 블록을 되살릴 수 있어야 함
-    const used = new Set(Object.values(items).flatMap((i) => ("docId" in i ? [i.docId] : [])));
+    const used = new Set([
+      ...Object.values(items).flatMap((i) => ("docId" in i ? [i.docId] : [])),
+      ...Object.values(slots).map((s) => s.eventDocId),
+    ]);
     const orphans = Object.values(docs).filter((d) => isEmptyAutoDoc(d) && !used.has(d.id));
     if (orphans.length) {
       const at = new Date().toISOString();
@@ -134,6 +146,8 @@ async function readNovel(novelId: string): Promise<NovelData | null> {
       categories: await live(db.wikiCategories),
       docs,
       lines: await live(db.storyLines),
+      episodes: await live(db.episodes),
+      slots,
     };
   });
 }

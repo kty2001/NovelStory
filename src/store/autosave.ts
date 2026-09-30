@@ -11,6 +11,8 @@ const COLLECTIONS = {
   categories: db.wikiCategories,
   docs: db.wikiDocs,
   lines: db.storyLines,
+  episodes: db.episodes,
+  slots: db.narrativeSlots,
 } as const;
 type CollectionKey = keyof typeof COLLECTIONS;
 const KEYS = Object.keys(COLLECTIONS) as CollectionKey[];
@@ -25,6 +27,8 @@ const snapshotOf = (s: NovelState | NovelData): Snapshot => ({
   categories: s.categories,
   docs: s.docs,
   lines: s.lines,
+  episodes: s.episodes,
+  slots: s.slots,
 });
 
 const isDirty = (base: Snapshot, s: NovelState) =>

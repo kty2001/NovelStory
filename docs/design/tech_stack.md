@@ -8,7 +8,7 @@
 | UI 프레임워크 | React + TypeScript | SPA |
 | 스타일 | Tailwind CSS v4 | `@tailwindcss/vite` 플러그인, PostCSS 설정 불필요 |
 | 화이트보드 캔버스 | React Flow (`@xyflow/react`) | 무한 캔버스·줌·팬·연결선·그룹. 사건/상태 블록을 커스텀 노드로 구현 |
-| 드래그앤드롭 (캔버스 밖) | dnd kit (`@dnd-kit/core` + `@dnd-kit/sortable`, v6 안정판) | 서술 순서 회차 목록, 사전 트리 정렬. `@dnd-kit/react`는 1.0 이전(v0.5)이라 제외 |
+| 드래그앤드롭 (캔버스 밖) | HTML 끌어 놓기 (의존성 없음) | 사전 트리 정렬 · 라인 순서 · 서술 순서 회차 목록. 처음 선정한 dnd kit은 구현 중 불필요해 추가 안 함 (2026-09-30) |
 | 사전 본문 에디터 | Tiptap | 서식 텍스트 + Mention 확장으로 `@` 문서 링크. 한글 IME 검증 필요 (TODO 기술 스파이크 C1) |
 | 상태 관리 | Zustand + zundo | React Flow 공식 문서의 Zustand 연동 방식, zundo로 실행 취소/다시 실행 |
 | IndexedDB 래퍼 | Dexie | 스키마 버전·마이그레이션, 반응형 쿼리 |
@@ -95,7 +95,7 @@ npm create cloudflare@latest -- whitenoard --framework=react
 ### 수동 설정 시 패키지
 ```bash
 npm i -D @cloudflare/vite-plugin wrangler tailwindcss @tailwindcss/vite
-npm i @xyflow/react @dnd-kit/core @dnd-kit/sortable
+npm i @xyflow/react
 npm i @tiptap/react @tiptap/starter-kit @tiptap/extension-mention
 npm i zustand zundo dexie react-router lucide-react
 npm i -D vitest @playwright/test eslint prettier

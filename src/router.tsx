@@ -25,6 +25,10 @@ export const router = createBrowserRouter([
         path: "overview",
         lazy: async () => ({ Component: (await import("./pages/OverviewPage")).default }),
       },
+      {
+        path: "narrative",
+        lazy: async () => ({ Component: (await import("./pages/NarrativePage")).default }),
+      },
     ],
   },
   { path: "*", element: <Navigate to="/" replace /> },

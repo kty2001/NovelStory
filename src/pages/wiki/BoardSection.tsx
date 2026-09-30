@@ -2,6 +2,7 @@ import type { ReactNode } from "react";
 import EmptyState from "../../components/EmptyState";
 import type { WikiDoc } from "../../db/types";
 import { useNovelStore } from "../../store/novelStore";
+import { docEpisodes, MODE_LABEL } from "../narrative/narrative";
 import {
   characterEvents,
   eventBlock,
@@ -33,14 +34,16 @@ const Label = ({ children }: { children: ReactNode }) => (
 );
 
 // 보드 연동 (W-1 ⑧ · W-2, 자동 · 편집 불가): 캐릭터 = 등장 사건 · 상태 변화 이력,
-// 사건 = 작중 시점 · 관련 캐릭터. 항목 클릭 → 보드에서 그 블록으로
+// 사건 = 작중 시점 · 관련 캐릭터 · 배치된 회차. 항목 클릭 → 보드에서 그 블록 / 서술 탭 그 회차로
 export default function BoardSection({ doc }: { doc: WikiDoc }) {
   const items = useNovelStore((s) => s.items);
   const docs = useNovelStore((s) => s.docs);
   const lines = useNovelStore((s) => s.lines);
   const categories = useNovelStore((s) => s.categories);
   const scale = useNovelStore((s) => s.board?.timeScale);
-  const { openBoard, openDoc, inPanel } = useWikiNav();
+  const episodes = useNovelStore((s) => s.episodes);
+  const slots = useNovelStore((s) => s.slots);
+  const { openBoard, openDoc, openEpisode, inPanel } = useWikiNav();
   const family = familyOf(categories, doc.categoryId);
   if (!scale || (family !== "character" && family !== "event")) return null;
 
@@ -135,12 +138,31 @@ export default function BoardSection({ doc }: { doc: WikiDoc }) {
     );
   }
 
+  const placedIn = docEpisodes(slots, episodes, doc.id);
   return (
     <section aria-label="보드 연동" className="mt-12 border-t border-hairline pt-6">
       <h3 className="mb-3 flex items-center gap-2 text-title-sm text-ink">
         보드 연동 <span className="text-caption text-muted">자동 표시</span>
       </h3>
       {body}
+      {family === "event" && (
+        <div className="mt-4">
+          <Label>배치된 회차</Label>
+          <ul>
+            {placedIn.map(({ slot, episode }) => (
+              <Row key={slot.id} at={`${episode.number}화`} onClick={() => openEpisode(episode.id)}>
+                <span className="truncate">{episode.title}</span>
+                <span className="rounded-full bg-surface-card px-2 text-caption">
+                  {MODE_LABEL[slot.mode]}
+                </span>
+              </Row>
+            ))}
+          </ul>
+          {!placedIn.length && (
+            <p className="px-2 text-body-sm text-muted">아직 서술에 쓰이지 않았어요</p>
+          )}
+        </div>
+      )}
     </section>
   );
 }

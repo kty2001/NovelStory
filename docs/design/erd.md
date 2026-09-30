@@ -148,7 +148,7 @@ erDiagram
     }
 ```
 
-## 3. MVP 이후 (F2 서술 순서 · F5 메모)
+## 3. F2 서술 순서 · MVP 이후 F5 메모
 
 ```mermaid
 erDiagram

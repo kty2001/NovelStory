@@ -207,7 +207,7 @@ type BoardEdge = NovelScoped & {
 type UiState = {
   novelId: string;                // 기본 키
   viewport?: { x: number; y: number; zoom: number }; // 보드를 처음 열기 전에는 없음 → 0 눈금이 화면 중앙
-  lastTab: 'board' | 'wiki' | 'overview';
+  lastTab: 'board' | 'wiki' | 'overview' | 'narrative';
   wikiPanelDocId?: string;
   backupSnoozedUntil?: ISODate;   // 백업 알림 "나중에"
   filters?: { hiddenDocIds: string[]; hiddenTags: string[]; hiddenCategoryIds: string[]; hiddenLineIds: string[] }; // hiddenLineIds의 'none' = 미지정
@@ -217,17 +217,18 @@ type AppMeta =                    // key-value
   | { key: 'persist'; requestedAt: ISODate; granted: boolean }
   | { key: 'librarySort'; value: 'updated' | 'title' };
 
-// ── MVP 이후 ──
-type Episode = NovelScoped & { number: number; title?: string };
+// ── 서술 순서 (F2) ──
+type Episode = NovelScoped & { number: number; title?: string }; // number = 목록 순서 (1부터 연속)
 
 type NarrativeSlot = NovelScoped & {
   episodeId: string;
-  order: number;
-  eventDocId: string;             // 사건 문서 (보드 블록 없이도 배치 가능)
+  order: number;                  // 회차 안 순서 (0부터 연속)
+  eventDocId: string;             // 사건 문서 (보드 블록 없이도 배치 가능, 한 문서가 여러 회차에)
   mode: 'linear' | 'flashback' | 'flashforward' | 'foreshadow' | 'payoff';
   note?: string;                  // 부분 공개 범위 메모
 };
 
+// ── MVP 이후 ──
 type Memo = NovelScoped & { body: string; pinned: boolean; createdAt: ISODate };
 ```
 
@@ -283,6 +284,8 @@ type Memo = NovelScoped & { body: string; pinned: boolean; createdAt: ISODate };
 | `WikiDoc.props` | 같은 `key` 중복 금지 (입력 시 검사) |
 | `WikiDoc.lineId` | 같은 소설의 살아 있는 `StoryLine`. 사건 계열 문서만 (다른 계열로 옮기면 제거) |
 | 라인 삭제 | 쓰던 문서의 `lineId` 제거(미지정) + `hiddenLineIds`에서 제거, 1개 트랜잭션. 라인 0개 허용 |
+| `NarrativeSlot.eventDocId` | 같은 소설의 살아 있는 사건 계열 문서. 문서 삭제 · 사건 계열 밖으로 이동 시 슬롯 삭제. 슬롯이 있는 자동 생성 문서는 빈 문서 정리 제외 |
+| `Episode.number` · `NarrativeSlot.order` | 회차 추가 · 삽입 · 삭제, 슬롯 이동 · 삭제 시 연속 번호로 재계산. 회차 삭제 = 그 회차 슬롯 함께 삭제 |
 
 ## 6. Dexie 스키마 (IndexedDB)
 
@@ -300,6 +303,10 @@ db.version(1).stores({
   uiState:        'novelId',
   meta:           'key',
 });
+db.version(2).stores({                                    // F2 서술 순서 (테이블 추가만)
+  episodes:       'id, novelId',
+  narrativeSlots: 'id, novelId, episodeId, eventDocId',
+});
 ```
 - 소설 1개 분량(블록 수백~천 개)은 `novelId`로 한 번에 읽어 스토어에 올림 → 필터·검색은 메모리에서
 - DB 구조 변경은 `db.version(n).upgrade()`로 처리. **DB 버전과 내보내기 `schemaVersion`은 별개**
@@ -310,7 +317,7 @@ db.version(1).stores({
 ```ts
 type NovelExport = {
   format: 'whitenoard-novel';
-  schemaVersion: 1;
+  schemaVersion: 2;
   exportedAt: ISODate;
   novel: Novel;
   board: Board;
@@ -319,15 +326,18 @@ type NovelExport = {
   wikiCategories: WikiCategory[];
   wikiDocs: Omit<WikiDoc, 'mentions' | 'plainText'>[];
   storyLines: StoryLine[];
+  episodes: Episode[];            // v2
+  narrativeSlots: NarrativeSlot[]; // v2
   images: (Omit<ImageAsset, 'blob'> & { dataUrl: string })[]; // Blob → base64 data URL
 };
 ```
 - 삭제 기록(`deletedAt` 있는 레코드), `UiState`, `AppMeta`, 파생 필드 제외
+- v1 → v2: `episodes` · `narrativeSlots` 빈 배열 추가
 - 내보내기 성공 시 `Novel.lastExportedAt` 갱신
 - **가져오기** (UC-05)
   1. `format` 확인, `schemaVersion`이 현재보다 크면 거부
   2. 낮으면 `migrations[v]`(v → v+1)를 차례로 적용
-  3. 모든 ID 재발급 → 참조 필드(`novelId`·`docId`·`parentFrameId`·`source`·`target`·`linkedEventItemId`·`categoryId`·`parentId`·`lineId`·`imageId`·`coverImageId`·`stateLanes.order`)와 **본문 · 시놉시스 mention `attrs.id`** 일괄 치환
+  3. 모든 ID 재발급 → 참조 필드(`novelId`·`docId`·`parentFrameId`·`source`·`target`·`linkedEventItemId`·`categoryId`·`parentId`·`lineId`·`imageId`·`coverImageId`·`stateLanes.order`·`episodeId`·`eventDocId`)와 **본문 · 시놉시스 mention `attrs.id`** 일괄 치환
   4. 파생 필드 다시 계산, 1개 트랜잭션으로 저장 → 항상 새 소설로 추가
 
 ## 8. 유스케이스 대조
@@ -354,6 +364,7 @@ type NovelExport = {
 | UC-33 링크 | `WikiDoc.body` mention, `mentions`, 4.5 |
 | UC-34 표·검색 | `WikiDoc.props`·`plainText` |
 | UC-35 문서 삭제 | 5장 연쇄 삭제 규칙 |
+| UC-50 서술 순서 | `Episode`, `NarrativeSlot`, 5장 슬롯 규칙, `UiState.lastTab` `narrative` |
 | UC-40~42 저장 | `updatedAt` 규칙, Dexie 트랜잭션, `Novel.lastExportedAt`, `UiState.backupSnoozedUntil` |
 
 ## 9. 기본값으로 정한 사항 (변경 가능)

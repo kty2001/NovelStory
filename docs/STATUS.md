@@ -1,7 +1,7 @@
 # 진행 상태 (Status)
 
 ## 현재 단계
-1단계(MVP) 진행 중 — 기반 · F0 서재 완료, F1 보드 완료, F4 사전 완료(분류 트리 · 문서 편집 · 템플릿 · `@` 링크 + 역링크 · 표 보기 · 검색 · 보드 연동 · 빈 상태 안내), 다음: 데스크톱 점검 · 배포. MVP는 데스크톱 전용, 태블릿·모바일(와이어프레임·반응형·터치·실기기 확인)은 MVP 이후로 연기(확인 기기 없음)
+MVP 이후 — 1단계(MVP: F0 서재 · F1 보드 · F4 사전 · F6 로컬 저장, 데스크톱 전용) 배포 완료. MVP 이후 기능: 사전 시점 선택 보기 · F7 개요 · 보드 문서 목록 사이드바 · 설정 점검 · F2 서술 순서 1차 완료, 다음: F2 2차(보드 비교 오버레이). 태블릿·모바일은 기기 확보 후
 
 ## 이력
 | 날짜 | 내용 |
@@ -49,6 +49,7 @@
 | 2026-09-29 | 데스크톱 점검 2차: 도구 모음 글자 캔버스 < 768px이면 숨김(`@container` · `@max-3xl:sr-only`), `<mark>` · `MentionChip` 여백 축소, 보드 · 사전 라우트 `lazy`(1.19MB → 최대 462kB, `server.warmup`), `ZoomControls` 배율 메뉴(직접 입력 · 25~200% 프리셋, 5~200% 제한), e2e 화면 밖 눈금 클릭 제거 |
 | 2026-09-30 | MVP 이후 기능 4건 기획 반영: 사전 시점 선택 보기(F3 통합) · F7 개요 탭 · 보드 문서 목록 사이드바 · 설정 점검 ([features_spec.md](./design/features_spec.md)) |
 | 2026-09-30 | MVP 이후 기능 4건 구현: 사전 시점 선택 보기(`stateTicks` · `TimePick`, 문서 · 표), F7 개요 탭(`Novel.synopsisBody` · `setSynopsisBody`, `BodyEditor` `onChange` 일반화, `storyFlow`, `Alt+3`), 보드 문서 목록 사이드바(`DocSidebar`, `DOC_MIME` 재사용), 설정 점검(`settingIssues` · `CheckView`, `?view=check`), Vitest 3건 · Playwright 4건(`e2e/sample.spec.ts`) |
+| 2026-09-30 | F2 서술 순서 1차: 결정(별도 "서술" 탭 `Alt+4` · 1차/2차 분할 · HTML 끌어 놓기, dnd kit 제외) 문서 반영, `Episode` · `NarrativeSlot`(Dexie v2 · 내보내기 v2 + v1 변환), `narrativeActions`(회차 추가 · 삽입 · 삭제 재번호, 슬롯 배치 · 이동 · 방식 · 메모, 문서 삭제 · 계열 이탈 연쇄), `NarrativePage`, 사건 문서 "배치된 회차", Vitest 11건 · Playwright 2건(`e2e/narrative.spec.ts`) |
 
 ## 결정됨
 | 항목 | 결정 |

@@ -1,5 +1,11 @@
 import { describe, expect, it } from "vitest";
-import { EXPORT_FORMAT, ExportFormatError, SCHEMA_VERSION, upgradeExport } from "./exportFormat";
+import {
+  EXPORT_FORMAT,
+  ExportFormatError,
+  migrations,
+  SCHEMA_VERSION,
+  upgradeExport,
+} from "./exportFormat";
 
 describe("upgradeExport", () => {
   it("형식이 아니면 거부", () => {
@@ -30,6 +36,16 @@ describe("upgradeExport", () => {
     expect(upgradeExport(raw, steps as never)).toMatchObject({
       schemaVersion: SCHEMA_VERSION,
       log: [SCHEMA_VERSION - 1],
+    });
+  });
+
+  it("v1 → v2: 서술 순서 빈 목록 추가", () => {
+    const raw = { format: EXPORT_FORMAT, schemaVersion: 1, novel: { id: "n1" } };
+    expect(upgradeExport(raw, migrations)).toEqual({
+      ...raw,
+      schemaVersion: 2,
+      episodes: [],
+      narrativeSlots: [],
     });
   });
 

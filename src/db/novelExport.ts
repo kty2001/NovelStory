@@ -32,6 +32,8 @@ export async function buildExport(novelId: string): Promise<NovelExport> {
       db.wikiCategories,
       db.wikiDocs,
       db.storyLines,
+      db.episodes,
+      db.narrativeSlots,
       db.images,
     ],
     async () => {
@@ -47,6 +49,8 @@ export async function buildExport(novelId: string): Promise<NovelExport> {
         wikiCategories: live(await db.wikiCategories.where(byNovel).toArray()),
         wikiDocs: live(await db.wikiDocs.where(byNovel).toArray()),
         storyLines: live(await db.storyLines.where(byNovel).toArray()),
+        episodes: live(await db.episodes.where(byNovel).toArray()),
+        narrativeSlots: live(await db.narrativeSlots.where(byNovel).toArray()),
         images: await db.images.where(byNovel).toArray(),
       };
     },
@@ -97,6 +101,8 @@ export async function importExport(raw: unknown, opts: { titleSuffix?: string } 
       data.wikiCategories,
       data.wikiDocs,
       data.storyLines,
+      data.episodes,
+      data.narrativeSlots,
       data.images,
     ].every(Array.isArray)
   ) {
@@ -116,6 +122,8 @@ export async function importExport(raw: unknown, opts: { titleSuffix?: string } 
     data.wikiCategories,
     data.wikiDocs,
     data.storyLines,
+    data.episodes,
+    data.narrativeSlots,
     data.images,
   ]) {
     for (const r of list) fresh(r.id);
@@ -167,6 +175,12 @@ export async function importExport(raw: unknown, opts: { titleSuffix?: string } 
     parentId: opt(c.parentId),
   }));
   const storyLines = data.storyLines.map(base);
+  const episodes = data.episodes.map(base);
+  const narrativeSlots = data.narrativeSlots.map((s) => ({
+    ...base(s),
+    episodeId: map(s.episodeId),
+    eventDocId: map(s.eventDocId),
+  }));
   const wikiDocs: WikiDoc[] = data.wikiDocs.map((d) => {
     const body = remapMentions(d.body, map);
     return {
@@ -189,6 +203,8 @@ export async function importExport(raw: unknown, opts: { titleSuffix?: string } 
       db.wikiCategories,
       db.wikiDocs,
       db.storyLines,
+      db.episodes,
+      db.narrativeSlots,
       db.images,
     ],
     async () => {
@@ -199,6 +215,8 @@ export async function importExport(raw: unknown, opts: { titleSuffix?: string } 
       await db.wikiCategories.bulkAdd(wikiCategories);
       await db.wikiDocs.bulkAdd(wikiDocs);
       await db.storyLines.bulkAdd(storyLines);
+      await db.episodes.bulkAdd(episodes);
+      await db.narrativeSlots.bulkAdd(narrativeSlots);
       await db.images.bulkAdd(images);
     },
   );

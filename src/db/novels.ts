@@ -16,6 +16,8 @@ const NOVEL_TABLES = [
   db.wikiDocs,
   db.storyLines,
   db.images,
+  db.episodes,
+  db.narrativeSlots,
 ];
 
 export const toAsset = (novelId: string, img: ResizedImage, now: string): ImageAsset => ({

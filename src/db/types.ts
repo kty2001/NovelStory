@@ -145,11 +145,24 @@ export type BoardEdge = NovelScoped & {
   dashed: boolean;
 };
 
+// ── 서술 순서 (F2) ──
+export type Episode = NovelScoped & { number: number; title?: string }; // number = 목록 순서 (1부터 연속)
+
+export type NarrativeMode = "linear" | "flashback" | "flashforward" | "foreshadow" | "payoff";
+
+export type NarrativeSlot = NovelScoped & {
+  episodeId: string;
+  order: number; // 회차 안 순서 (0부터 연속)
+  eventDocId: string; // 사건 계열 문서 (보드 블록 없이도 배치 가능, 여러 회차 허용)
+  mode: NarrativeMode;
+  note?: string; // 부분 공개 범위 메모
+};
+
 // ── 로컬 전용 (동기화·내보내기 제외) ──
 export type UiState = {
   novelId: string;
   viewport?: { x: number; y: number; zoom: number }; // 보드를 처음 열기 전에는 없음
-  lastTab: "board" | "wiki" | "overview";
+  lastTab: "board" | "wiki" | "overview" | "narrative";
   wikiPanelDocId?: string;
   backupSnoozedUntil?: ISODate;
   filters?: {

@@ -101,15 +101,25 @@ describe("자동 생성 빈 사건 문서 정리 (소설 열 때)", () => {
     color: "brand-peach",
   });
 
-  it("블록이 없고 비어 있는 자동 생성 문서만 소프트 삭제", async () => {
+  it("블록 · 서술 배치가 없고 비어 있는 자동 생성 문서만 소프트 삭제", async () => {
     await db.wikiDocs.bulkPut([
       { ...doc("empty", "n1"), autoCreated: true },
       { ...doc("used", "n1"), autoCreated: true },
       { ...doc("tagged", "n1"), autoCreated: true, tags: ["복선"] },
+      { ...doc("narrated", "n1"), autoCreated: true },
     ]);
     await db.boardItems.put(event("e1", "used"));
+    await db.narrativeSlots.put({
+      id: "slot1",
+      novelId: "n1",
+      updatedAt: OLD,
+      episodeId: "ep1",
+      order: 0,
+      eventDocId: "narrated",
+      mode: "linear",
+    });
     await loadNovel("n1");
-    expect(Object.keys(store.getState().docs).sort()).toEqual(["d1", "tagged", "used"]);
+    expect(Object.keys(store.getState().docs).sort()).toEqual(["d1", "narrated", "tagged", "used"]);
     expect((await db.wikiDocs.get("empty"))?.deletedAt).toBeTruthy();
   });
 });

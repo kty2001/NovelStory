@@ -8,7 +8,8 @@ import type { BoardItem } from "./types";
 
 beforeEach(resetDb);
 
-// 모든 참조 필드를 쓰는 소설: 하위 분류, 라인, 멘션, 프레임 소속, 상태 → 사건 연결, 연결선, 레인 순서
+// 모든 참조 필드를 쓰는 소설: 하위 분류, 라인, 멘션, 프레임 소속, 상태 → 사건 연결, 연결선, 레인 순서,
+// 서술 순서(회차 · 슬롯)
 async function richNovel() {
   const id = await createNovel({ title: "원본" });
   const cats = await db.wikiCategories.where({ novelId: id }).sortBy("order");
@@ -82,6 +83,17 @@ async function richNovel() {
     dashed: false,
   });
   await db.boards.update(id, { stateLanes: { enabled: true, order: ["hero"] } });
+  await db.episodes.add({ id: "ep1", novelId: id, updatedAt: OLD, number: 1, title: "프롤로그" });
+  await db.narrativeSlots.add({
+    id: "slot1",
+    novelId: id,
+    updatedAt: OLD,
+    episodeId: "ep1",
+    order: 0,
+    eventDocId: "ev",
+    mode: "flashback",
+    note: "일부만",
+  });
   await db.novels.update(id, {
     synopsisBody: {
       type: "doc",
@@ -119,14 +131,18 @@ describe("importExport", () => {
       ...(await db.wikiCategories.where({ novelId: orig }).primaryKeys()),
       ...(await db.storyLines.where({ novelId: orig }).primaryKeys()),
       "edge",
+      "ep1",
+      "slot1",
     ]);
     const items = await db.boardItems.where({ novelId: id }).toArray();
     const docs = await db.wikiDocs.where({ novelId: id }).toArray();
     const cats = await db.wikiCategories.where({ novelId: id }).toArray();
     const lines = await db.storyLines.where({ novelId: id }).toArray();
     const [edge] = await db.boardEdges.where({ novelId: id }).toArray();
+    const [episode] = await db.episodes.where({ novelId: id }).toArray();
+    const [slot] = await db.narrativeSlots.where({ novelId: id }).toArray();
     const board = await db.boards.get(id);
-    for (const r of [...items, ...docs, ...cats, ...lines, edge])
+    for (const r of [...items, ...docs, ...cats, ...lines, edge, episode, slot])
       expect(origIds.has(r.id)).toBe(false);
 
     const byOld = <T extends { id: string }>(list: T[], pick: (r: T) => boolean) =>
@@ -141,6 +157,13 @@ describe("importExport", () => {
     expect(state).toMatchObject({ docId: hero.id, linkedEventItemId: event.id });
     expect(edge).toMatchObject({ source: event.id, target: state.id });
     expect(board?.stateLanes.order).toEqual([hero.id]);
+    expect(episode).toMatchObject({ number: 1, title: "프롤로그" });
+    expect(slot).toMatchObject({
+      episodeId: episode.id,
+      eventDocId: ev.id,
+      mode: "flashback",
+      note: "일부만",
+    });
     expect(cats.some((c) => c.id === ev.categoryId)).toBe(true);
     expect(lines.some((l) => l.id === ev.lineId)).toBe(true);
     const sub = byOld(cats, (c) => c.name === "도시");

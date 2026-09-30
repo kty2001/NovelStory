@@ -12,6 +12,7 @@ import {
   type DropPos,
 } from "../pages/wiki/categories";
 import { deleteItems, newDoc, setDocsLine, setLanes } from "./boardActions";
+import { removeDocSlots } from "./narrativeActions";
 import { useNovelStore } from "./novelStore";
 
 // 사전 분류 · 문서 동작 (UC-30 · 31). 실행 취소 기록 대상 아님
@@ -69,18 +70,18 @@ export function deleteCategory(id: string) {
 }
 
 // 끌어 놓기. 불가 이유가 있으면 이동하지 않고 이유 반환.
-// 사건 계열을 벗어나면 하위 문서의 라인 제거 (data_model 5장)
+// 사건 계열을 벗어나면 하위 문서의 라인 · 서술 배치 제거 (data_model 5장)
 export function moveCategory(dragId: string, targetId: string, pos: DropPos): string | null {
   const s = store.getState();
   const error = dropError(s, dragId, targetId, pos);
   if (error) return error;
   const next = movedCategories(s.categories, dragId, targetId, pos);
   store.setState({ categories: next });
-  if (familyOf(s.categories, dragId) === "event" && familyOf(next, dragId) !== "event")
-    setDocsLine(
-      subtreeDocs(next, s.docs, dragId).map((d) => d.id),
-      undefined,
-    );
+  if (familyOf(s.categories, dragId) === "event" && familyOf(next, dragId) !== "event") {
+    const ids = subtreeDocs(next, s.docs, dragId).map((d) => d.id);
+    setDocsLine(ids, undefined);
+    removeDocSlots(ids);
+  }
   return null;
 }
 
@@ -125,7 +126,7 @@ export function setDocBody(id: string, body: TiptapJSON | null) {
   );
 }
 
-// 분류 이동. 보드에 쓰인 문서는 같은 계열 안에서만, 사건 계열 밖이면 라인 제거 (data_model 5장)
+// 분류 이동. 보드에 쓰인 문서는 같은 계열 안에서만, 사건 계열 밖이면 라인 · 서술 배치 제거 (data_model 5장)
 export function moveDoc(id: string, categoryId: string): string | null {
   const { docs, categories, items } = store.getState();
   const doc = docs[id];
@@ -135,10 +136,11 @@ export function moveDoc(id: string, categoryId: string): string | null {
     return "보드에 쓰인 문서는 같은 계열 안에서만 옮길 수 있어요";
   const { lineId: _line, ...rest } = doc;
   store.setState({ docs: { ...docs, [id]: { ...(to === "event" ? doc : rest), categoryId } } });
+  if (to !== "event") removeDocSlots([id]);
   return null;
 }
 
-// 문서 삭제 (UC-35): 연결 블록(사건 1개 / 상태 블록 전부) · 그 연결선 · 레인 순서도 함께 정리, 대표 이미지 삭제.
+// 문서 삭제 (UC-35): 연결 블록(사건 1개 / 상태 블록 전부) · 그 연결선 · 레인 순서 · 서술 배치도 함께 정리, 대표 이미지 삭제.
 // 되돌리면 문서 없는 블록이 생기므로 블록이 있었다면 보드 실행 취소 기록을 비움
 export function deleteDoc(id: string) {
   const { docs, items, board } = store.getState();
@@ -153,6 +155,7 @@ export function deleteDoc(id: string) {
     if (order.includes(id)) setLanes({ order: order.filter((x) => x !== id) });
     store.temporal.getState().clear();
   }
+  removeDocSlots([id]);
   const { [id]: _removed, ...rest } = store.getState().docs;
   store.setState({ docs: rest });
   if (doc.imageId) void deleteImage(doc.imageId);

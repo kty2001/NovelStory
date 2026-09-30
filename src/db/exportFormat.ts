@@ -2,8 +2,10 @@ import type {
   Board,
   BoardEdge,
   BoardItem,
+  Episode,
   ImageAsset,
   ISODate,
+  NarrativeSlot,
   Novel,
   StoryLine,
   WikiCategory,
@@ -12,7 +14,7 @@ import type {
 
 // data_model.md 7장
 export const EXPORT_FORMAT = "whitenoard-novel";
-export const SCHEMA_VERSION = 1;
+export const SCHEMA_VERSION = 2;
 
 export type NovelExport = {
   format: typeof EXPORT_FORMAT;
@@ -25,13 +27,18 @@ export type NovelExport = {
   wikiCategories: WikiCategory[];
   wikiDocs: Omit<WikiDoc, "mentions" | "plainText">[];
   storyLines: StoryLine[];
+  episodes: Episode[]; // v2
+  narrativeSlots: NarrativeSlot[]; // v2
   images: (Omit<ImageAsset, "blob"> & { dataUrl: string })[];
 };
 
 type RawExport = Record<string, unknown> & { schemaVersion: number };
 
 // migrations[v]: v → v+1 변환
-export const migrations: Record<number, (data: RawExport) => RawExport> = {};
+export const migrations: Record<number, (data: RawExport) => RawExport> = {
+  // v2: F2 서술 순서
+  1: (data) => ({ ...data, schemaVersion: 2, episodes: [], narrativeSlots: [] }),
+};
 
 export class ExportFormatError extends Error {
   constructor(
