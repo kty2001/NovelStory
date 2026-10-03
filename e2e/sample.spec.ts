@@ -1,6 +1,6 @@
 import { expect, test, type Page } from "@playwright/test";
 
-// 샘플 소설(잿빛 왕관) 기반: 사전 시점 선택 보기 · 개요 · 보드 문서 목록 · 설정 점검
+// 샘플 소설(잿빛 왕관) 기반: 사전 시점 선택 보기 · 개요 · 보드 문서 목록 · 설정 점검 · 보드 필터
 
 const tree = (page: Page) => page.getByRole("list", { name: "분류 트리" });
 
@@ -146,4 +146,51 @@ test("설정 점검: 항목 수 · 문서 항목 = 문서 열기 · 블록 항�
     .click();
   await expect(page).toHaveURL(/\/board/);
   await expect(page.locator(".react-flow__node.selected")).toContainText("예언서의 발견");
+});
+
+test("보드 필터: 캐릭터 · 태그 · 분류 숨김 · 개수 배지 · 새로고침 유지 · 모두 표시", async ({
+  page,
+}) => {
+  const state = (name: string) => page.getByTestId("state-block").filter({ hasText: name });
+  const event = (title: string) => page.getByTestId("event-block").filter({ hasText: title });
+  const open = async () => {
+    await page.getByRole("button", { name: "필터" }).click();
+    return page.getByRole("dialog", { name: "필터" });
+  };
+  await expect(state("카엘").first()).toBeVisible();
+
+  let filter = await open();
+  await filter
+    .getByRole("region", { name: "캐릭터" })
+    .getByRole("checkbox", { name: /카엘/ })
+    .uncheck();
+  await expect(state("카엘")).toHaveCount(0);
+  await expect(state("레아").first()).toBeVisible();
+
+  await filter
+    .getByRole("region", { name: "태그" })
+    .getByRole("checkbox", { name: /#1부/ })
+    .uncheck();
+  await expect(event("왕의 서거")).toHaveCount(0);
+  await expect(event("예언서의 발견")).toBeVisible();
+
+  await filter
+    .getByRole("region", { name: "분류" })
+    .getByRole("checkbox", { name: /^캐릭터/ })
+    .uncheck();
+  await expect(page.getByTestId("state-block")).toHaveCount(0);
+  await expect(page.getByTestId("filter-count")).toHaveText("3");
+
+  await page.waitForTimeout(800); // 필터 저장
+  await page.reload();
+  await expect(event("예언서의 발견")).toBeVisible();
+  await expect(page.getByTestId("state-block")).toHaveCount(0);
+  await expect(event("왕의 서거")).toHaveCount(0);
+  await expect(page.getByTestId("filter-count")).toHaveText("3");
+
+  filter = await open();
+  await filter.getByRole("button", { name: "모두 표시" }).click();
+  await expect(state("카엘").first()).toBeVisible();
+  await expect(event("왕의 서거")).toBeVisible();
+  await expect(page.getByTestId("filter-count")).toHaveCount(0);
 });

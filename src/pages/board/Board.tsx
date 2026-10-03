@@ -31,7 +31,7 @@ import { PanelLeft, Route } from "lucide-react";
 import Toast from "../../components/Toast";
 import { db } from "../../db/db";
 import { UNDO_MS } from "../../db/novels";
-import type { BoardEdge, BoardItem, ShapeKind, TimeScale, UiState } from "../../db/types";
+import type { BoardEdge, BoardItem, ShapeKind, TimeScale } from "../../db/types";
 import { patchUiState } from "../../db/uiState";
 import {
   addEdge,
@@ -105,7 +105,7 @@ import Lanes from "./Lanes";
 import Leaders, { type Rect } from "./Leaders";
 import LineEditDialog from "./LineEditDialog";
 import { AllHiddenNotice, EmptyGuide } from "./EmptyGuide";
-import { NO_LINE } from "./lines";
+import { hiddenItemIds, NO_FILTERS, type Filters } from "./filters";
 import PlacePreview, { FrameDraft, type Preview } from "./PlacePreview";
 import ReadingPath from "./ReadingPath";
 import StateNode from "./StateNode";
@@ -186,14 +186,6 @@ function applyUi(prev: Record<string, NodeUi>, changes: NodeChange[]) {
   }
   return next;
 }
-
-type Filters = NonNullable<UiState["filters"]>;
-const NO_FILTERS: Filters = {
-  hiddenDocIds: [],
-  hiddenTags: [],
-  hiddenCategoryIds: [],
-  hiddenLineIds: [],
-};
 
 // 도구 모음을 끌어 캔버스 위에서 놓았는지 (도구 모음 · 미니맵 등 패널 위는 제외)
 const overCanvas = (x: number, y: number) => {
@@ -341,16 +333,8 @@ function Canvas({
     [novelId],
   );
 
-  // 필터로 숨긴 블록 (스토리 라인: 사건 문서의 lineId, 미지정 = NO_LINE)
-  const hiddenIds = useMemo(() => {
-    const lines = new Set(filters.hiddenLineIds);
-    const out = new Set<string>();
-    if (!lines.size) return out;
-    for (const item of Object.values(items)) {
-      if (item.kind === "event" && lines.has(docs[item.docId]?.lineId ?? NO_LINE)) out.add(item.id);
-    }
-    return out;
-  }, [items, docs, filters.hiddenLineIds]);
+  // 필터로 숨긴 블록 (라인 · 캐릭터 · 태그 · 분류)
+  const hiddenIds = useMemo(() => hiddenItemIds(items, docs, filters), [items, docs, filters]);
 
   // 캐릭터별 정렬 (UC-13): 켜져 있으면 캐릭터 → 레인 번호
   const stateLanes = useNovelStore((s) => s.board?.stateLanes);
@@ -1239,8 +1223,8 @@ function Canvas({
                 <span className="@max-3xl:sr-only">서술 비교</span>
               </button>
               <FilterMenu
-                hiddenLineIds={filters.hiddenLineIds}
-                onChange={(hiddenLineIds) => changeFilters({ hiddenLineIds })}
+                filters={filters}
+                onChange={changeFilters}
                 onEditLines={() => setLinesOpen(true)}
               />
             </Toolbar>
@@ -1256,10 +1240,7 @@ function Canvas({
             <ZoomControls />
             {empty && <EmptyGuide />}
             {allHidden && (
-              <AllHiddenNotice
-                count={hiddenIds.size}
-                onClear={() => changeFilters({ hiddenLineIds: [] })}
-              />
+              <AllHiddenNotice count={hiddenIds.size} onClear={() => changeFilters(NO_FILTERS)} />
             )}
             <LineEditDialog
               open={linesOpen}
