@@ -6,7 +6,7 @@
 - `json` = 배열·객체 필드, 괄호 안은 구조
 - 저장소: IndexedDB(Dexie) 테이블 이름은 data_model.md 6장
 
-## 1. MVP (F0 서재 · F1 보드 · F4 사전 · F6 저장)
+## 1. 서재 · 보드 · 사전 (F0 · F1 · F4 · F6, 이후 추가된 도형 · 정렬 · 시놉시스 필드 포함)
 
 ```mermaid
 erDiagram
@@ -36,7 +36,8 @@ erDiagram
         string id PK
         string title
         string genre
-        string synopsis
+        string synopsis "서재용 짧은 소개"
+        json synopsisBody "개요 탭 시놉시스 (Tiptap JSON)"
         string coverImageId FK
         datetime createdAt
         datetime lastExportedAt "마지막 JSON 백업"
@@ -46,6 +47,7 @@ erDiagram
         string novelId FK
         json timeScale "pxPerTick, collapsedPx, tickLabels, collapsed, snap"
         json stateLanes "enabled, order(캐릭터 docId)"
+        boolean align "정렬 보조선 (없음 = 켬)"
     }
     IMAGE_ASSET {
         string id PK
@@ -71,7 +73,7 @@ erDiagram
         string novelId FK
         string name "메인 | 서브 | 사이드 | 사용자 추가"
         number order "표시 순서 = 테두리 모양"
-        string color "색 토큰 (MVP 이후 사용)"
+        string color "색 토큰 (muted = 기본 모양)"
     }
     WIKI_DOC {
         string id PK
@@ -84,7 +86,7 @@ erDiagram
         json props "key-value 목록 (순서 유지)"
         json body "Tiptap JSON (mention 노드)"
         string imageId FK
-        string color "캐릭터 대표 색 토큰"
+        string color "캐릭터 대표 색 토큰 (예약, 미사용)"
         datetime createdAt
         boolean autoCreated "보드에서 자동 생성"
         json mentions "파생: 멘션 · 속성 링크 docId 목록"
@@ -93,19 +95,20 @@ erDiagram
     BOARD_ITEM {
         string id PK
         string novelId FK
-        string kind "event | state | sticky | text | frame"
+        string kind "event | state | sticky | text | shape | frame"
         json place "timed(t, tEnd, y) | undated(x, y) | free(x, y)"
         number z "쌓임 순서"
         string parentFrameId FK "frame은 없음 (중첩 금지)"
         string docId FK "event, state"
-        string color "event, sticky 색 토큰"
+        string color "event, sticky, shape(채움, 없으면 투명) 색 토큰"
         string stateType "state: appear | change | exit"
         json changes "state: key, from, to 목록"
         string note "state 메모"
         string linkedEventItemId FK "state → event"
-        number w "sticky, text, frame"
-        number h "sticky, frame"
-        string text "sticky, text"
+        number w "sticky, text, shape, frame"
+        number h "sticky, shape, frame"
+        string text "sticky, text, shape"
+        string shape "shape: rect | ellipse | diamond"
         string title "frame"
     }
     BOARD_EDGE {
@@ -137,7 +140,7 @@ erDiagram
     UI_STATE {
         string novelId PK
         json viewport "x, y, zoom"
-        string lastTab "board | wiki"
+        string lastTab "board | wiki | overview | narrative | memo"
         string wikiPanelDocId
         datetime backupSnoozedUntil
         json filters "숨긴 캐릭터, 태그, 분류, 라인"
@@ -148,7 +151,7 @@ erDiagram
     }
 ```
 
-## 3. F2 서술 순서 · MVP 이후 F5 메모
+## 3. MVP 이후: F2 서술 순서 · F5 메모
 
 ```mermaid
 erDiagram

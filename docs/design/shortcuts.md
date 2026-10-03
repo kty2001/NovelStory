@@ -1,6 +1,6 @@
 # 단축키 (Shortcuts)
 
-MVP(F0·F1·F4) 키보드·마우스 조작 목록. [usecase.md](./usecase.md)의 흐름을 키보드로 수행할 수 있는지 대조하고, [spikes.md](./spikes.md) C2에서 확정한 IME 규칙을 구현 기준으로 정리.
+키보드·마우스 조작 목록 (MVP F0·F1·F4 + 이후 구현한 개요 · 서술 · 메모 탭 전환 포함). **(미구현)** 표시 = 정했으나 아직 적용 안 된 규칙. [usecase.md](./usecase.md)의 흐름을 키보드로 수행할 수 있는지 대조하고, [spikes.md](./spikes.md) C2에서 확정한 IME 규칙을 구현 기준으로 정리.
 
 - **표기**: Windows 기준. macOS는 `Ctrl` → `⌘`, `Alt` → `⌥` (`Ctrl+클릭` 등 마우스 조합 포함)
 - **키 판정**: 모든 단축키는 `KeyboardEvent.code` 기준 (`KeyV`, `Digit1` …) → 한글 입력 모드에서도 같은 키로 동작 (C2)
@@ -13,7 +13,7 @@ MVP(F0·F1·F4) 키보드·마우스 조작 목록. [usecase.md](./usecase.md)�
 flowchart TB
     K["keydown"] --> C1{"조합 중?<br/>isComposing · keyCode 229"}
     C1 -->|"예"| IME["무시 (IME에 맡김)"]
-    C1 -->|"아니오"| C2{"입력 요소 안?<br/>input · textarea · contenteditable"}
+    C1 -->|"아니오"| C2{"입력 요소 안?<br/>input · textarea · select · contenteditable"}
     C2 -->|"예"| ED{"Esc · Ctrl+S ?"}
     ED -->|"예"| ESC["편집 종료 / 저장 안내"]
     ED -->|"아니오"| NATIVE["입력 요소 기본 동작<br/>(텍스트 실행 취소 · 글자 삭제)"]
@@ -74,10 +74,10 @@ flowchart TB
 | 빈 곳 드래그 (선택 도구) | 드래그 박스 선택 | `Shift`를 누르면 기존 선택에 추가 |
 | `Ctrl+A` | 보드 전체 선택 | 페이지 글자 선택 대신 |
 | `Tab` / `Shift+Tab` | 다음 / 이전 요소 선택 (화면 위치 순: 왼쪽 → 오른쪽, 위 → 아래) | 키보드 접근성 (features_spec 6장) |
-| `Enter` | 선택 요소 열기: 사건·상태 블록 → 사전 패널에 문서 / 포스트잇·텍스트 → 편집 / 연결선 → 라벨 편집 | UC-22 |
+| `Enter` | 선택 요소 열기: 사건·상태 블록 → 사전 패널에 문서 / 포스트잇·텍스트 → 편집 / 연결선 → 라벨 편집 | UC-22. 버튼에 포커스가 있으면 버튼 동작만 |
 | `F2` · 더블클릭 | 인라인 편집 (블록 제목, 포스트잇·텍스트 내용, 프레임 제목, 연결선 라벨) | |
 | `Delete` · `Backspace` | 선택 요소 삭제 (확인 없음, 실행 취소 가능) | 프레임은 자식 유지 (C7) |
-| `Ctrl+C` / `Ctrl+X` / `Ctrl+V` | 복사 / 잘라내기 / 붙여넣기 | 붙여넣기 위치 = 마우스 위치, 없으면 원본 +24px |
+| `Ctrl+C` / `Ctrl+X` / `Ctrl+V` | 복사 / 잘라내기 / 붙여넣기 | 붙여넣기 위치 = 마우스 위치, 없으면 원본 +24px. 프레임을 복사 · 잘라내면 안의 요소도 함께 |
 | `Ctrl+D` | 복제 (원본 +24px) | 사건 블록은 사건 문서도 복제 (UC-20) |
 | `Ctrl+Z` | 실행 취소 | 드래그 1회·편집 1회 = 1건 (C2) |
 | `Ctrl+Shift+Z` · `Ctrl+Y` | 다시 실행 | |
@@ -122,7 +122,7 @@ flowchart TB
 
 ### 2.6 사용하지 않는 조합
 - 텍스트 편집 중: 2.1~2.4 전부 무시, `Esc`만 편집 종료 (C2·C6)
-- 드래그 중: 도구 전환 키 무시 (드래그 종료 후 적용)
+- 드래그 중: 도구 전환 키 무시 (드래그 종료 후 적용) **(미구현)**
 
 ## 3. 사전
 
@@ -165,12 +165,13 @@ flowchart TB
 - **단일 핸들러**: 보드 단축키는 `window` keydown 핸들러 1개 + `code → 동작` 표로 처리. 컴포넌트마다 따로 등록하지 않음
 - **무시 조건** (모든 단축키 공통, C2 확정)
   - `event.isComposing` 또는 `keyCode === 229`
-  - 대상이 `input`·`textarea`·`[contenteditable]` (예외: `Esc`, `Ctrl+S`)
-  - `event.repeat`인 도구 전환 키 (방향키·`+`·`-`는 반복 허용)
+  - 대상이 `input`·`textarea`·`select`·`[contenteditable]` (예외: `Esc`, `Ctrl+S`)
+  - 대상이 대화상자 · 팝오버(`dialog`, `[role=dialog]` — 상태 입력 패널 · 캐릭터 선택 · 필터 메뉴) 또는 사전 패널 안
+  - `event.repeat`인 도구 전환 키 (방향키·`+`·`-`는 반복 허용) **(미구현)**
 - **React Flow 설정**: 기본 키 처리를 끄고 자체 핸들러 사용
-  - `deleteKeyCode={null}` (프레임 삭제 자체 처리, C7), `selectionKeyCode="Shift"`, `multiSelectionKeyCode={["Shift", "Control", "Meta"]}`
+  - `deleteKeyCode={null}` (프레임 삭제 자체 처리, C7), `disableKeyboardA11y`(노드 키 처리 끔), 박스 선택 키 = 기본 `Shift`, `multiSelectionKeyCode={["Shift", "Control", "Meta"]}`
   - `panActivationKeyCode="Space"`, `selectionOnDrag` + `panOnDrag={[1]}` (가운데 버튼)
-  - 터치 입력은 한 손가락 빈 곳 드래그 = 팬 (C5, UC-21) → `pointerType === 'touch'`일 때 `selectionOnDrag` 끄기
+  - 터치 입력은 한 손가락 빈 곳 드래그 = 팬 (C5, UC-21) → `pointerType === 'touch'`일 때 `selectionOnDrag` 끄기 (태블릿 · 모바일과 함께 연기)
 - **브라우저 예약 키는 가로채지 않음**: `Ctrl+N`·`Ctrl+T`·`Ctrl+W`·`Ctrl+Tab`·`Ctrl+1`~`9`·`Ctrl+L`·`Ctrl+F`·`Ctrl+P`·`F5`·`F11`
 - **테스트**: Playwright로 한글 모드 단축키(`key: 'ㅍ'`, `code: 'KeyV'`), 편집 중 `Delete`·`Ctrl+Z` 무시, `Esc` 순서 검증 (스파이크 C2 테스트 이식)
 

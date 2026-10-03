@@ -9,13 +9,13 @@
 | 스타일 | Tailwind CSS v4 | `@tailwindcss/vite` 플러그인, PostCSS 설정 불필요 |
 | 화이트보드 캔버스 | React Flow (`@xyflow/react`) | 무한 캔버스·줌·팬·연결선·그룹. 사건/상태 블록을 커스텀 노드로 구현 |
 | 드래그앤드롭 (캔버스 밖) | HTML 끌어 놓기 (의존성 없음) | 사전 트리 정렬 · 라인 순서 · 서술 순서 회차 목록. 처음 선정한 dnd kit은 구현 중 불필요해 추가 안 함 (2026-09-30) |
-| 사전 본문 에디터 | Tiptap | 서식 텍스트 + Mention 확장으로 `@` 문서 링크. 한글 IME 검증 필요 (TODO 기술 스파이크 C1) |
+| 사전 본문 에디터 | Tiptap | 서식 텍스트 + Mention 확장으로 `@` 문서 링크. 한글 IME 스파이크 C1 통과 (개요 시놉시스도 같은 편집기) |
 | 상태 관리 | Zustand + zundo | React Flow 공식 문서의 Zustand 연동 방식, zundo로 실행 취소/다시 실행 |
 | IndexedDB 래퍼 | Dexie | 스키마 버전·마이그레이션, 반응형 쿼리 |
-| 라우팅 | React Router | `/`, `/novel/:id/board`, `/novel/:id/narrative`, `/novel/:id/wiki`, `/novel/:id/memo` |
+| 라우팅 | React Router | `/`, `/novel/:id/board`, `/novel/:id/wiki/:docId?`, `/novel/:id/overview`, `/novel/:id/narrative`, `/novel/:id/memo` (보드 · 사전은 지연 로드) |
 | 아이콘 | Lucide | 오픈 라이선스, React 패키지 |
 | 품질 도구 | ESLint + Prettier + Vitest + Playwright | Vitest = 로직(시간 변환, 상태 누적), Playwright = 드래그·IME E2E. TypeScript는 6.0 고정 (typescript-eslint가 7 미지원) |
-| 검색 | 부분 일치 + 초성 일치(es-hangul `getChoseong`) | 초성 검색은 MVP 이후 추가, 제목 · 별칭만 (본문 제외) |
+| 검색 | 부분 일치 + 초성 일치(es-hangul `getChoseong`) | 초성 검색은 MVP 이후 추가, 제목 · 별칭만 (본문 제외). 검색 엔진 없이 메모리에서 계산 |
 | 저장 1단계 | IndexedDB (브라우저 로컬) + JSON 내보내기/가져오기 | 서버 비용·한도 부담 없음. 보드 요소·사전·이미지(Blob) 저장 |
 | 저장 2단계 | Cloudflare Workers API + D1 | 로그인·기기 간 동기화, 인증 방식 미정 |
 | 배포 | GitHub + Cloudflare Workers Builds → Workers Static Assets | main 푸시 시 자동 빌드·배포, 무료 티어. `@cloudflare/vite-plugin` + wrangler |
@@ -47,7 +47,7 @@
 | 시간축 선·눈금 | `ViewportPortal`로 캔버스 좌표계에 렌더링 |
 | 도구 모음 → 캔버스 배치 | 드래그앤드롭 예제의 **Pointer Events 방식** + `screenToFlowPosition` (HTML Drag and Drop API는 터치 기기 미지원) |
 | 눈금 스냅 | 스파이크 C4 `timeAxis.ts`의 `snapTick` (접힌 구간 반영). 블록은 눈금 좌표로 저장 ([data_model.md](./data_model.md) 4.1) |
-| 다중 선택 | 기본 선택 박스 (라소 선택은 공식 화이트보드 예제 참고) |
+| 다중 선택 | 기본 선택 박스 (라소 선택은 미적용) |
 | 미니맵 | `MiniMap` |
 | 실행 취소 / 다시 실행 | Zustand 스토어 + zundo (`temporal` 미들웨어) |
 | 정렬 보조선 | 직접 구현 (공식 helper lines 예제는 **Pro 라이선스**) |

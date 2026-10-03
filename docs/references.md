@@ -43,7 +43,7 @@
 
 | 이름 | URL | 참고 포인트 |
 |---|---|---|
-| dnd kit | https://dndkit.com/ | 캔버스 밖 목록(회차, 사전 트리) 드래그 정렬, 터치·키보드 지원 |
+| dnd kit | https://dndkit.com/ | 캔버스 밖 목록(회차, 사전 트리) 드래그 정렬, 터치·키보드 지원 — 최종 미사용 (HTML 끌어 놓기로 구현) |
 | dnd kit — core vs react 로드맵 | https://github.com/clauderic/dnd-kit/discussions/1842 | `@dnd-kit/core`(v6 안정) 채택, `@dnd-kit/react`(v0.5) 제외 근거 |
 | React Flow — 상태 관리 | https://reactflow.dev/learn/advanced-use/state-management | Zustand 연동 방식 |
 | zundo | https://github.com/charkour/zundo | Zustand용 실행 취소/다시 실행 미들웨어 |

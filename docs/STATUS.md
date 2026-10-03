@@ -1,7 +1,7 @@
 # 진행 상태 (Status)
 
 ## 현재 단계
-MVP 이후 — 1단계(MVP: F0 서재 · F1 보드 · F4 사전 · F6 로컬 저장, 데스크톱 전용) 배포 완료. MVP 이후 기능: 사전 시점 선택 보기 · F7 개요 · 보드 문서 목록 사이드바 · 설정 점검 · F2 서술 순서(1차 회차 · 배치, 2차 보드 비교 오버레이) · F5 메모 · 보드 도형 · 정렬 보조선 · 스토리 라인 색 · 사전 초성 검색 · 속성 값 문서 링크 · 보드 필터 확장 · 저장 실패 대응 완료, 다음: 남은 MVP 이후 항목. 태블릿·모바일은 기기 확보 후
+MVP 이후 — 1단계(MVP: F0 서재 · F1 보드 · F4 사전 · F6 로컬 저장, 데스크톱 전용) 배포 완료. MVP 이후 기능: 사전 시점 선택 보기 · F7 개요 · 보드 문서 목록 사이드바 · 설정 점검 · F2 서술 순서(1차 회차 · 배치, 2차 보드 비교 오버레이) · F5 메모 · 보드 도형 · 정렬 보조선 · 스토리 라인 색 · 사전 초성 검색 · 속성 값 문서 링크 · 보드 필터 확장 · 저장 실패 대응 · 전체 코드 점검 완료, 다음: 남은 항목([TODO.md](./TODO.md) "MVP 이후 > 남은 항목"). 태블릿·모바일은 기기 확보 후
 
 ## 이력
 | 날짜 | 내용 |
@@ -56,6 +56,7 @@ MVP 이후 — 1단계(MVP: F0 서재 · F1 보드 · F4 사전 · F6 로컬 저
 | 2026-10-03 | 보드 필터 확장(캐릭터 · 태그 · 분류, B-5): `board/filters.ts`(`hiddenItemIds` · `filterRows` · `NO_FILTERS`), `FilterMenu` 그룹 섹션 · 배지 수 · 전체 초기화, `Board.tsx` 숨김 계산 교체, Vitest 10건 · Playwright 1건(`e2e/sample.spec.ts`) |
 | 2026-10-03 | 저장 실패 · 공간 부족 대응(UC-42): `db/storage.ts`(`isQuotaError` · `storageUsage` · `imageUsageByNovel` · `formatBytes`), 자동 저장 `save: "full"`, `SaveStatus`(실패 팝오버) · `StorageFullDialog`(L-5, 서재 가져오기 공용), `buildExport`/`exportNovel` `records` 인자 + `currentRecords` · `adoptExport`(작업공간 내보내기 = 스토어 기준), Vitest 6건 · Playwright 2건(`e2e/storage.spec.ts`, IndexedDB 쓰기 차단) |
 | 2026-10-03 | 전체 코드 점검 · 정리: 보드 단축키가 목록 · 버튼 · 팝오버 포커스에서 동작하던 문제(`isEditable` `select`, `[role=dialog]` 제외), 프레임 `Ctrl+X` 자식 중복, 값이 그대로인 수정의 실행 취소 기록(`updateState` · `patchItems` · 눈금 라벨), 이미지 참조 확인 삭제(`releaseImage`, 붙여넣은 문서 이미지 공유) + 소설 열 때 고아 이미지 정리, 이미지만 있는 자동 문서 보존, 메모 `updatedAt` 유지(새로고침 후 순서), `adoptNovel` 부분 병합(내보내기 · 정보 수정 중 편집 유지), 가져오기 `data:` URL · `deletedAt` 검증, 내보내기 · 정보 수정 · 복제 실패 처리. 공용 `lib/keys.ts`(`isImeKey` · `commitKeys`), `byTitle` · `blockIds` · `pointerPlace` · `spanRect` · `Rect` · `STATE_LOOK` · `changeText` 통합, 미사용 코드 제거, Prettier `endOfLine: auto`, Vitest 8건 · Playwright 2건 |
+| 2026-10-04 | 전체 문서 점검 · 정리: 구현 완료된 MVP 이후 기능 상태 표시(features_spec · usecase · ui_guide · wireframe), ERD 누락 필드(`synopsisBody` · `align` · `shape` · `lastTab` 5탭) 반영, 탭 순서 · 라우트 · 단축키 무시 조건(`select` · 팝오버) · 프레임 잘라내기 갱신, 명세상 미구현 항목 **(미구현)** 표시 + TODO "남은 항목" 6건, TODO 완료 항목 한 줄 요약(상세는 이 이력), README 기능 · 개발 명령 |
 
 ## 결정됨
 | 항목 | 결정 |
@@ -73,11 +74,11 @@ MVP 이후 — 1단계(MVP: F0 서재 · F1 보드 · F4 사전 · F6 로컬 저
 | 데이터 유실 대책 | `storage.persist()` + JSON 백업 알림 (로그인·유저별 DB 도입 전까지) |
 | 블록 위치 저장 | 사건·상태 = 눈금 좌표(`t`), 그 외 = 보드 절대 좌표 ([data_model.md](./design/data_model.md)) |
 | 보드 마우스 조작 | 빈 곳 드래그 = 박스 선택, 팬 = `Space`+드래그·가운데 버튼·`H`·터치 ([shortcuts.md](./design/shortcuts.md)) |
-| 사건 스토리 라인 | 사건당 1개, 기본 메인·서브·사이드 + 추가·수정, 배지·테두리·필터로 구분, 색 지정은 MVP 이후 (UC-23) |
+| 사건 스토리 라인 | 사건당 1개, 기본 메인·서브·사이드 + 추가·수정, 배지·테두리·필터로 구분, 색 지정은 MVP 이후 구현 (UC-23) |
 | 다크 모드 | MVP 제외 |
 | 온보딩 | 샘플 소설(빈 서재, 가져오기 경로 재사용) + 빈 보드 안내 카드(요소 0개일 때만), 투어 없음 ([onboarding.md](./design/onboarding.md)) |
 | `persist()` 요청 시점 | 첫 소설이 생기는 순간 1회 (새 소설 · 샘플 · 가져오기) |
-| 기술 | React Flow, dnd kit(core), Tiptap, Zustand + zundo, Dexie, React Router, Lucide, ESLint·Prettier·Vitest·Playwright |
+| 기술 | React Flow, HTML 끌어 놓기(dnd kit 미사용), Tiptap, Zustand + zundo, Dexie, React Router, Lucide, ESLint·Prettier·Vitest·Playwright |
 | 배포 | GitHub + Cloudflare Workers Builds (무료 티어) |
 
 ## 보류
