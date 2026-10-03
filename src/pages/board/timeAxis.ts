@@ -78,7 +78,7 @@ export function insertTick(at: number, scale: TimeScale, items: Collection<Board
       ),
       collapsed: scale.collapsed.map((c) => ({
         from: shift(c.from),
-        to: c.to >= at ? c.to + 1 : c.to,
+        to: shift(c.to),
       })),
     },
     // 바뀐 블록만 새 객체 (자동 저장 참조 비교)

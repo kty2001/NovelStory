@@ -11,12 +11,20 @@ import { stateTicks } from "../board/stateCalc";
 import Backlinks from "./Backlinks";
 import BodyEditor from "./BodyEditor";
 import BoardSection from "./BoardSection";
-import { blockCount, categoryPath, familyOf, flatCategories, usedDocIds } from "./categories";
+import {
+  blockCount,
+  blockIds,
+  categoryPath,
+  familyOf,
+  flatCategories,
+  usedDocIds,
+} from "./categories";
 import ChipInput from "./ChipInput";
 import DocImage from "./DocImage";
 import PropsTable from "./PropsTable";
 import TimePick, { StateAtTable } from "./TimePick";
 import { useWikiNav } from "./useWikiNav";
+import { isImeKey } from "../../lib/keys";
 
 // 분류 이동: 트리 순서 목록. 보드에 쓰인 문서는 다른 계열 분류 비활성 (data_model 5장)
 function MoveDocDialog({ doc, onClose }: { doc: WikiDoc; onClose: () => void }) {
@@ -70,11 +78,9 @@ function DeleteDocDialog({
   const items = useNovelStore((s) => s.items);
   const edges = useNovelStore((s) => s.edges);
   const docs = useNovelStore((s) => s.docs);
-  const blockIds = new Set(
-    Object.values(items).flatMap((i) => ("docId" in i && i.docId === doc.id ? [i.id] : [])),
-  );
+  const blocks = new Set(blockIds(items, doc.id));
   const edgeCount = Object.values(edges).filter(
-    (e) => blockIds.has(e.source) || blockIds.has(e.target),
+    (e) => blocks.has(e.source) || blocks.has(e.target),
   ).length;
   const backlinks = Object.values(docs).filter(
     (d) => d.id !== doc.id && d.mentions.includes(doc.id),
@@ -95,14 +101,14 @@ function DeleteDocDialog({
               onDeleted();
             }}
           >
-            {blockIds.size ? "문서와 블록 삭제" : "삭제"}
+            {blocks.size ? "문서와 블록 삭제" : "삭제"}
           </Button>
         </>
       }
     >
-      {blockIds.size > 0 && (
+      {blocks.size > 0 && (
         <div role="alert" className="mb-3 rounded-sm bg-surface-card px-3 py-2 text-body-sm">
-          <b>보드 블록 {blockIds.size}개가 함께 삭제됩니다.</b>
+          <b>보드 블록 {blocks.size}개가 함께 삭제됩니다.</b>
           <p className="text-caption text-muted">
             {edgeCount > 0 && `그 블록에 이어진 연결선 ${edgeCount}개도 삭제돼요. `}
             보드에서 실행 취소로 되돌릴 수 없어요.
@@ -115,7 +121,7 @@ function DeleteDocDialog({
         </p>
       )}
       {doc.imageId && <p className="text-body-sm">대표 이미지도 함께 삭제돼요.</p>}
-      {!blockIds.size && !backlinks && !doc.imageId && (
+      {!blocks.size && !backlinks && !doc.imageId && (
         <p className="text-body-sm">삭제한 문서는 되돌릴 수 없어요.</p>
       )}
     </Dialog>
@@ -145,7 +151,7 @@ export default function DocView({ doc, onDeleted }: { doc: WikiDoc; onDeleted?: 
       <div className="flex items-center gap-2 text-body-sm text-muted">
         <span
           className="size-2 rounded-full"
-          style={{ background: `var(--color-${category?.color})` }}
+          style={{ background: `var(--color-${category?.color ?? "muted"})` }}
         />
         {path.map((c) => c.name).join(" › ")}
         <span className="ml-auto" />
@@ -180,7 +186,7 @@ export default function DocView({ doc, onDeleted }: { doc: WikiDoc; onDeleted?: 
         defaultValue={doc.title}
         className="mt-2 w-full rounded-sm text-display text-ink focus:bg-surface-soft focus:outline-none"
         onKeyDown={(e) => {
-          if (e.nativeEvent.isComposing || e.keyCode === 229) return;
+          if (isImeKey(e)) return;
           if (e.key === "Escape") e.currentTarget.value = doc.title;
           if (e.key === "Enter" || e.key === "Escape") e.currentTarget.blur();
         }}

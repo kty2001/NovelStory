@@ -7,10 +7,11 @@ import { useNovelStore, type Collection } from "../../store/novelStore";
 import { setPropValue } from "../../store/wikiActions";
 import { stateAt, stateTicks } from "../board/stateCalc";
 import { eventBlock, placeText, relatedCharacters } from "./boardLinks";
-import { familyOf, subtreeDocs } from "./categories";
+import { byTitle, familyOf, subtreeDocs } from "./categories";
 import { DocLinkChip } from "./MentionChip";
 import TimePick from "./TimePick";
 import { useWikiNav } from "./useWikiNav";
+import { isImeKey } from "../../lib/keys";
 
 type Column = {
   id: string;
@@ -112,7 +113,7 @@ export default function CategoryTable({ categoryId }: { categoryId: string }) {
           defaultValue={value}
           className="w-full min-w-24 rounded-xs bg-transparent px-1 py-0.5 text-ink focus:bg-surface-soft focus:outline-none"
           onKeyDown={(e) => {
-            if (e.nativeEvent.isComposing || e.keyCode === 229) return;
+            if (isImeKey(e)) return;
             if (e.key === "Escape") {
               e.currentTarget.value = value;
               e.currentTarget.blur();
@@ -230,8 +231,7 @@ export default function CategoryTable({ categoryId }: { categoryId: string }) {
 
   const col = columns.find((c) => c.id === sort.id) ?? columns[0];
   const sorted = [...rows].sort(
-    (a, b) =>
-      compare(col.sortKey(a), col.sortKey(b), sort.dir) || a.title.localeCompare(b.title, "ko"),
+    (a, b) => compare(col.sortKey(a), col.sortKey(b), sort.dir) || byTitle(a, b),
   );
 
   return (

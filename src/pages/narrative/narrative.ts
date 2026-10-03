@@ -9,7 +9,7 @@ import type {
 } from "../../db/types";
 import type { Collection } from "../../store/novelStore";
 import { byPlace } from "../wiki/boardLinks";
-import { familyOf } from "../wiki/categories";
+import { byTitle, familyOf } from "../wiki/categories";
 
 // 서술 순서 (F2) 계산. 회차 번호 = 목록 순서, 슬롯 order = 회차 안 순서
 
@@ -32,7 +32,7 @@ export const episodeSlots = (slots: Collection<NarrativeSlot>, episodeId: string
 
 export const episodeName = (e: Episode) => `${e.number}화${e.title ? ` ${e.title}` : ""}`;
 
-export type EventEntry = { doc: WikiDoc; block?: EventItem };
+type EventEntry = { doc: WikiDoc; block?: EventItem };
 
 // 사건 계열 문서: 보드 시점순(미정은 뒤) → 보드에 없는 문서(제목순)
 export function eventDocsInOrder(
@@ -46,7 +46,7 @@ export function eventDocsInOrder(
   const placed = new Set(blocks.map((b) => b.docId));
   const rest = Object.values(docs)
     .filter((d) => !placed.has(d.id) && familyOf(categories, d.categoryId) === "event")
-    .sort((a, b) => a.title.localeCompare(b.title, "ko"));
+    .sort(byTitle);
   return [
     ...blocks.map((block) => ({ doc: docs[block.docId], block })),
     ...rest.map((doc) => ({ doc })),

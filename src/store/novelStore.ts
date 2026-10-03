@@ -21,6 +21,7 @@ import type {
   WikiDoc,
 } from "../db/types";
 import { insertTick } from "../pages/board/timeAxis";
+import { usedDocIds } from "../pages/wiki/categories";
 import { createAutosave } from "./autosave";
 
 export type Collection<T> = Record<string, T>;
@@ -90,13 +91,9 @@ export const flushSave = autosave.flush;
 // 내보내기(lastExportedAt)·소설 정보 수정처럼 DB에 직접 쓴 소설 레코드를 반영
 export const adoptNovel = autosave.adoptNovel;
 
-// 작업공간 내보내기 결과 반영. 저장 실패 중이면 스토어 소설이 DB보다 앞서 있으므로 덮지 않고
-// 백업 시각만 더해 다음 저장에 포함
+// 작업공간 내보내기 결과 반영: 백업 시각만 (저장 실패 · 내보내기 중 편집으로 스토어 소설이 DB보다 앞설 수 있음)
 export function adoptExport(exported: Novel) {
-  const s = useNovelStore.getState();
-  if (s.save === "saved") adoptNovel(exported);
-  else if (s.novel && exported.lastExportedAt)
-    useNovelStore.setState({ novel: { ...s.novel, lastExportedAt: exported.lastExportedAt } });
+  if (exported.lastExportedAt) adoptNovel({ lastExportedAt: exported.lastExportedAt });
 }
 
 // 작업공간 내보내기용 현재 레코드 (저장 실패 중에도 화면 그대로, UC-42)
@@ -119,12 +116,13 @@ export function currentRecords(): ExportRecords {
 const toCollection = <T extends BaseRecord>(rows: T[]): Collection<T> =>
   Object.fromEntries(rows.map((r) => [r.id, r]));
 
-// 자동 생성 후 제목 외 내용이 없는 문서 (속성값 · 본문 · 별칭 · 태그 · 라인 없음, data_model 5장)
+// 자동 생성 후 제목 외 내용이 없는 문서 (속성값 · 본문 · 별칭 · 태그 · 라인 · 이미지 없음, data_model 5장)
 export const isEmptyAutoDoc = (d: WikiDoc) =>
   !!d.autoCreated &&
   !d.aliases.length &&
   !d.tags.length &&
   !d.lineId &&
+  !d.imageId &&
   !d.body &&
   d.props.every((p) => !p.value);
 
@@ -140,6 +138,7 @@ async function readNovel(novelId: string): Promise<NovelData | null> {
     db.episodes,
     db.narrativeSlots,
     db.memos,
+    db.images,
   ];
   return db.transaction("rw", tables, async () => {
     const novel = await db.novels.get(novelId);
@@ -157,10 +156,7 @@ async function readNovel(novelId: string): Promise<NovelData | null> {
     const slots = await live(db.narrativeSlots);
     // 블록과 함께 자동 생성된 뒤 비어 있는 사건 문서: 블록 · 서술 배치가 없으면 정리 (UC-20).
     // 삭제 시점이 아니라 여기서 하는 이유: 같은 세션의 실행 취소로 블록을 되살릴 수 있어야 함
-    const used = new Set([
-      ...Object.values(items).flatMap((i) => ("docId" in i ? [i.docId] : [])),
-      ...Object.values(slots).map((s) => s.eventDocId),
-    ]);
+    const used = new Set([...usedDocIds(items), ...Object.values(slots).map((s) => s.eventDocId)]);
     const orphans = Object.values(docs).filter((d) => isEmptyAutoDoc(d) && !used.has(d.id));
     if (orphans.length) {
       const at = new Date().toISOString();
@@ -169,6 +165,14 @@ async function readNovel(novelId: string): Promise<NovelData | null> {
         delete docs[d.id];
       }
     }
+    // 살아 있는 문서 · 표지가 쓰지 않는 이미지 정리 (교체 · 삭제 실패 등으로 남은 것, data_model 4장)
+    const usedImages = new Set([novel.coverImageId, ...Object.values(docs).map((d) => d.imageId)]);
+    const staleImages = await db.images
+      .where("novelId")
+      .equals(novelId)
+      .filter((img) => !usedImages.has(img.id))
+      .primaryKeys();
+    if (staleImages.length) await db.images.bulkDelete(staleImages);
     return {
       novel,
       board,
@@ -188,9 +192,10 @@ let loadSeq = 0;
 
 export async function loadNovel(novelId: string) {
   const seq = ++loadSeq;
-  void autosave.flush();
+  const saved = autosave.flush();
   autosave.reset(null);
   useNovelStore.setState({ ...initialState, novelId, status: "loading" });
+  await saved; // 같은 소설에 바로 다시 들어와도 직전 저장 뒤에 읽기
   const data = await readNovel(novelId);
   if (seq !== loadSeq) return; // 늦게 끝난 이전 로드는 무시
   useNovelStore.setState(data ? { ...data, status: "ready" } : { status: "missing" });

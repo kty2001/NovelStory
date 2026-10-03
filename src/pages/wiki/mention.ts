@@ -2,6 +2,8 @@ import type { SuggestionKeyDownProps, SuggestionProps } from "@tiptap/suggestion
 import type { WikiDoc } from "../../db/types";
 import { useNovelStore, type Collection } from "../../store/novelStore";
 import { matchAt, searchDocs } from "../board/stateCalc";
+import { isImeKey } from "../../lib/keys";
+import { byTitle } from "./categories";
 
 // 본문 `@` 링크 후보 (UC-33, shortcuts 3.2)
 
@@ -21,7 +23,7 @@ export function mentionCandidates(
     Object.values(docs).filter((d) => d.id !== excludeId),
     query,
   )
-    .sort((a, b) => rank(a) - rank(b) || a.title.localeCompare(b.title, "ko"))
+    .sort((a, b) => rank(a) - rank(b) || byTitle(a, b))
     .slice(0, LIMIT)
     .map((doc) => ({
       doc,
@@ -103,7 +105,7 @@ export function suggestionRenderer() {
       draw();
     },
     onKeyDown: ({ event }: SuggestionKeyDownProps) => {
-      if (!props || event.isComposing || event.keyCode === 229) return false;
+      if (!props || isImeKey(event)) return false;
       const n = props.items.length;
       if (!n) return false;
       if (event.key === "ArrowDown" || event.key === "ArrowUp") {

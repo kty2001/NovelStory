@@ -4,6 +4,17 @@ import { cdp, keyDuringComposition, setComposition } from "./helpers/ime";
 const tick = (page: Page, t: number) => page.locator(`.tick-label[data-tick="${t}"]`);
 const labelInput = (page: Page, t: number) => page.getByRole("textbox", { name: `눈금 ${t} 라벨` });
 
+// 포스트잇 도구(S)로 (x, y)에 놓고 내용 입력
+async function sticky(page: Page, x: number, y: number, text: string) {
+  await expect(page.getByTestId("time-axis")).toBeVisible();
+  await page.keyboard.press("KeyS");
+  await page.mouse.click(x, y);
+  const input = page.getByRole("textbox", { name: "포스트잇 내용" });
+  await input.fill(text);
+  await input.press("Escape");
+  return page.getByTestId("sticky").filter({ hasText: text });
+}
+
 async function setLabel(page: Page, t: number, text: string) {
   await tick(page, t).click();
   await labelInput(page, t).fill(text);
@@ -626,6 +637,21 @@ test.describe("캐릭터 상태 블록", () => {
     await expect(page.getByTestId("state-link")).toHaveCount(1);
   });
 
+  test("패널 목록에 포커스가 있으면 방향키 · 글자 키는 보드 단축키로 쓰지 않음", async ({
+    page,
+  }) => {
+    await placeEvent(page, 2, "왕도 습격");
+    await placeState(page, 2, "레아");
+    const related = page.getByRole("combobox", { name: "관련 사건" });
+    await related.focus();
+    await page.keyboard.press("ArrowDown"); // 목록 선택 이동 (블록 이동 아님)
+    await expect(related).not.toHaveValue("");
+    await page.keyboard.press("KeyE");
+    await expect(toolButton(page, "사건")).not.toHaveAttribute("aria-pressed", "true");
+    await closePanel(page);
+    await expect(page.getByTestId("state-link")).toHaveCount(1);
+  });
+
   test("캐릭터별 정렬: 레인 머리 · 레인 정렬 · 머리 끌어 순서 변경 · 끄면 원래 위치", async ({
     page,
   }) => {
@@ -874,15 +900,6 @@ test.describe("도형", () => {
 });
 
 test.describe("정렬 보조선", () => {
-  async function sticky(page: Page, x: number, y: number, text: string) {
-    await expect(page.getByTestId("time-axis")).toBeVisible();
-    await page.keyboard.press("KeyS");
-    await page.mouse.click(x, y);
-    const input = page.getByRole("textbox", { name: "포스트잇 내용" });
-    await input.fill(text);
-    await input.press("Escape");
-    return page.getByTestId("sticky").filter({ hasText: text });
-  }
   const top = async (l: import("@playwright/test").Locator) => (await l.boundingBox())!.y;
   const guide = (page: Page) => page.getByTestId("align-guide");
 
@@ -1055,15 +1072,6 @@ test.describe("연결선", () => {
 });
 
 test.describe("선택 · 복사 · 실행 취소", () => {
-  async function sticky(page: Page, x: number, y: number, text: string) {
-    await expect(page.getByTestId("time-axis")).toBeVisible();
-    await page.keyboard.press("KeyS");
-    await page.mouse.click(x, y);
-    const input = page.getByRole("textbox", { name: "포스트잇 내용" });
-    await input.fill(text);
-    await input.press("Escape");
-    return page.getByTestId("sticky").filter({ hasText: text });
-  }
   const selected = (page: Page) => page.locator(".react-flow__node.selected");
 
   test("실행 취소 · 다시 실행: 끌기 1회 = 1건, 배치도 되돌림", async ({ page }) => {
@@ -1133,6 +1141,25 @@ test.describe("선택 · 복사 · 실행 취소", () => {
     await page.mouse.move(600, 650);
     await page.keyboard.press("Control+KeyV");
     await expect(all).toHaveCount(2);
+  });
+
+  test("프레임 Ctrl+X → Ctrl+V: 안의 요소도 함께 옮겨지고 중복 없음", async ({ page }) => {
+    await sticky(page, 900, 340, "안");
+    await page.keyboard.press("KeyF");
+    await page.mouse.move(780, 240); // 위쪽 도구 모음을 피해 프레임 제목이 보이게
+    await page.mouse.down();
+    await page.mouse.move(1040, 450, { steps: 6 });
+    await page.mouse.up();
+    await page.getByRole("textbox", { name: "프레임 제목" }).press("Enter");
+
+    await page.getByTestId("frame-title").click();
+    await page.keyboard.press("Control+KeyX");
+    await expect(page.getByTestId("frame")).toHaveCount(0);
+    await expect(page.getByTestId("sticky")).toHaveCount(0);
+    await page.mouse.move(700, 500);
+    await page.keyboard.press("Control+KeyV");
+    await expect(page.getByTestId("frame")).toHaveCount(1);
+    await expect(page.getByTestId("sticky")).toHaveCount(1);
   });
 
   test("박스 선택 · Ctrl+A · Tab 순서 선택 · Delete", async ({ page }) => {
@@ -1316,15 +1343,6 @@ test.describe("보드 ↔ 사전 연동", () => {
 });
 
 test.describe("단축키", () => {
-  async function sticky(page: Page, x: number, y: number, text: string) {
-    await expect(page.getByTestId("time-axis")).toBeVisible();
-    await page.keyboard.press("KeyS");
-    await page.mouse.click(x, y);
-    const input = page.getByRole("textbox", { name: "포스트잇 내용" });
-    await input.fill(text);
-    await input.press("Escape");
-    return page.getByTestId("sticky").filter({ hasText: text });
-  }
   const selected = (page: Page) => page.locator(".react-flow__node.selected");
 
   test("방향키: 사건 1 눈금 · 누르고 있는 동안 = 실행 취소 1건 · Shift 5 눈금 · 0 눈금에서 멈춤", async ({

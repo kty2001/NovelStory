@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { Check, GripVertical, Search, X } from "lucide-react";
 import { useNovelStore } from "../../store/novelStore";
-import { usedDocIds } from "../wiki/categories";
+import { byTitle, usedDocIds } from "../wiki/categories";
 import { DOC_MIME } from "./DocPanel";
 import { categoryFamily, searchDocs } from "./stateCalc";
 
@@ -74,7 +74,7 @@ export default function DocSidebar({
               (d) => family.has(d.categoryId) && !(unplaced && used.has(d.id)),
             ),
             query,
-          ).sort((a, b) => a.title.localeCompare(b.title, "ko"));
+          ).sort(byTitle);
           return (
             <section key={system} aria-label={label} className="mb-3">
               <h3 className="px-2 py-1 text-caption font-semibold text-muted">

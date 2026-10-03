@@ -3,6 +3,7 @@ import { Panel, useReactFlow, useStore } from "@xyflow/react";
 import { Check, Maximize, Minus, Plus } from "lucide-react";
 import { MenuList } from "../../components/Menu";
 import { useDismiss } from "../../components/useDismiss";
+import { isImeKey } from "../../lib/keys";
 
 export const ZOOM_MS = 200;
 const zoomButton = "flex h-9 min-w-9 items-center justify-center rounded-sm text-button text-ink";
@@ -62,7 +63,7 @@ export default function ZoomControls() {
                 className="w-16 rounded-xs border border-hairline bg-canvas px-1.5 py-0.5 text-right text-ink tabular-nums outline-none focus:border-ink"
                 // Enter = 적용 (빈 값 · 숫자 아님은 무시), Esc는 useDismiss가 닫음
                 onKeyDown={(e) => {
-                  if (e.key !== "Enter" || e.nativeEvent.isComposing) return;
+                  if (e.key !== "Enter" || isImeKey(e)) return;
                   const p = Number(e.currentTarget.value);
                   if (!e.currentTarget.value.trim() || !Number.isFinite(p)) return;
                   apply(p);

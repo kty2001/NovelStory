@@ -12,6 +12,7 @@ import {
 } from "../../store/boardActions";
 import { useNovelStore } from "../../store/novelStore";
 import { LINE_COLORS, lineBorder } from "./lines";
+import { isImeKey } from "../../lib/keys";
 
 // 라인 편집 (B-6): 이름 바로 수정 · 견본 = 색 선택 · ⋮⋮ 끌어서 순서 변경(테두리 모양이 순서를 따름) · 추가 · 삭제
 export default function LineEditDialog({
@@ -104,7 +105,7 @@ export default function LineEditDialog({
                   defaultValue={l.name}
                   className="min-w-0 flex-1 rounded-sm border border-hairline bg-canvas px-2 py-1 text-body-sm text-ink focus:border-ink focus:outline-none"
                   onKeyDown={(e) => {
-                    if (e.nativeEvent.isComposing || e.keyCode === 229) return;
+                    if (isImeKey(e)) return;
                     if (e.key === "Enter") e.currentTarget.blur();
                   }}
                   onBlur={(e) => {

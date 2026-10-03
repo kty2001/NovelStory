@@ -3,11 +3,11 @@ import { useLiveQuery } from "dexie-react-hooks";
 import { ImagePlus, X } from "lucide-react";
 import BlobImage from "../../components/BlobImage";
 import { db } from "../../db/db";
-import { deleteImage, resizeImage, saveImage } from "../../db/images";
+import { resizeImage, saveImage } from "../../db/images";
 import { isQuotaError } from "../../db/storage";
 import type { WikiDoc } from "../../db/types";
 import { useNovelStore } from "../../store/novelStore";
-import { updateDoc } from "../../store/wikiActions";
+import { releaseImage, updateDoc } from "../../store/wikiActions";
 
 // 대표 이미지 (UC-31 ④): 긴 변 1600px WebP 변환(Worker, C8) 중 진행 표시, 실패해도 문서 편집은 계속
 export default function DocImage({ doc }: { doc: WikiDoc }) {
@@ -22,7 +22,7 @@ export default function DocImage({ doc }: { doc: WikiDoc }) {
   const replace = (imageId: string | undefined) => {
     const old = useNovelStore.getState().docs[doc.id]?.imageId;
     updateDoc(doc.id, { imageId });
-    if (old && old !== imageId) void deleteImage(old);
+    if (old !== imageId) releaseImage(old);
   };
 
   const pick = async (file: File | undefined) => {

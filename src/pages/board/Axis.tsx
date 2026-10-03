@@ -14,6 +14,7 @@ import {
   type Collapsed,
   type Label,
 } from "./timeAxis";
+import { isImeKey } from "../../lib/keys";
 
 // 라벨 사이 최소 간격(화면 px). 줌이 작으면 1·2·5 배수로 눈금을 건너뜀
 const MIN_GAP_PX = 56;
@@ -81,6 +82,7 @@ function LabelInput({
     if (value === null) return;
     const tickLabels = { ...currentLabels() };
     const text = value.trim();
+    if (text === (tickLabels[tick] ?? "")) return; // 바뀐 것 없음 = 기록 없음
     if (text) tickLabels[tick] = text;
     else delete tickLabels[tick];
     setTimeScale({ tickLabels });
@@ -95,7 +97,7 @@ function LabelInput({
       onFocus={(e) => e.currentTarget.select()}
       onKeyDown={(e) => {
         // 한글 조합 중 Enter는 조합 확정용 (C1·C2)
-        if (e.nativeEvent.isComposing || e.keyCode === 229) return;
+        if (isImeKey(e)) return;
         if (e.key === "Enter") finish(e.currentTarget.value);
         else if (e.key === "Escape") finish(null);
       }}

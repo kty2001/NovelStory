@@ -21,18 +21,21 @@ export const NO_FILTERS: Filters = {
   hiddenLineIds: [],
 };
 
+// 필터 없음: 같은 빈 집합 (참조가 그대로라 보드 파생 계산 · 키 처리기가 다시 돌지 않음)
+const NONE: ReadonlySet<string> = new Set();
+
 // 하나라도 해당하면 숨김: 사건 = 라인 · 태그 · 분류, 상태 = 캐릭터 · 분류
 export function hiddenItemIds(
   items: Collection<BoardItem>,
   docs: Collection<WikiDoc>,
   filters: Filters,
-): Set<string> {
+): ReadonlySet<string> {
   const lines = new Set(filters.hiddenLineIds);
   const chars = new Set(filters.hiddenDocIds);
   const tags = new Set(filters.hiddenTags);
   const cats = new Set(filters.hiddenCategoryIds);
+  if (!lines.size && !chars.size && !tags.size && !cats.size) return NONE;
   const out = new Set<string>();
-  if (!lines.size && !chars.size && !tags.size && !cats.size) return out;
   for (const item of Object.values(items)) {
     if (item.kind !== "event" && item.kind !== "state") continue;
     const doc = docs[item.docId];

@@ -33,9 +33,9 @@ export function addEpisode(beforeId?: string): string | null {
 export function renameEpisode(id: string, title: string) {
   store.setState(({ episodes }) => {
     const e = episodes[id];
-    if (!e) return {};
-    const { title: _old, ...rest } = e;
     const t = title.trim();
+    if (!e || (e.title ?? "") === t) return {}; // 바뀐 것 없음 = 저장 안 함
+    const { title: _old, ...rest } = e;
     return { episodes: { ...episodes, [id]: t ? { ...rest, title: t } : rest } };
   });
 }

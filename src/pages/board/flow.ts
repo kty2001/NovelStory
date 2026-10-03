@@ -94,6 +94,17 @@ export function decorNodes(
 export const EVENT_W = 160; // 단일 시점 사건 폭 (가운데 = 눈금)
 export const EVENT_H = 56; // 배치 미리보기 높이 (실제 높이는 내용에 따름)
 
+// 보드 좌표 사각형 (왼쪽 위 기준)
+export type Rect = { x: number; y: number; w: number; h: number };
+
+// 두 점을 대각으로 하는 사각형 (끌어서 그리는 영역)
+export const spanRect = (x0: number, y0: number, x1: number, y1: number): Rect => ({
+  x: Math.min(x0, x1),
+  y: Math.min(y0, y1),
+  w: Math.abs(x1 - x0),
+  h: Math.abs(y1 - y0),
+});
+
 // 시간 블록 위치: x → 눈금 (snap이면 정수 눈금). x < 0 이면 미정 영역
 export function timePlace(
   x: number,
@@ -104,6 +115,10 @@ export function timePlace(
   const t = snap ? snapTick(x, scale) : xToTick(x, scale);
   return t === null ? { mode: "undated", x, y } : { mode: "timed", t, y };
 }
+
+// 포인터 위치에 놓을 시간 블록 위치 (포인터 = 블록 세로 가운데)
+export const pointerPlace = (p: { x: number; y: number }, scale: TimeScale, snap: boolean) =>
+  timePlace(p.x, p.y - EVENT_H / 2, scale, snap);
 
 // 포스트잇 · 텍스트 기본 크기 (ui_guide `sticky-note` 160 × 160), 프레임 기본 크기 (클릭만 했을 때)
 export const STICKY_SIZE = 160;
@@ -216,11 +231,10 @@ export function withFrames(nodes: Node[], items: Collection<BoardItem>): Node[] 
 export function frameAt(
   point: { x: number; y: number },
   items: Collection<BoardItem>,
-  exclude?: string,
 ): string | undefined {
   let best: { id: string; z: number } | undefined;
   for (const f of Object.values(items)) {
-    if (f.kind !== "frame" || f.id === exclude) continue;
+    if (f.kind !== "frame") continue;
     const { x, y } = f.place;
     const inside = point.x >= x && point.x <= x + f.w && point.y >= y && point.y <= y + f.h;
     if (inside && (!best || f.z > best.z)) best = { id: f.id, z: f.z };
@@ -363,10 +377,7 @@ export const EDGE_SELECTED = "#1a3a3a"; // {colors.brand-teal}
 export type Side = "top" | "right" | "bottom" | "left";
 
 // 두 사각형이 마주 보는 면 (연결선 도구로 이을 때 핸들 자동 선택)
-export function facingSides(
-  a: { x: number; y: number; w: number; h: number },
-  b: { x: number; y: number; w: number; h: number },
-): [Side, Side] {
+export function facingSides(a: Rect, b: Rect): [Side, Side] {
   const dx = b.x + b.w / 2 - (a.x + a.w / 2);
   const dy = b.y + b.h / 2 - (a.y + a.h / 2);
   if (Math.abs(dx) >= Math.abs(dy)) return dx >= 0 ? ["right", "left"] : ["left", "right"];

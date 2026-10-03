@@ -1,6 +1,6 @@
 import { useStore, ViewportPortal } from "@xyflow/react";
 import { arcPath, badgeChips, type Segment, type SegmentKind } from "../narrative/readingPath";
-import type { Rect } from "./Leaders";
+import type { Rect } from "./flow";
 
 // 블록(노드 z-index = 블록 z, 선택 시 +1000)보다 위. 뷰포트 안에서만 비교되므로 패널 · 메뉴는 가리지 않음
 const OVER_NODES = 100000;

@@ -1,4 +1,11 @@
-import type { BoardItem, EventItem, StateItem, TimeScale, WikiDoc } from "../../db/types";
+import type {
+  BoardItem,
+  EventItem,
+  PropChange,
+  StateItem,
+  TimeScale,
+  WikiDoc,
+} from "../../db/types";
 import type { Collection } from "../../store/novelStore";
 
 // 사전 문서의 보드 연동 정보 (UC-22 · 33, W-1 ⑧ · W-2 · W-3 ⑥). 보드 블록에서 계산, 편집 불가
@@ -66,12 +73,14 @@ export const stateHistory = (items: Collection<BoardItem>, docId: string) =>
     .filter((s) => s.docId === docId)
     .sort(byPlace);
 
+// 속성 변경 한 줄: "키: 이전 → 새" (이전 값 없으면 "키: 새")
+export const changeText = (c: PropChange) =>
+  c.from ? `${c.key}: ${c.from} → ${c.to}` : `${c.key}: ${c.to}`;
+
 // ▲ 등장 / ◆ 키: 이전 → 새 / ▼ 퇴장
 export function stateText(s: StateItem): string {
   if (s.stateType === "appear") return "▲ 등장";
   if (s.stateType === "exit") return "▼ 퇴장";
-  const changes = s.changes.map((c) =>
-    c.from ? `${c.key}: ${c.from} → ${c.to}` : `${c.key}: ${c.to}`,
-  );
+  const changes = s.changes.map(changeText);
   return `◆ ${changes.join(", ") || s.note || "변화"}`;
 }

@@ -10,6 +10,7 @@ import {
 } from "../../store/wikiActions";
 import { childCategories, dropError, flatCategories } from "./categories";
 import PropsTable from "./PropsTable";
+import { isImeKey } from "../../lib/keys";
 
 // 사용자 분류 색: 브랜드 색 + 기본 muted (ui_guide 사전 분류 색)
 const CATEGORY_COLORS: { token: ColorToken; label: string }[] = [
@@ -65,7 +66,7 @@ export default function CategorySettings({ category }: { category: WikiCategory 
           defaultValue={category.name}
           className={fieldClass}
           onKeyDown={(e) => {
-            if (e.nativeEvent.isComposing || e.keyCode === 229) return;
+            if (isImeKey(e)) return;
             if (e.key === "Escape") e.currentTarget.value = category.name;
             if (e.key === "Enter" || e.key === "Escape") e.currentTarget.blur();
           }}

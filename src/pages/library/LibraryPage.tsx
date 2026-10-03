@@ -47,9 +47,12 @@ export default function LibraryPage() {
   const [storageBroken, setStorageBroken] = useState(false);
   const fileInput = useRef<HTMLInputElement>(null);
 
+  // 열기 실패 = 저장 불가 배너. 삭제 소설 정리 실패는 다음에 다시 시도
   useEffect(() => {
     db.open()
-      .then(() => purgeDeletedNovels())
+      .then(() => {
+        purgeDeletedNovels().catch((err: unknown) => console.error("삭제한 소설 정리 실패", err));
+      })
       .catch(() => setStorageBroken(true));
   }, []);
 
@@ -58,7 +61,7 @@ export default function LibraryPage() {
     if (!deleted) return;
     const timer = setTimeout(() => {
       setDeleted(null);
-      void purgeNovel(deleted.id);
+      purgeNovel(deleted.id).catch((err: unknown) => console.error("소설 삭제 실패", err));
     }, UNDO_MS);
     return () => clearTimeout(timer);
   }, [deleted]);
@@ -85,6 +88,16 @@ export default function LibraryPage() {
       void requestPersistOnce();
     } catch (err) {
       setImportError(err);
+    }
+  };
+
+  // 복제 = 가져오기 경로: 공간 부족이면 같은 L-5 대화상자
+  const duplicate = async (id: string) => {
+    try {
+      await duplicateNovel(id);
+    } catch (err) {
+      console.error("소설 복제 실패", err);
+      if (isQuotaError(err)) setImportError(err);
     }
   };
 
@@ -202,7 +215,7 @@ export default function LibraryPage() {
                 novel={novel}
                 onOpen={() => void open(novel)}
                 onEdit={() => setForm({ novel })}
-                onDuplicate={() => void duplicateNovel(novel.id)}
+                onDuplicate={() => void duplicate(novel.id)}
                 onExport={() => void exportNovel(novel.id)}
                 onDelete={() => setDeleting(novel)}
               />

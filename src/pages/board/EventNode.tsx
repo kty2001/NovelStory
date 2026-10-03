@@ -9,9 +9,10 @@ import { lineBorder, lineDotColor } from "./lines";
 import Ports from "./Ports";
 import { snapTick, xToTick } from "./timeAxis";
 import { useFocusWhenVisible } from "./useFocusWhenVisible";
+import { isImeKey } from "../../lib/keys";
 
 // span = 기간 사건 (폭은 노드 width, 래퍼를 채움)
-export type EventNodeType = Node<{ span?: boolean }, "event">;
+type EventNodeType = Node<{ span?: boolean }, "event">;
 
 // 제목 인라인 편집: Enter · Esc · 바깥 클릭 = 확정 (C6). 한글 조합 중 Enter 무시. 비우면 원래 제목
 function TitleInput({
@@ -40,7 +41,7 @@ function TitleInput({
       defaultValue={initial}
       className="nodrag nopan nowheel w-full min-w-0 rounded-xs bg-canvas/70 px-1 text-block-label text-ink outline-none"
       onKeyDown={(e) => {
-        if (e.nativeEvent.isComposing || e.keyCode === 229) return;
+        if (isImeKey(e)) return;
         if (e.key === "Enter" || e.key === "Escape") finish(e.currentTarget.value);
       }}
       onBlur={(e) => finish(e.currentTarget.value)}

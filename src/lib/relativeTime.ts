@@ -8,7 +8,7 @@ const UNITS: [Intl.RelativeTimeFormatUnit, number][] = [
 ];
 const rtf = new Intl.RelativeTimeFormat("ko", { numeric: "auto" });
 
-// "3분 전", "어제", "1주 전"
+// "3분 전", "어제", "지난주"
 export function relativeTime(iso: string, now = Date.now()) {
   const sec = (Date.parse(iso) - now) / 1000;
   for (const [unit, size] of UNITS) {

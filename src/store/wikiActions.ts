@@ -2,6 +2,7 @@ import { deleteImage } from "../db/images";
 import type { ColorToken, TiptapJSON, WikiCategory, WikiDoc } from "../db/types";
 import { deriveDoc } from "../db/wikiDerived";
 import {
+  blockIds,
   childCategories,
   deleteError,
   dropError,
@@ -149,11 +150,9 @@ export function deleteDoc(id: string) {
   const { docs, items, board } = store.getState();
   const doc = docs[id];
   if (!doc) return;
-  const blockIds = Object.values(items).flatMap((i) =>
-    "docId" in i && i.docId === id ? [i.id] : [],
-  );
-  if (blockIds.length) {
-    deleteItems(blockIds);
+  const blocks = blockIds(items, id);
+  if (blocks.length) {
+    deleteItems(blocks);
     const order = board?.stateLanes.order ?? [];
     if (order.includes(id)) setLanes({ order: order.filter((x) => x !== id) });
     store.temporal.getState().clear();
@@ -161,5 +160,15 @@ export function deleteDoc(id: string) {
   removeDocSlots([id]);
   const { [id]: _removed, ...rest } = store.getState().docs;
   store.setState({ docs: rest });
-  if (doc.imageId) void deleteImage(doc.imageId);
+  releaseImage(doc.imageId);
+}
+
+// 더 쓰는 곳(다른 문서 · 표지)이 없을 때만 이미지 삭제 — 붙여넣은 사건 문서는 원본과 이미지를 공유.
+// 남은 이미지 · 삭제 실패분은 소설을 열 때 정리
+export function releaseImage(imageId: string | undefined) {
+  if (!imageId) return;
+  const { docs, novel } = store.getState();
+  if (novel?.coverImageId === imageId) return;
+  if (Object.values(docs).some((d) => d.imageId === imageId)) return;
+  deleteImage(imageId).catch((err: unknown) => console.error("이미지 삭제 실패", err));
 }

@@ -2,7 +2,7 @@ import type { CSSProperties } from "react";
 import type { ColorToken } from "../../db/types";
 
 // 라인 색: "기본"(저장값 muted) = 순서별 ink · muted 테두리, 그 외 = 테두리 색 + 배지 점
-export const DEFAULT_LINE_COLOR = "muted";
+const DEFAULT_LINE_COLOR = "muted";
 export const LINE_COLORS: { token: ColorToken; label: string }[] = [
   { token: DEFAULT_LINE_COLOR, label: "기본" },
   { token: "brand-coral", label: "코랄" },

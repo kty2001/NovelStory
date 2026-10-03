@@ -6,7 +6,7 @@ import EmptyState from "../../components/EmptyState";
 import type { WikiCategory } from "../../db/types";
 import { useNovelStore } from "../../store/novelStore";
 import { addDoc } from "../../store/wikiActions";
-import { familyOf, subtreeDocs } from "./categories";
+import { byTitle, familyOf, subtreeDocs } from "./categories";
 import CategorySettings from "./CategorySettings";
 import CategoryTable from "./CategoryTable";
 import { useWikiNav } from "./useWikiNav";
@@ -61,9 +61,7 @@ export default function CategoryView({ categoryId }: { categoryId: string }) {
   const [tab, setTab] = useState<keyof typeof TABS>("list");
   const category = categories[categoryId];
   if (!category) return null;
-  const list = subtreeDocs(categories, docs, categoryId).sort((a, b) =>
-    a.title.localeCompare(b.title, "ko"),
-  );
+  const list = subtreeDocs(categories, docs, categoryId).sort(byTitle);
 
   return (
     <section aria-label={`${category.name} 분류`}>
@@ -103,26 +101,22 @@ export default function CategoryView({ categoryId }: { categoryId: string }) {
           <CategoryTable categoryId={categoryId} />
         </div>
       ) : (
-        <>
-          <ul className="mt-6 border-t border-hairline">
-            {list.map((d) => (
-              <li key={d.id} className="border-b border-hairline">
-                <button
-                  type="button"
-                  className="flex w-full items-center gap-3 px-2 py-3 text-left hover:bg-surface-soft"
-                  onClick={() => openDoc(d.id)}
-                >
-                  <span className="text-body-md text-ink">{d.title || "제목 없음"}</span>
-                  {d.categoryId !== categoryId && (
-                    <span className="text-caption text-muted">
-                      {categories[d.categoryId]?.name}
-                    </span>
-                  )}
-                </button>
-              </li>
-            ))}
-          </ul>
-        </>
+        <ul className="mt-6 border-t border-hairline">
+          {list.map((d) => (
+            <li key={d.id} className="border-b border-hairline">
+              <button
+                type="button"
+                className="flex w-full items-center gap-3 px-2 py-3 text-left hover:bg-surface-soft"
+                onClick={() => openDoc(d.id)}
+              >
+                <span className="text-body-md text-ink">{d.title || "제목 없음"}</span>
+                {d.categoryId !== categoryId && (
+                  <span className="text-caption text-muted">{categories[d.categoryId]?.name}</span>
+                )}
+              </button>
+            </li>
+          ))}
+        </ul>
       )}
     </section>
   );

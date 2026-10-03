@@ -75,9 +75,13 @@ export function createAutosave(store: NovelStore) {
     base = data && snapshotOf(data);
   }
 
-  // DB에 이미 기록된 소설 레코드를 스토어에 반영 (저장·updatedAt 갱신 없음)
-  function adoptNovel(novel: Novel) {
-    if (base) base = { ...base, novel };
+  // DB에 이미 기록된 소설 필드를 스토어에 반영. 미저장 소설 변경이 없으면 저장 기준도 갱신(다시 저장 안 함),
+  // 있으면 덮지 않고 합쳐 다음 저장에 포함 (내보내기 · 정보 수정 중 편집 유지)
+  function adoptNovel(patch: Partial<Novel>) {
+    const cur = store.getState().novel;
+    if (!cur) return;
+    const novel = { ...cur, ...patch };
+    if (base && base.novel === cur) base = { ...base, novel };
     store.setState({ novel });
   }
 
@@ -106,10 +110,11 @@ async function write(prev: Snapshot, next: Snapshot) {
       const after = next[key] as Record<string, BaseRecord>;
       if (before === after) continue;
       const table = COLLECTIONS[key] as unknown as Table<BaseRecord, string>;
-      // 실행 취소로 되살아난 레코드도 put으로 deletedAt 없이 덮어씀
+      // 실행 취소로 되살아난 레코드도 put으로 deletedAt 없이 덮어씀.
+      // 메모는 스토어 updatedAt 유지 (메모 동작이 수정마다 기록, 목록 순서 = 최근 수정순)
       const puts = Object.values(after)
         .filter((r) => before[r.id] !== r)
-        .map((r) => ({ ...r, updatedAt: now }));
+        .map((r) => (key === "memos" ? r : { ...r, updatedAt: now }));
       if (puts.length) await table.bulkPut(puts);
       for (const id of Object.keys(before)) {
         if (!(id in after)) await table.update(id, { deletedAt: now, updatedAt: now });

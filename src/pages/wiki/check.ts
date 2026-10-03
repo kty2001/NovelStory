@@ -2,17 +2,15 @@ import type { BoardItem, EventItem, StateItem, WikiCategory, WikiDoc } from "../
 import type { Collection } from "../../store/novelStore";
 import { afterExit } from "../board/stateCalc";
 import { byPlace } from "./boardLinks";
-import { familyOf, usedDocIds } from "./categories";
+import { byTitle, familyOf, usedDocIds } from "./categories";
 
-export type SettingIssues = {
+type SettingIssues = {
   unplaced: WikiDoc[]; // 보드에 없는 캐릭터 · 사건 문서
   afterExit: StateItem[]; // 퇴장 이후 상태 블록
   undated: EventItem[]; // 미정 영역 사건
   broken: { doc: WikiDoc; count: number }[]; // 깨진 링크가 있는 문서
   emptyProps: { doc: WikiDoc; keys: string[] }[]; // 분류 템플릿 키 값이 빈 문서
 };
-
-const byTitle = (a: WikiDoc, b: WikiDoc) => a.title.localeCompare(b.title, "ko");
 
 // 설정 점검 (F4): 보드 · 사전 데이터에서 계산, 막지 않고 목록만
 export function settingIssues({

@@ -1,4 +1,4 @@
-import { Fragment, useEffect, useState, type DragEvent, type KeyboardEvent } from "react";
+import { Fragment, useEffect, useState, type DragEvent } from "react";
 import { useNavigate, useSearchParams } from "react-router";
 import { GripVertical, MoreHorizontal, Plus, Route, X } from "lucide-react";
 import Button from "../components/Button";
@@ -29,6 +29,7 @@ import {
 import { particle } from "../lib/particle";
 import { eventBlock, placeText } from "./wiki/boardLinks";
 import { useWikiNav } from "./wiki/useWikiNav";
+import { commitKeys } from "../lib/keys";
 
 const EVENT_MIME = "application/x-whitenoard-event"; // 사건 목록 → 회차 (문서 ID)
 const SLOT_MIME = "application/x-whitenoard-slot"; // 회차 안 · 회차 사이 이동 (슬롯 ID)
@@ -45,16 +46,6 @@ type DropAt = { episodeId: string; index: number };
 
 const accepts = (e: DragEvent) =>
   e.dataTransfer.types.includes(EVENT_MIME) || e.dataTransfer.types.includes(SLOT_MIME);
-
-// 한글 조합 중 Enter 무시, Enter = 확정(blur) · Esc = 원래 값
-function commitKeys(e: KeyboardEvent<HTMLInputElement>, original: string) {
-  if (e.nativeEvent.isComposing || e.keyCode === 229) return;
-  if (e.key === "Enter") e.currentTarget.blur();
-  if (e.key === "Escape") {
-    e.currentTarget.value = original;
-    e.currentTarget.blur();
-  }
-}
 
 // 서술 순서 (F2 1차): 왼쪽 사건 목록(작중 시점순) → 오른쪽 회차에 끌어 배치. 같은 사건 여러 회차 허용
 export default function NarrativePage() {

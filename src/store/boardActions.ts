@@ -12,6 +12,8 @@ import type {
   WikiCategory,
   WikiDoc,
 } from "../db/types";
+import { STICKY_SIZE, TEXT_W, type Rect } from "../pages/board/flow";
+import { eventBlock } from "../pages/wiki/boardLinks";
 import { useNovelStore, type Collection, type NovelState } from "./novelStore";
 
 // 보드 편집 동작. 한 번의 setState = 실행 취소 1건 (보드 데이터만 기록, 사전 문서는 기록 안 함)
@@ -24,7 +26,7 @@ export const nextZ = (items: NovelState["items"]) =>
   Object.values(items).reduce((z, item) => Math.max(z, item.z), 0) + 1;
 
 // system 분류 (사건 · 캐릭터). 사용자가 지울 수 없으므로 항상 존재
-export const systemCategory = (s: NovelState, system: NonNullable<WikiCategory["system"]>) =>
+const systemCategory = (s: NovelState, system: NonNullable<WikiCategory["system"]>) =>
   Object.values(s.categories).find((c) => c.system === system);
 
 // 분류 템플릿 키로 빈 속성을 채운 새 문서 (UC-32)
@@ -61,7 +63,7 @@ export function addEvent(place: EventItem["place"], title = "새 사건"): strin
 export function placeEvent(place: EventItem["place"], docId: string): string | null {
   const s = store.getState();
   if (!s.novelId || !s.docs[docId]) return null;
-  if (Object.values(s.items).some((i) => i.kind === "event" && i.docId === docId)) return null;
+  if (eventBlock(s.items, docId)) return null;
   const item: EventItem = {
     id: crypto.randomUUID(),
     novelId: s.novelId,
@@ -95,17 +97,22 @@ export function moveItems(places: Record<string, BoardItem["place"]>) {
 export function patchItems(ids: string[], patch: { color?: string; shape?: ShapeItem["shape"] }) {
   store.setState(({ items }) => {
     const next = { ...items };
+    let changed = false;
     for (const id of ids) {
       const item = next[id];
+      let patched: BoardItem | undefined;
       if (item?.kind === "shape") {
         const shape = { ...item, ...patch };
         if ("color" in patch && !patch.color) delete shape.color;
-        next[id] = shape;
+        patched = shape;
       } else if ((item?.kind === "event" || item?.kind === "sticky") && patch.color) {
-        next[id] = { ...item, color: patch.color };
+        patched = { ...item, color: patch.color };
       }
+      if (!patched || JSON.stringify(patched) === JSON.stringify(item)) continue;
+      next[id] = patched;
+      changed = true;
     }
-    return { items: next };
+    return changed ? { items: next } : {};
   });
 }
 
@@ -229,6 +236,7 @@ export function updateState(id: string, patch: StatePatch) {
     if (item?.kind !== "state") return {};
     const next = { ...item, ...patch };
     if ("linkedEventItemId" in patch && !patch.linkedEventItemId) delete next.linkedEventItemId;
+    if (JSON.stringify(next) === JSON.stringify(item)) return {}; // 바뀐 것 없음 = 기록 없음
     return { items: { ...items, [id]: next } };
   });
 }
@@ -267,7 +275,7 @@ function addFree<T extends StickyItem | TextItem | ShapeItem | FrameItem>(
   return item.id;
 }
 
-export const addSticky = (x: number, y: number, w = 160, h = 160, text = "") =>
+export const addSticky = (x: number, y: number, w = STICKY_SIZE, h = STICKY_SIZE, text = "") =>
   addFree<StickyItem>("sticky", {
     place: { mode: "free", x, y },
     w,
@@ -276,7 +284,7 @@ export const addSticky = (x: number, y: number, w = 160, h = 160, text = "") =>
     color: "sticky-yellow",
   });
 
-export const addText = (x: number, y: number, w = 240) =>
+export const addText = (x: number, y: number, w = TEXT_W) =>
   addFree<TextItem>("text", { place: { mode: "free", x, y }, w, text: "" });
 
 // 도형: 기본 채움 없음 (ui_guide `board-shape`)
@@ -284,16 +292,12 @@ export const addShape = (x: number, y: number, w: number, h: number, shape: Shap
   addFree<ShapeItem>("shape", { place: { mode: "free", x, y }, w, h, shape, text: "" });
 
 // 프레임 + 안에 든 요소 소속 지정 (1건). 프레임은 다른 요소보다 아래 (z 최소 - 1)
-export function addFrame(
-  rect: { x: number; y: number; w: number; h: number },
-  childIds: string[] = [],
-  title = "프레임",
-): string | null {
+export function addFrame(rect: Rect, childIds: string[]): string | null {
   const { items } = store.getState();
   const z = Object.values(items).reduce((m, i) => Math.min(m, i.z), 1) - 1;
   const id = addFree<FrameItem>(
     "frame",
-    { place: { mode: "free", x: rect.x, y: rect.y }, w: rect.w, h: rect.h, title },
+    { place: { mode: "free", x: rect.x, y: rect.y }, w: rect.w, h: rect.h, title: "프레임" },
     z,
   );
   if (!id) return null;
@@ -304,7 +308,9 @@ export function addFrame(
 // 직전 동작(요소 생성)에 이어 프레임 소속 지정 → 실행 취소 1건으로 묶음 (기록 일시 정지)
 export function adopt(ids: string[], frameId: string | undefined) {
   if (!frameId || !ids.length) return;
-  store.temporal.getState().pause();
+  // 묶음 기록(beginBatch) 중이면 이미 정지 상태 → 그대로 둠
+  const tracking = store.temporal.getState().isTracking;
+  if (tracking) store.temporal.getState().pause();
   store.setState(({ items }) => {
     const next = { ...items };
     for (const id of ids) {
@@ -312,7 +318,7 @@ export function adopt(ids: string[], frameId: string | undefined) {
     }
     return { items: next };
   });
-  store.temporal.getState().resume();
+  if (tracking) store.temporal.getState().resume();
 }
 
 // 여러 요소 필드 변경 (끌기 · 크기 조절 · 편집 1회 = 1건). undefined 값은 필드 제거
@@ -393,15 +399,6 @@ export function updateEdge(id: string, patch: Partial<Pick<BoardEdge, "label" | 
     if (JSON.stringify(next) === JSON.stringify(edge)) return {};
     return { edges: { ...edges, [id]: next } };
   });
-}
-
-export function deleteEdges(ids: string[]) {
-  const gone = new Set(ids);
-  store.setState(({ edges }) =>
-    ids.some((id) => edges[id])
-      ? { edges: Object.fromEntries(Object.entries(edges).filter(([id]) => !gone.has(id))) }
-      : {},
-  );
 }
 
 // ── 붙여넣기 · 복제 (UC-20): 요소 · 연결선 · 복제한 사건 문서를 한 번에 (실행 취소 1건) ──

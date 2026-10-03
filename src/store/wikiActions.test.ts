@@ -1,4 +1,5 @@
-import { beforeEach, describe, expect, it } from "vitest";
+import { beforeEach, describe, expect, it, vi } from "vitest";
+import { db } from "../db/db";
 import type { EventItem, StateItem, WikiCategory } from "../db/types";
 import { board, doc, OLD } from "../test/fixtures";
 import { placeEvent, setLanes } from "./boardActions";
@@ -213,4 +214,25 @@ it("문서 → 보드: 사건 블록은 문서당 1개", () => {
   const first = placeEvent({ mode: "timed", t: 1, y: 0 }, "d1");
   expect(store.getState().items[first!]).toMatchObject({ kind: "event", docId: "d1" });
   expect(placeEvent({ mode: "timed", t: 2, y: 0 }, "d1")).toBeNull();
+});
+
+it("문서 삭제: 다른 문서도 쓰는 이미지는 남기고, 마지막 문서까지 지우면 삭제", async () => {
+  await db.images.put({
+    id: "img",
+    novelId: "n1",
+    updatedAt: OLD,
+    blob: new Blob(["x"], { type: "image/webp" }),
+    mime: "image/webp",
+    width: 1,
+    height: 1,
+    bytes: 1,
+  });
+  store.setState({
+    docs: { a: { ...doc("a", "n1"), imageId: "img" }, b: { ...doc("b", "n1"), imageId: "img" } },
+  });
+  deleteDoc("a");
+  await Promise.resolve();
+  expect(await db.images.get("img")).toBeDefined();
+  deleteDoc("b");
+  await vi.waitFor(async () => expect(await db.images.get("img")).toBeUndefined());
 });

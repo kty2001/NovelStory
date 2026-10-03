@@ -41,7 +41,7 @@ export function readingSteps(
 // 시작 눈금. 미정 영역은 판정 제외
 const tickOf = (s: Placed) => (s.block.place.mode === "timed" ? s.block.place.t : null);
 
-export function segmentKind(from: Placed, to: Placed): SegmentKind {
+function segmentKind(from: Placed, to: Placed): SegmentKind {
   const a = tickOf(from);
   const b = tickOf(to);
   if (a === null || b === null || b >= a) return "forward";
@@ -58,7 +58,7 @@ export function pathSegments(steps: Step[], hiddenIds: ReadonlySet<string>): Seg
   });
 }
 
-export const stepLabel = (s: Step) => `${s.episode.number}화·${s.index}`;
+const stepLabel = (s: Step) => `${s.episode.number}화·${s.index}`;
 
 // 블록 ID → 순번 배지 (서술 순서)
 export function stepLabels(steps: Step[]): Map<string, string[]> {

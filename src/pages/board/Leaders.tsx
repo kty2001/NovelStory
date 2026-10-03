@@ -1,9 +1,8 @@
 import { useStore, ViewportPortal } from "@xyflow/react";
 import type { BoardItem, TimeScale } from "../../db/types";
 import type { Collection } from "../../store/novelStore";
+import type { Rect } from "./flow";
 import { tickToX } from "./timeAxis";
-
-export type Rect = { x: number; y: number; w: number; h: number };
 
 // 시간 블록에서 시간축까지 점선 지시선 (ui_guide `event-block` · `state-block`).
 // 사건: 가운데(기간 사건은 시작·끝 두 줄), 상태: 왼쪽 끝. 캐릭터별 정렬 중에는 상태 지시선 생략 (B-4 메모 6)

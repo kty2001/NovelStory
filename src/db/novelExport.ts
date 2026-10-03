@@ -129,6 +129,11 @@ export async function importExport(raw: unknown, opts: { titleSuffix?: string } 
   ) {
     throw new ExportFormatError("format", "필수 항목 누락");
   }
+  // 이미지는 파일에 담긴 data: URL만 (임의 주소 요청 방지)
+  if (
+    !data.images.every((img) => typeof img.dataUrl === "string" && img.dataUrl.startsWith("data:"))
+  )
+    throw new ExportFormatError("format", "이미지 형식 오류");
 
   const ids = new Map<string, string>();
   const fresh = (old: string) => {
@@ -154,7 +159,13 @@ export async function importExport(raw: unknown, opts: { titleSuffix?: string } 
   const map = (id: string) => ids.get(id) ?? id;
   const opt = (id: string | undefined) => (id === undefined ? undefined : map(id));
   const now = new Date().toISOString();
-  const base = <T extends BaseRecord>(r: T) => ({ ...r, id: map(r.id), novelId, updatedAt: now });
+  // 삭제 표시는 가져오지 않음 (내보내기에는 살아 있는 레코드만 담김)
+  const base = <T extends BaseRecord>({ deletedAt: _deleted, ...r }: T) => ({
+    ...r,
+    id: map(r.id),
+    novelId,
+    updatedAt: now,
+  });
 
   const images: ImageAsset[] = await Promise.all(
     data.images.map(async ({ dataUrl, ...img }) => ({
@@ -162,7 +173,7 @@ export async function importExport(raw: unknown, opts: { titleSuffix?: string } 
       blob: await (await fetch(dataUrl)).blob(),
     })),
   );
-  const { lastExportedAt, ...novelRest } = data.novel;
+  const { lastExportedAt, deletedAt: _deleted, ...novelRest } = data.novel;
   const novel = {
     ...novelRest,
     id: novelId,

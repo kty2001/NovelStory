@@ -1,9 +1,9 @@
 import type { ISODate, Novel } from "./types";
 
 // UC-41 기본값 (조정 가능)
-export const BACKUP_AFTER_DAYS = 7;
-export const FIRST_NOTICE_DAYS = 3;
-export const SNOOZE_DAYS = 3;
+const BACKUP_AFTER_DAYS = 7;
+const FIRST_NOTICE_DAYS = 3;
+const SNOOZE_DAYS = 3;
 
 const DAY_MS = 24 * 60 * 60 * 1000;
 const daysBetween = (from: ISODate, now: Date) =>

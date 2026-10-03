@@ -5,12 +5,15 @@ import Dialog from "../components/Dialog";
 import EmptyState from "../components/EmptyState";
 import { useNovelStore } from "../store/novelStore";
 import { searchDocs } from "./board/stateCalc";
+import { isImeKey } from "../lib/keys";
+import { byTitle } from "./wiki/categories";
 
 type Result =
   | { kind: "doc"; id: string; title: string; sub: string; color: string }
   | { kind: "tick"; t: number; title: string; sub: string };
 
 const LIMIT = 8;
+const NO_LABELS: Record<string, string> = {}; // 선택자가 매번 새 객체를 돌려주지 않게
 
 // 빠른 이동 (B-8, Ctrl+K): 사전 문서(제목 · 별칭) + 시간축 시점(눈금 번호 · 라벨) 검색
 export default function QuickMove({ open, onClose }: { open: boolean; onClose: () => void }) {
@@ -27,16 +30,14 @@ function Palette({ onClose }: { onClose: () => void }) {
   const onBoard = useLocation().pathname.endsWith("/board");
   const docs = useNovelStore((s) => s.docs);
   const categories = useNovelStore((s) => s.categories);
-  const labels = useNovelStore((s) => s.board?.timeScale.tickLabels ?? {});
+  const labels = useNovelStore((s) => s.board?.timeScale.tickLabels ?? NO_LABELS);
   const [query, setQuery] = useState("");
   const [active, setActive] = useState(0);
 
   const q = query.trim();
   const results: Result[] = [];
   if (q) {
-    for (const d of searchDocs(Object.values(docs), q)
-      .sort((a, b) => a.title.localeCompare(b.title, "ko"))
-      .slice(0, LIMIT)) {
+    for (const d of searchDocs(Object.values(docs), q).sort(byTitle).slice(0, LIMIT)) {
       const c = categories[d.categoryId];
       results.push({
         kind: "doc",
@@ -79,7 +80,7 @@ function Palette({ onClose }: { onClose: () => void }) {
           setActive(0);
         }}
         onKeyDown={(e) => {
-          if (e.nativeEvent.isComposing || e.keyCode === 229) return;
+          if (isImeKey(e)) return;
           if (e.key === "ArrowDown" || e.key === "ArrowUp") {
             e.preventDefault();
             const n = results.length || 1;

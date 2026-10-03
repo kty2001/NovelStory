@@ -230,6 +230,31 @@ describe("importExport", () => {
     expect(novel?.createdAt).not.toBe(OLD);
   });
 
+  it("이미지는 data: URL만, 삭제 표시는 가져오지 않음", async () => {
+    const data = await buildExport(await createNovel({ title: "a" }));
+    const image = {
+      id: "img",
+      novelId: data.novel.id,
+      updatedAt: OLD,
+      mime: "image/webp",
+      width: 1,
+      height: 1,
+      bytes: 1,
+    };
+    await expect(
+      importExport({ ...data, images: [{ ...image, dataUrl: "https://example.com/x.webp" }] }),
+    ).rejects.toMatchObject({ reason: "format" });
+
+    const id = await importExport({
+      ...data,
+      novel: { ...data.novel, deletedAt: OLD },
+      wikiDocs: [{ ...doc("d", data.novel.id), deletedAt: OLD }],
+    });
+    expect((await db.novels.get(id))?.deletedAt).toBeUndefined();
+    const [imported] = await db.wikiDocs.where({ novelId: id }).toArray();
+    expect(imported.deletedAt).toBeUndefined();
+  });
+
   it("잘못된 파일·새 버전 거부", async () => {
     await expect(importFile(new Blob(["not json"]))).rejects.toBeInstanceOf(ExportFormatError);
     await expect(

@@ -1,4 +1,4 @@
-import type { Rect } from "./Leaders";
+import type { Rect } from "./flow";
 
 // 정렬 보조선 (features_spec F1): 끄는 요소 묶음의 시작 · 가운데 · 끝을 다른 요소에 맞춤
 // axis x = 세로선 (x = at, y from ~ to), axis y = 가로선 (y = at, x from ~ to)

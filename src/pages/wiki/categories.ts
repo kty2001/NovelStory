@@ -22,7 +22,7 @@ export function flatCategories(
   ]);
 }
 
-export function descendantIds(categories: Collection<WikiCategory>, id: string): Set<string> {
+function descendantIds(categories: Collection<WikiCategory>, id: string): Set<string> {
   const found = new Set<string>();
   const visit = (parentId: string) => {
     for (const c of childCategories(categories, parentId)) {
@@ -93,13 +93,20 @@ export function deleteError(
   return n ? `문서 ${n}개 — 먼저 옮기세요` : null;
 }
 
+// 제목 가나다순
+export const byTitle = (a: { title: string }, b: { title: string }) =>
+  a.title.localeCompare(b.title, "ko");
+
 // 보드 블록(사건 · 상태)이 가리키는 문서
 export const usedDocIds = (items: Collection<BoardItem>) =>
   new Set(Object.values(items).flatMap((i) => ("docId" in i ? [i.docId] : [])));
 
-// 문서에 연결된 보드 블록 수
+// 문서에 연결된 보드 블록 (사건 1개 / 상태 블록 여러 개)
+export const blockIds = (items: Collection<BoardItem>, docId: string) =>
+  Object.values(items).flatMap((i) => ("docId" in i && i.docId === docId ? [i.id] : []));
+
 export const blockCount = (items: Collection<BoardItem>, docId: string) =>
-  Object.values(items).filter((i) => "docId" in i && i.docId === docId).length;
+  blockIds(items, docId).length;
 
 type TreeState = {
   categories: Collection<WikiCategory>;

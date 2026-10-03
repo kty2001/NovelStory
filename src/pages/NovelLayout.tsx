@@ -22,6 +22,7 @@ import QuickMove from "./QuickMove";
 import SaveStatus from "./SaveStatus";
 import ShortcutHelp from "./ShortcutHelp";
 import { ShortcutHelpContext } from "./shortcutHelpContext";
+import { isImeKey } from "../lib/keys";
 
 const TAB_KEYS = {
   Digit1: "board",
@@ -43,20 +44,20 @@ export default function NovelLayout() {
   const [infoOpen, setInfoOpen] = useState(false);
   const [quickOpen, setQuickOpen] = useState(false);
   const [helpOpen, setHelpOpen] = useState(false);
-  const [savedNotice, setSavedNotice] = useState(false);
+  const [notice, setNotice] = useState<string | null>(null);
   const navigate = useNavigate();
 
   // 공통 단축키 (shortcuts 1장): Ctrl+K 빠른 이동(B-8) · Ctrl+S 자동 저장 안내 · Alt+1~5 탭 · ? 도움말
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => {
-      if (e.isComposing || e.keyCode === 229) return;
+      if (isImeKey(e)) return;
       const mod = e.ctrlKey || e.metaKey;
       if (mod && e.code === "KeyK") {
         e.preventDefault();
         setQuickOpen(true);
       } else if (mod && e.code === "KeyS") {
         e.preventDefault(); // 브라우저 저장 대화상자 대신 (편집 중에도)
-        setSavedNotice(true);
+        setNotice("자동 저장됨 — 따로 저장하지 않아도 돼요");
       } else if (e.altKey && !mod && e.code in TAB_KEYS) {
         e.preventDefault();
         void navigate(TAB_KEYS[e.code as keyof typeof TAB_KEYS]);
@@ -70,10 +71,10 @@ export default function NovelLayout() {
   }, [navigate]);
 
   useEffect(() => {
-    if (!savedNotice) return;
-    const timer = setTimeout(() => setSavedNotice(false), 2000);
+    if (!notice) return;
+    const timer = setTimeout(() => setNotice(null), 2000);
     return () => clearTimeout(timer);
-  }, [savedNotice]);
+  }, [notice]);
 
   useEffect(() => {
     if (!novelId) return;
@@ -96,16 +97,24 @@ export default function NovelLayout() {
   }, [novelId, status, tab]);
 
   // DB에 직접 쓰는 동작: 미저장분을 먼저 저장하고, 결과 소설 레코드를 스토어에 반영.
-  // 내보내기는 저장 실패 중에도 화면 그대로 (스토어 레코드, UC-42)
+  // 내보내기는 저장 실패 중에도 화면 그대로 (스토어 레코드, UC-42). 성공 여부 반환
   const exportCurrent = async () => {
-    if (!novelId) return;
-    await flushSave();
-    adoptExport(await exportNovel(novelId, currentRecords()));
+    if (!novelId) return false;
+    try {
+      await flushSave();
+      adoptExport(await exportNovel(novelId, currentRecords()));
+      return true;
+    } catch (err) {
+      console.error("내보내기 실패", err);
+      setNotice("내보내지 못했어요 — 다시 시도해 주세요");
+      return false;
+    }
   };
   const submitInfo: NovelFormSubmit = async (info, cover) => {
     if (!novelId) return;
     await flushSave();
-    adoptNovel(await updateNovelInfo(novelId, info, cover));
+    const { coverImageId } = await updateNovelInfo(novelId, info, cover);
+    adoptNovel({ ...info, coverImageId });
   };
 
   if (status === "missing") {
@@ -195,7 +204,7 @@ export default function NovelLayout() {
       </div>
       {status === "ready" && <QuickMove open={quickOpen} onClose={() => setQuickOpen(false)} />}
       <ShortcutHelp open={helpOpen} onClose={() => setHelpOpen(false)} />
-      {savedNotice && <Toast>자동 저장됨 — 따로 저장하지 않아도 돼요</Toast>}
+      {notice && <Toast>{notice}</Toast>}
       <NovelFormDialog
         open={infoOpen}
         novel={novel ?? undefined}

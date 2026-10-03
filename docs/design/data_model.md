@@ -1,6 +1,6 @@
 # 데이터 모델 (Data Model)
 
-MVP(F0·F1·F4·F6) 구현 기준 확정본. [features_spec.md](./features_spec.md) 4장 초안을 [spikes.md](./spikes.md) 결과, [tech_stack.md](./tech_stack.md) 6장 데이터 규칙, [usecase.md](./usecase.md)에 맞춰 수정함.
+MVP(F0·F1·F4·F6) 구현 기준 확정본 (이후 F2 서술 순서 · F5 메모 · F7 개요 반영). [features_spec.md](./features_spec.md) 4장 초안을 [spikes.md](./spikes.md) 결과, [tech_stack.md](./tech_stack.md) 6장 데이터 규칙, [usecase.md](./usecase.md)에 맞춰 수정함.
 
 - 엔터티 관계도: **[erd.md](./erd.md)**
 - 아래는 보드 블록의 위치가 저장값에서 화면으로, 드래그 후 다시 저장값으로 가는 흐름 (4.1·4.2)
@@ -49,11 +49,11 @@ flowchart LR
 
 - **ID**: `crypto.randomUUID()`. 단, `Board.id` = `novelId` (소설당 1개)
 - **시각**: ISO 8601 문자열 (`new Date().toISOString()`)
-- **`updatedAt`**: 모든 쓰기에서 갱신. 소설 하위 레코드가 바뀌면 같은 트랜잭션에서 `Novel.updatedAt`도 갱신 (서재 최근 수정순). `UiState`·`AppMeta` 변경은 제외
+- **`updatedAt`**: 모든 쓰기에서 갱신. 소설 하위 레코드가 바뀌면 같은 트랜잭션에서 `Novel.updatedAt`도 갱신 (서재 최근 수정순). `UiState`·`AppMeta` 변경은 제외. `Memo`는 내용 · 고정을 바꾼 시각 그대로 저장 (목록 순서 기준)
 - **삭제**
   - 기본: `deletedAt` 기록(소프트 삭제). 모든 조회는 `deletedAt`이 없는 레코드만 사용
   - 소설 삭제: `Novel`만 소프트 삭제, 하위 레코드·이미지는 되돌리기 알림이 끝난 뒤 **물리 삭제** (2단계에선 `Novel` 삭제 기록으로 하위 삭제 전파)
-  - `ImageAsset`: 참조가 없어지면 물리 삭제 (용량 대부분 차지, 1단계 동기화 대상 아님)
+  - `ImageAsset`: 참조가 없어지면 물리 삭제 (용량 대부분 차지, 1단계 동기화 대상 아님). 다른 문서 · 표지가 쓰면 유지 (붙여넣은 사건 문서는 원본과 이미지 공유)
   - 삭제 기록 정리 시점은 2단계 동기화 설계 때 결정. MVP는 보관만 하고 내보내기에서 제외
 - **색상**: 헥스 값이 아니라 [ui_guide.md](./ui_guide.md)의 **색 토큰 이름** 저장 (`brand-peach`, `sticky-yellow` 등) → 팔레트·다크 모드 변경 시 데이터 변환 불필요
 - **실행 취소 기록**(zundo): 메모리에만 유지, 저장·내보내기 대상 아님
@@ -115,7 +115,7 @@ type WikiDoc = NovelScoped & {
   props: WikiProp[];              // 순서 유지, 같은 key 중복 금지
   body: TiptapJSON | null;        // mention 노드: { type: 'mention', attrs: { id: docId, label } }
   imageId?: string;               // 대표 이미지 ImageAsset.id
-  color?: ColorToken;             // 캐릭터 대표 색 (생성 시 팔레트 순환 배정)
+  color?: ColorToken;             // 캐릭터 대표 색 (예약 — 아직 배정 · 사용하지 않음)
   createdAt: ISODate;
   autoCreated?: boolean;          // 보드 블록 생성으로 자동 생성됨 (빈 문서 정리 판단용)
 
@@ -270,7 +270,7 @@ type Memo = NovelScoped & { body: string; pinned: boolean; createdAt: ISODate };
 
 ### 4.5 사전 파생 필드
 - 저장 시 `body`를 순회해 `mentions`(mention 노드 `attrs.id` + `props`의 `docId`, 중복 제거)·`plainText`(본문만) 계산
-- 역링크 = `wikiDocs.where('mentions').equals(docId)`
+- 역링크 = 스토어의 문서 중 `mentions`에 `docId`가 있는 문서 (메모리 계산, `*mentions` 인덱스는 미사용)
 - 링크 표시 이름은 대상 문서의 **현재 제목** (mention `label` · 속성 `value`는 대상 삭제 시 깨진 링크 표시용). 상태 누적(4.4) · 표 정렬도 속성 링크는 현재 제목 사용
 
 ## 5. 무결성 규칙
@@ -284,7 +284,7 @@ type Memo = NovelScoped & { body: string; pinned: boolean; createdAt: ISODate };
 | `parentFrameId` | 같은 소설의 살아 있는 `frame`. 프레임은 소속 불가 |
 | `BoardEdge` | `source`·`target`은 같은 소설의 살아 있는 블록. 블록 삭제 시 연결선도 삭제 |
 | `StateItem.linkedEventItemId` | 사건 블록 삭제 시 제거 |
-| 사건 블록 삭제 | 문서 유지. 단 `autoCreated`이고 내용이 비어 있으면(제목 외 속성·본문·별칭·태그·라인 없음) 함께 삭제 |
+| 사건 블록 삭제 | 문서 유지. 단 `autoCreated`이고 내용이 비어 있으면(제목 외 속성·본문·별칭·태그·라인·이미지 없음) 다음에 소설을 열 때 삭제 (같은 세션 실행 취소로 블록을 되살릴 수 있게) |
 | 문서 삭제 (UC-35) | 연결 블록(사건 1개 / 상태 블록 전부)과 그 연결선 함께 삭제, `stateLanes.order`에서 제거 |
 | 분류 삭제 | 비어 있는 분류만. `system` 분류 불가 |
 | 문서 제목·분류 변경 | 링크(`mentions`)·블록(`docId`)은 문서 ID 기준이라 영향 없음 |

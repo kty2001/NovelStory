@@ -3,8 +3,8 @@ import { sortedLines } from "../../store/boardActions";
 import type { Collection } from "../../store/novelStore";
 import { byPlace } from "../wiki/boardLinks";
 
-export type FlowLine = { line: StoryLine | null; events: EventItem[] };
-export type FlowSection = { frame: FrameItem | null; lines: FlowLine[] };
+type FlowLine = { line: StoryLine | null; events: EventItem[] };
+type FlowSection = { frame: FrameItem | null; lines: FlowLine[] };
 
 // 개요 스토리 흐름 (F7): 프레임(가로 위치순, 프레임 밖은 마지막) → 라인(라인 순서, 미지정 마지막)
 // → 사건(시점순, 미정은 끝). 빈 묶음은 뺌

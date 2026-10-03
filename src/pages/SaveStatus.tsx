@@ -9,7 +9,7 @@ import StorageFullDialog from "./StorageFullDialog";
 const SAVE_LABEL = { saving: "저장 중", saved: "저장됨" } as const;
 
 // 상단 바 저장 상태 (UC-40 · 42). 실패면 버튼 → 다시 시도 · 내보내기 팝오버, 공간 부족이면 L-5 대화상자
-export default function SaveStatus({ onExport }: { onExport: () => Promise<void> }) {
+export default function SaveStatus({ onExport }: { onExport: () => Promise<unknown> }) {
   const save = useNovelStore((s) => s.save);
   const novelId = useNovelStore((s) => s.novelId);
   const [popover, setPopover] = useState(false);

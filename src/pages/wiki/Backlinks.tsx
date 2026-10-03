@@ -2,6 +2,7 @@ import EmptyState from "../../components/EmptyState";
 import { mentionContext } from "../../db/wikiDerived";
 import { useNovelStore } from "../../store/novelStore";
 import { useWikiNav } from "./useWikiNav";
+import { byTitle } from "./categories";
 
 // 역링크 "이 문서를 언급한 문서" (UC-33, W-1 ⑨): 분류 · 제목 · 언급 문맥
 export default function Backlinks({ docId, title }: { docId: string; title: string }) {
@@ -10,7 +11,7 @@ export default function Backlinks({ docId, title }: { docId: string; title: stri
   const { openDoc } = useWikiNav();
   const list = Object.values(docs)
     .filter((d) => d.id !== docId && d.mentions.includes(docId))
-    .sort((a, b) => a.title.localeCompare(b.title, "ko"));
+    .sort(byTitle);
 
   return (
     <section aria-label="역링크" className="mt-12 border-t border-hairline pt-6">

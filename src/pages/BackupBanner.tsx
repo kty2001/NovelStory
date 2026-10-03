@@ -14,7 +14,7 @@ export default function BackupBanner({
   onExport,
 }: {
   novelId: string;
-  onExport: () => Promise<void>;
+  onExport: () => Promise<boolean>;
 }) {
   const [notice, setNotice] = useState<Notice>(null);
 
@@ -50,7 +50,7 @@ export default function BackupBanner({
         size="sm"
         variant="primary"
         className="ml-auto"
-        onClick={() => void onExport().then(() => setNotice(null))}
+        onClick={() => void onExport().then((ok) => ok && setNotice(null))}
       >
         지금 내보내기
       </Button>

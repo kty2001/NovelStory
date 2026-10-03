@@ -6,15 +6,16 @@ import { useDismiss } from "../../components/useDismiss";
 import type { PropChange, StateItem } from "../../db/types";
 import { addCharacter, updateState } from "../../store/boardActions";
 import { useNovelStore } from "../../store/novelStore";
-import type { Rect } from "./Leaders";
+import type { Rect } from "./flow";
 import { afterExit, categoryFamily, searchDocs, stateAt } from "./stateCalc";
 import { STATE_CYCLE, STATE_LABEL } from "./tools";
+import { isImeKey } from "../../lib/keys";
+import { byTitle } from "../wiki/categories";
 
 const field =
   "min-w-0 rounded-xs border border-hairline bg-canvas px-2 py-1 text-body-sm text-ink placeholder:text-muted-soft focus:border-ink focus:outline-none";
 
 // 한글 조합 중 Enter는 무시
-const isComposing = (e: React.KeyboardEvent) => e.nativeEvent.isComposing || e.keyCode === 229;
 
 // ① 캐릭터 선택 (B-3): 제목 · 별칭 부분 일치 검색, 없으면 새 캐릭터 문서 생성. 화면 좌표에 뜨는 팝오버
 export function CharacterPicker({
@@ -36,7 +37,7 @@ export function CharacterPicker({
     const family = categoryFamily(categories, "character");
     return Object.values(docs)
       .filter((d) => family.has(d.categoryId))
-      .sort((a, b) => a.title.localeCompare(b.title, "ko"));
+      .sort(byTitle);
   }, [docs, categories]);
   const found = searchDocs(characters, query);
   const name = query.trim();
@@ -63,7 +64,7 @@ export function CharacterPicker({
         value={query}
         onChange={(e) => setQuery(e.target.value)}
         onKeyDown={(e) => {
-          if (isComposing(e) || e.key !== "Enter") return;
+          if (isImeKey(e) || e.key !== "Enter") return;
           if (found[0]) onPick(found[0].id);
           else if (name) create();
         }}

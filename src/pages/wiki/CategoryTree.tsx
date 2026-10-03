@@ -1,4 +1,4 @@
-import { useCallback, useRef, useState, type DragEvent } from "react";
+import { useCallback, useMemo, useRef, useState, type DragEvent } from "react";
 import {
   ChevronDown,
   ChevronRight,
@@ -23,6 +23,7 @@ import {
   renameCategory,
 } from "../../store/wikiActions";
 import {
+  byTitle,
   categoryPath,
   childCategories,
   deleteError,
@@ -32,6 +33,7 @@ import {
 } from "./categories";
 import { issueCount, settingIssues } from "./check";
 import { useWikiNav } from "./useWikiNav";
+import { isImeKey } from "../../lib/keys";
 
 const INDENT = 16;
 
@@ -59,7 +61,7 @@ function NameInput({ initial, onDone }: { initial: string; onDone: (name: string
       onFocus={(e) => e.currentTarget.select()}
       className="min-w-0 flex-1 rounded-xs border border-ink bg-canvas px-1 text-body-sm text-ink focus:outline-none"
       onKeyDown={(e) => {
-        if (e.nativeEvent.isComposing || e.keyCode === 229) return;
+        if (isImeKey(e)) return;
         if (e.key === "Escape") cancelled.current = true;
         if (e.key === "Enter" || e.key === "Escape") e.currentTarget.blur();
       }}
@@ -90,7 +92,11 @@ export default function CategoryTree({
   const items = useNovelStore((s) => s.items);
   const { openCategory, openDoc, openCheck } = useWikiNav();
   const counts = docCounts(categories, docs);
-  const issues = issueCount(settingIssues({ categories, docs, items }));
+  // 끌기 중 상태 변경마다 다시 계산하지 않게 (보드 · 사전 전체 순회)
+  const issues = useMemo(
+    () => issueCount(settingIssues({ categories, docs, items })),
+    [categories, docs, items],
+  );
 
   // 펼침: 직접 누른 상태 우선, 없으면 선택 항목의 상위 분류만 펼침
   const [toggled, setToggled] = useState<Record<string, boolean>>({});
@@ -156,7 +162,7 @@ export default function CategoryTree({
     const children = childCategories(categories, c.id);
     const childDocs = Object.values(docs)
       .filter((d) => d.categoryId === c.id)
-      .sort((a, b) => a.title.localeCompare(b.title, "ko"));
+      .sort(byTitle);
     const open = isOpen(c.id);
     const selected = !docId && categoryId === c.id;
     const mark = over?.id === c.id && over.error === null ? DROP_MARK[over.pos] : "";
@@ -275,7 +281,7 @@ export default function CategoryTree({
           className="w-full rounded-sm border border-hairline bg-canvas py-1.5 pr-7 pl-8 text-body-sm text-ink placeholder:text-muted focus:border-ink focus:outline-none [&::-webkit-search-cancel-button]:hidden"
           onChange={(e) => onQuery(e.target.value)}
           onKeyDown={(e) => {
-            if (e.key === "Escape") onQuery("");
+            if (e.key === "Escape" && !isImeKey(e)) onQuery("");
           }}
         />
         {query && (

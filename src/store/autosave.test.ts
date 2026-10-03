@@ -1,8 +1,10 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { db } from "../db/db";
 import { OLD, resetDb, seedNovel, sticky } from "../test/fixtures";
+import { addMemo, setMemoBody } from "./memoActions";
 import {
   adoptExport,
+  adoptNovel,
   beginBatch,
   endBatch,
   flushSave,
@@ -49,6 +51,36 @@ describe("자동 저장", () => {
     undo();
     await flushSave();
     expect((await db.boardItems.get("s1"))?.deletedAt).toBeUndefined();
+  });
+
+  it("메모는 스토어 updatedAt 그대로 저장 (새로고침 후에도 최근 수정순 유지)", async () => {
+    const a = addMemo("a")!;
+    const b = addMemo("b")!;
+    setMemoBody(a, "a2");
+    const { memos } = store.getState();
+    await flushSave();
+    expect((await db.memos.get(a))?.updatedAt).toBe(memos[a].updatedAt);
+    expect((await db.memos.get(b))?.updatedAt).toBe(memos[b].updatedAt);
+  });
+
+  it("소설 필드 반영: 미저장 소설 변경이 있으면 덮지 않고 합쳐 다음 저장에 포함", async () => {
+    store.setState((s) => ({ novel: { ...s.novel!, synopsisBody: { type: "doc" } } }));
+    adoptNovel({ title: "정보 수정" });
+    expect(store.getState().novel).toMatchObject({
+      title: "정보 수정",
+      synopsisBody: { type: "doc" },
+    });
+    await flushSave();
+    expect(await db.novels.get("n1")).toMatchObject({
+      title: "정보 수정",
+      synopsisBody: { type: "doc" },
+    });
+  });
+
+  it("소설 필드 반영: 미저장 변경이 없으면 다시 저장하지 않음", async () => {
+    adoptNovel({ title: "정보 수정" });
+    await flushSave();
+    expect((await db.novels.get("n1"))?.updatedAt).toBe(OLD);
   });
 
   it("로드만으로는 저장하지 않음", async () => {

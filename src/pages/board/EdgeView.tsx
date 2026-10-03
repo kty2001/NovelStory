@@ -6,6 +6,7 @@ import { useNovelStore } from "../../store/novelStore";
 import { useBoardUi } from "./boardContext";
 import { EDGE_COLOR, EDGE_SELECTED } from "./flow";
 import { useFocusWhenVisible } from "./useFocusWhenVisible";
+import { isImeKey } from "../../lib/keys";
 
 // 라벨 · 실선/점선 편집 (선 더블클릭 · F2 · Enter): Enter · Esc · 바깥 클릭 = 확정. 한글 조합 중 Enter 무시
 function EdgeEditor({
@@ -39,7 +40,7 @@ function EdgeEditor({
         defaultValue={label}
         className="w-36 rounded-xs border border-hairline bg-canvas px-2 py-0.5 text-caption text-ink outline-none focus:border-ink"
         onKeyDown={(e) => {
-          if (e.nativeEvent.isComposing || e.keyCode === 229) return;
+          if (isImeKey(e)) return;
           if (e.key === "Enter" || e.key === "Escape") finish();
         }}
       />

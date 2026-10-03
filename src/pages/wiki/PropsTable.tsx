@@ -5,13 +5,7 @@ import { propText } from "../../db/wikiDerived";
 import { useNovelStore } from "../../store/novelStore";
 import { mentionCandidates, type Candidate } from "./mention";
 import { DocLinkChip } from "./MentionChip";
-
-// 입력칸 공통: 한글 조합 중 키 무시, Enter = 확정, Esc = 이전 값 복원
-function commitKeys(e: KeyboardEvent<HTMLInputElement>, previous: string) {
-  if (e.nativeEvent.isComposing || e.keyCode === 229) return;
-  if (e.key === "Escape") e.currentTarget.value = previous;
-  if (e.key === "Enter" || e.key === "Escape") e.currentTarget.blur();
-}
+import { commitKeys, isImeKey } from "../../lib/keys";
 
 // 이름이 겹치지 않는 새 속성 키
 const newKey = (props: WikiProp[]) => {
@@ -59,7 +53,7 @@ export default function PropsTable({
 
   // 후보 목록이 열려 있을 때 키: ↑↓ 이동, Enter · Tab 선택, Esc 닫기. 처리했으면 true
   const linkKeys = (e: KeyboardEvent<HTMLInputElement>, i: number) => {
-    if (link?.row !== i || e.nativeEvent.isComposing || e.keyCode === 229) return false;
+    if (link?.row !== i || isImeKey(e)) return false;
     if (e.key === "Escape") {
       setLink(null);
       return true;

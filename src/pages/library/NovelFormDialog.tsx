@@ -7,6 +7,7 @@ import Dialog from "../../components/Dialog";
 import { db } from "../../db/db";
 import { resizeImage } from "../../db/images";
 import type { NovelInfo, ResizedImage } from "../../db/novels";
+import { isQuotaError } from "../../db/storage";
 import type { Novel } from "../../db/types";
 
 // cover: undefined = 그대로, null = 제거, 값 = 새 표지
@@ -37,6 +38,7 @@ function NovelForm({ novel, onClose, onSubmit }: Omit<Props, "open">) {
   const [converting, setConverting] = useState(false);
   const [coverError, setCoverError] = useState("");
   const [saving, setSaving] = useState(false);
+  const [submitError, setSubmitError] = useState("");
   const saved = useLiveQuery(
     () => (novel?.coverImageId ? db.images.get(novel.coverImageId) : undefined),
     [novel?.coverImageId],
@@ -59,6 +61,7 @@ function NovelForm({ novel, onClose, onSubmit }: Omit<Props, "open">) {
   const submit = async (e: FormEvent) => {
     e.preventDefault();
     setSaving(true);
+    setSubmitError("");
     try {
       await onSubmit(
         {
@@ -69,6 +72,13 @@ function NovelForm({ novel, onClose, onSubmit }: Omit<Props, "open">) {
         cover,
       );
       onClose();
+    } catch (err) {
+      console.error("소설 저장 실패", err);
+      setSubmitError(
+        isQuotaError(err)
+          ? "저장 공간이 부족해 저장하지 못했어요."
+          : "저장하지 못했어요. 다시 시도해 주세요.",
+      );
     } finally {
       setSaving(false);
     }
@@ -102,7 +112,10 @@ function NovelForm({ novel, onClose, onSubmit }: Omit<Props, "open">) {
             accept="image/*"
             aria-label="표지 이미지"
             className="sr-only"
-            onChange={(e) => void pickCover(e.target.files?.[0])}
+            onChange={(e) => {
+              void pickCover(e.target.files?.[0]);
+              e.target.value = ""; // 같은 파일 다시 고르기
+            }}
           />
         </label>
         {preview && !converting && (
@@ -145,6 +158,11 @@ function NovelForm({ novel, onClose, onSubmit }: Omit<Props, "open">) {
             onChange={(e) => setSynopsis(e.target.value)}
           />
         </label>
+        {submitError && (
+          <p role="alert" className="text-caption text-error">
+            {submitError}
+          </p>
+        )}
         <div className="flex justify-end gap-2">
           <Button onClick={onClose}>취소</Button>
           <Button type="submit" variant="primary" disabled={!title.trim() || converting || saving}>

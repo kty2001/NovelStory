@@ -67,7 +67,7 @@ import {
   type CompareScope,
 } from "../narrative/readingPath";
 import { eventBlock } from "../wiki/boardLinks";
-import { familyOf } from "../wiki/categories";
+import { blockIds, familyOf } from "../wiki/categories";
 import { copyClip, pasteRecords, type Clip } from "./clipboard";
 import { alignSnap, type Guide } from "./align";
 import AlignGuides from "./AlignGuides";
@@ -96,13 +96,16 @@ import {
   laneOrder,
   nudgePatches,
   STATE_W,
+  pointerPlace,
+  spanRect,
   timePlace,
+  type Rect,
   withFrames,
   type Dropped,
 } from "./flow";
 import { FrameNode, ShapeNode, StickyNode, TextNode } from "./FreeNodes";
 import Lanes from "./Lanes";
-import Leaders, { type Rect } from "./Leaders";
+import Leaders from "./Leaders";
 import LineEditDialog from "./LineEditDialog";
 import { AllHiddenNotice, EmptyGuide } from "./EmptyGuide";
 import { hiddenItemIds, NO_FILTERS, type Filters } from "./filters";
@@ -117,12 +120,14 @@ import {
   isPlaceTool,
   SHAPE_CYCLE,
   STATE_CYCLE,
+  STATE_LOOK,
   TOOL_BY_CODE,
   type PlaceTool,
   type StateType,
   type Tool,
 } from "./tools";
 import ZoomControls, { ZOOM_MS } from "./ZoomControls";
+import { isImeKey } from "../../lib/keys";
 
 // 스파이크 C4에서 라벨 겹침 없음을 확인한 줌 범위
 const MIN_ZOOM = 0.05;
@@ -154,12 +159,6 @@ const nodeTypes = {
   shape: ShapeNode,
   frame: FrameNode,
 };
-
-const STATE_COLOR = {
-  appear: "var(--color-brand-mint)",
-  change: "var(--color-brand-lavender)",
-  exit: "var(--color-brand-teal)",
-} as const;
 
 // React Flow가 알려 주는 노드 화면 상태 (크기 · 선택 · 끌기/크기 조절 중 위치 · 크기). 데이터는 스토어가 원본
 type NodeUi = {
@@ -207,7 +206,7 @@ const overlaps = (a: Rect, b: Rect) =>
 const minimapColor = (item: BoardItem | undefined) => {
   if (item?.kind === "event" || item?.kind === "sticky" || (item?.kind === "shape" && item.color))
     return `var(--color-${item.color})`;
-  if (item?.kind === "state") return STATE_COLOR[item.stateType];
+  if (item?.kind === "state") return STATE_LOOK[item.stateType].bg;
   return "var(--color-surface-strong)";
 };
 
@@ -248,6 +247,7 @@ function Canvas({
     place: ReturnType<typeof timePlace>;
     client: XYPosition;
     type: StateType;
+    frame: string | undefined; // 놓은 시점의 프레임 (고르는 동안 화면을 움직여도 유지)
   } | null>(null);
   // 프레임 도구로 그리는 중인 영역 (보드 좌표)
   const [draft, setDraft] = useState<{ x0: number; y0: number; x1: number; y1: number } | null>(
@@ -405,7 +405,6 @@ function Canvas({
     () => Object.keys(items).filter((id) => ui[id]?.selected && !hiddenIds.has(id)),
     [items, ui, hiddenIds],
   );
-  // 키 처리기에서 최신 값을 읽기 위한 참조
   // 연결선 (UC-19): 선택 상태만 화면 상태, 나머지는 스토어. 숨긴 블록에 이어진 선도 숨김
   const storeEdges = useNovelStore((s) => s.edges);
   const [edgeSel, setEdgeSel] = useState<Record<string, boolean>>({});
@@ -559,13 +558,13 @@ function Canvas({
     (placeTool: PlaceTool, client: XYPosition, alt: boolean) => {
       const p = screenToFlowPosition(client);
       const snap = timeScale.snap && !alt;
-      const at = timePlace(p.x, p.y - EVENT_H / 2, timeScale, snap);
+      const at = pointerPlace(p, timeScale, snap);
       const frame = frameAt(p, useNovelStore.getState().items);
       let id: string | null = null;
       // 사건: 배치 직후 제목 입력 (UC-10) / 상태: 캐릭터 선택 후 생성 (UC-12) / 포스트잇 · 텍스트: 바로 편집 (UC-17)
       // 도형: 선택만 (글자는 더블클릭 · F2 · Enter)
       if (placeTool === "event") id = addEvent(at);
-      else if (placeTool === "state") setPending({ place: at, client, type: stateType });
+      else if (placeTool === "state") setPending({ place: at, client, type: stateType, frame });
       else if (placeTool === "shape") {
         const r = freeRect("shape", p.x, p.y, shapeKind);
         const shapeId = addShape(r.x, r.y, r.w, r.h, shapeKind);
@@ -643,12 +642,7 @@ function Canvas({
       window.removeEventListener("pointerup", onUp);
       setDraft(null);
       const p = screenToFlowPosition({ x: ev.clientX, y: ev.clientY });
-      const drawn = {
-        x: Math.min(s.x, p.x),
-        y: Math.min(s.y, p.y),
-        w: Math.abs(p.x - s.x),
-        h: Math.abs(p.y - s.y),
-      };
+      const drawn = spanRect(s.x, s.y, p.x, p.y);
       const rect = drawn.w < 20 || drawn.h < 20 ? { x: s.x, y: s.y, ...FRAME_SIZE } : drawn;
       const cur = useNovelStore.getState().items;
       const inside = Object.values(cur)
@@ -695,13 +689,10 @@ function Canvas({
     (ids: string[]) => {
       const rs = ids.flatMap((id) => latest.current.rects.get(id) ?? []);
       if (!rs.length) return;
-      const x0 = Math.min(...rs.map((r) => r.x));
-      const y0 = Math.min(...rs.map((r) => r.y));
-      const x1 = Math.max(...rs.map((r) => r.x + r.w));
-      const y1 = Math.max(...rs.map((r) => r.y + r.h));
-      const fit = Math.min(viewW / (x1 - x0 + 200), viewH / (y1 - y0 + 200));
+      const u = union(rs);
+      const fit = Math.min(viewW / (u.w + 200), viewH / (u.h + 200));
       const zoom = Math.max(MIN_ZOOM, Math.min(getZoom(), fit));
-      void setCenter((x0 + x1) / 2, (y0 + y1) / 2, { zoom, duration: 300 });
+      void setCenter(u.x + u.w / 2, u.y + u.h / 2, { zoom, duration: 300 });
     },
     [viewW, viewH, getZoom, setCenter],
   );
@@ -716,11 +707,7 @@ function Canvas({
     const frame = requestAnimationFrame(() => {
       if (focusParam !== null) {
         const cur = useNovelStore.getState().items;
-        const ids = cur[focusParam]
-          ? [focusParam]
-          : Object.values(cur).flatMap((i) =>
-              "docId" in i && i.docId === focusParam ? [i.id] : [],
-            );
+        const ids = cur[focusParam] ? [focusParam] : blockIds(cur, focusParam);
         if (ids.length) {
           select(ids);
           showItems(ids);
@@ -760,7 +747,7 @@ function Canvas({
       return;
     }
     const p = screenToFlowPosition({ x: e.clientX, y: e.clientY });
-    const at = timePlace(p.x, p.y - EVENT_H / 2, timeScale, timeScale.snap && !e.altKey);
+    const at = pointerPlace(p, timeScale, timeScale.snap && !e.altKey);
     const id =
       family === "event"
         ? placeEvent(at, docId)
@@ -834,8 +821,13 @@ function Canvas({
   // 화면에 보이기 전에 등록 (보드가 보이자마자 누른 키도 처리)
   useLayoutEffect(() => {
     const onKey = (e: KeyboardEvent) => {
-      if (e.isComposing || e.keyCode === 229 || isEditable(e.target)) return;
-      if (e.target instanceof Element && e.target.closest("dialog, [data-doc-panel]")) return;
+      if (isImeKey(e) || isEditable(e.target)) return;
+      // 대화상자 · 팝오버(상태 입력 패널 · 캐릭터 선택 · 필터 메뉴) · 사전 패널 안은 자체 키 처리
+      if (
+        e.target instanceof Element &&
+        e.target.closest("dialog, [role=dialog], [data-doc-panel]")
+      )
+        return;
       const mod = e.ctrlKey || e.metaKey;
       if (mod && e.code === "KeyG") {
         e.preventDefault();
@@ -861,7 +853,8 @@ function Canvas({
         e.preventDefault();
         clip.current = copied;
         pasteCount.current = 0;
-        if (e.code === "KeyX") deleteItems(latest.current.selectedIds);
+        // 잘라내기 = 복사한 것 전부 삭제 (선택한 프레임의 자식 포함)
+        if (e.code === "KeyX") deleteItems(copied.items.map((i) => i.id));
         return;
       }
       if (mod && e.code === "KeyV" && clip.current) {
@@ -925,6 +918,7 @@ function Canvas({
       // Enter: 사건 · 상태 블록 하나 = 사전 패널, 그 외 = 편집 (shortcuts 2.2, UC-22)
       // F2: 선택한 요소 하나 편집 (제목 · 내용) / 연결선 하나는 Enter로도 라벨 편집
       const { selectedIds: ids, selectedEdgeIds: edgeIds } = latest.current;
+      if (e.key === "Enter" && e.target instanceof HTMLButtonElement) return; // 버튼 누르기
       if (e.key === "Enter" && ids.length === 1 && !edgeIds.length) {
         const item = useNovelStore.getState().items[ids[0]];
         if (item && "docId" in item) openPanel(item.docId);
@@ -981,6 +975,8 @@ function Canvas({
     hiddenIds,
     openPanel,
   ]);
+  // 방향키를 누른 채 보드를 떠나도 묶음 기록 · 자동 저장 정지가 남지 않게
+  useEffect(() => endBatch, []);
 
   // 끌기 시작: 정렬 후보 = 화면에 보이는 다른 요소 (숨긴 것 · 장식 · 끄는 프레임의 자식 제외).
   // 시간 블록은 눈금 스냅이 켜져 있으면 가로 정렬 안 함, 캐릭터별 정렬 중 상태 블록은 세로 정렬 안 함
@@ -1156,7 +1152,7 @@ function Canvas({
                 onCancel={() => setPending(null)}
                 onPick={(docId) => {
                   const id = addState(pending.place, docId, pending.type);
-                  if (id) adopt([id], frameAt(screenToFlowPosition(pending.client), items));
+                  if (id) adopt([id], pending.frame);
                   setEditId(id);
                   setPending(null);
                 }}
@@ -1173,16 +1169,7 @@ function Canvas({
             <Axis scale={timeScale} />
             {guides.length > 0 && <AlignGuides guides={guides} />}
             {preview && <PlacePreview preview={preview} scale={timeScale} />}
-            {draft && (
-              <FrameDraft
-                rect={{
-                  x: Math.min(draft.x0, draft.x1),
-                  y: Math.min(draft.y0, draft.y1),
-                  w: Math.abs(draft.x1 - draft.x0),
-                  h: Math.abs(draft.y1 - draft.y0),
-                }}
-              />
-            )}
+            {draft && <FrameDraft rect={spanRect(draft.x0, draft.y0, draft.x1, draft.y1)} />}
             <Toolbar
               tool={tool}
               stateType={stateType}

@@ -1,6 +1,6 @@
 import { useStore, ViewportPortal } from "@xyflow/react";
 import type { ShapeKind, TimeScale } from "../../db/types";
-import { EVENT_H, EVENT_W, freeRect, timePlace } from "./flow";
+import { EVENT_H, EVENT_W, freeRect, pointerPlace, type Rect } from "./flow";
 import { ShapeOutline } from "./FreeNodes";
 import { tickToX } from "./timeAxis";
 import type { PlaceTool } from "./tools";
@@ -41,7 +41,7 @@ export default function PlacePreview({ preview, scale }: { preview: Preview; sca
   }
 
   const top = preview.y - EVENT_H / 2;
-  const place = timePlace(preview.x, top, scale, preview.snap);
+  const place = pointerPlace(preview, scale, preview.snap);
   const x = place.mode === "timed" ? tickToX(place.t, scale) : preview.x;
   // 사건은 가운데 = 눈금, 상태는 왼쪽 끝 = 눈금
   const left = preview.tool === "state" ? x : x - EVENT_W / 2;
@@ -86,7 +86,7 @@ export default function PlacePreview({ preview, scale }: { preview: Preview; sca
 }
 
 // 프레임 도구로 그리는 중인 영역
-export function FrameDraft({ rect }: { rect: { x: number; y: number; w: number; h: number } }) {
+export function FrameDraft({ rect }: { rect: Rect }) {
   const zoom = useStore((s) => s.transform[2]);
   return (
     <ViewportPortal>

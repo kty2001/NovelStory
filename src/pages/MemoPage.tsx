@@ -21,11 +21,11 @@ import {
 } from "../store/memoActions";
 import { useNovelStore } from "../store/novelStore";
 import { deleteDoc } from "../store/wikiActions";
+import { STICKY_SIZE } from "./board/flow";
 import { sortedMemos } from "./memo/memo";
 import { flatCategories } from "./wiki/categories";
 import { useWikiNav } from "./wiki/useWikiNav";
 
-const STICKY_SIZE = 160;
 const HEADER_H = 56; // 작업공간 상단 바 (보드 화면 가운데 근사용)
 
 type Notice = { text: string; actions: { label: string; run: () => void }[] };

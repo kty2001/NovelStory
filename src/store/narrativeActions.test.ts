@@ -77,6 +77,14 @@ describe("회차", () => {
     renameEpisode(e, " ");
     expect(store.getState().episodes[e]).not.toHaveProperty("title");
   });
+
+  it("같은 제목이면 바꾸지 않음 (blur마다 저장 방지)", () => {
+    const e = addEpisode()!;
+    renameEpisode(e, "프롤로그");
+    const before = store.getState().episodes;
+    renameEpisode(e, " 프롤로그 ");
+    expect(store.getState().episodes).toBe(before);
+  });
 });
 
 describe("슬롯", () => {

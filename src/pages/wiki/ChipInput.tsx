@@ -1,4 +1,5 @@
 import { X } from "lucide-react";
+import { isImeKey } from "../../lib/keys";
 
 // 별칭 · 태그 칩 목록: Enter · 바깥 클릭으로 추가(한글 조합 중 Enter 무시, 공백 · 중복 무시), × 삭제
 export default function ChipInput({
@@ -40,7 +41,7 @@ export default function ChipInput({
         placeholder={`+ ${label}`}
         className="w-28 rounded-full px-2.5 py-0.5 text-body-sm text-ink placeholder:text-muted focus:bg-surface-soft focus:outline-none"
         onKeyDown={(e) => {
-          if (e.nativeEvent.isComposing || e.keyCode === 229) return;
+          if (isImeKey(e)) return;
           if (e.key === "Enter") add(e.currentTarget);
           if (e.key === "Escape") e.currentTarget.value = "";
         }}

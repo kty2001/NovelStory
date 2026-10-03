@@ -6,8 +6,7 @@ import { useNovelStore } from "../../store/novelStore";
 import { useBoardUi } from "./boardContext";
 import Ports from "./Ports";
 import { useFocusWhenVisible } from "./useFocusWhenVisible";
-
-const isComposing = (e: React.KeyboardEvent) => e.nativeEvent.isComposing || e.keyCode === 229;
+import { isImeKey } from "../../lib/keys";
 
 // 인라인 편집 (C6): 편집 중 드래그 = 글자 선택, 휠 = 텍스트 스크롤. Esc · 바깥 클릭 = 종료, 내용 유지. 편집 1회 = 1건
 function InlineText({
@@ -39,7 +38,7 @@ function InlineText({
     onBlur: (e: React.FocusEvent<HTMLTextAreaElement & HTMLInputElement>) =>
       finish(e.currentTarget.value),
     onKeyDown: (e: React.KeyboardEvent<HTMLTextAreaElement & HTMLInputElement>) => {
-      if (isComposing(e)) return;
+      if (isImeKey(e)) return;
       if (e.key === "Escape" || (!multiline && e.key === "Enter")) finish(e.currentTarget.value);
     },
   };
