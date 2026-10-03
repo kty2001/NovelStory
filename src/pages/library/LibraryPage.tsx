@@ -17,6 +17,7 @@ import {
   updateNovelInfo,
 } from "../../db/novels";
 import { requestPersistOnce } from "../../db/persist";
+import { isQuotaError } from "../../db/storage";
 import type { Novel } from "../../db/types";
 import DeleteDialog from "./DeleteDialog";
 import EmptyLibrary from "./EmptyLibrary";
@@ -24,6 +25,7 @@ import ImportErrorDialog from "./ImportErrorDialog";
 import NovelCard from "./NovelCard";
 import NovelFormDialog, { type NovelFormSubmit } from "./NovelFormDialog";
 import { importSample } from "./sample";
+import StorageFullDialog from "../StorageFullDialog";
 
 type Sort = "updated" | "title";
 
@@ -221,7 +223,16 @@ export default function LibraryPage() {
         onExport={(novel) => void exportNovel(novel.id)}
         onConfirm={(novel) => void confirmDelete(novel)}
       />
-      <ImportErrorDialog error={importError} onClose={() => setImportError(null)} />
+      {/* 공간 부족이면 L-5 공간 부족 대화상자 (UC-05 → UC-42) */}
+      <ImportErrorDialog
+        error={isQuotaError(importError) ? null : importError}
+        onClose={() => setImportError(null)}
+      />
+      <StorageFullDialog
+        open={isQuotaError(importError)}
+        onClose={() => setImportError(null)}
+        onExport={(id) => void exportNovel(id)}
+      />
       {deleted && (
         <Toast
           action={

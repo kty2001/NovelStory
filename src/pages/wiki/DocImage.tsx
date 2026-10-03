@@ -4,6 +4,7 @@ import { ImagePlus, X } from "lucide-react";
 import BlobImage from "../../components/BlobImage";
 import { db } from "../../db/db";
 import { deleteImage, resizeImage, saveImage } from "../../db/images";
+import { isQuotaError } from "../../db/storage";
 import type { WikiDoc } from "../../db/types";
 import { useNovelStore } from "../../store/novelStore";
 import { updateDoc } from "../../store/wikiActions";
@@ -30,8 +31,12 @@ export default function DocImage({ doc }: { doc: WikiDoc }) {
     setError("");
     try {
       replace(await saveImage(doc.novelId, await resizeImage(file)));
-    } catch {
-      setError("이미지를 변환하지 못했어요. 다른 파일을 골라 주세요.");
+    } catch (err) {
+      setError(
+        isQuotaError(err)
+          ? "저장 공간이 부족해 이미지를 저장하지 못했어요."
+          : "이미지를 변환하지 못했어요. 다른 파일을 골라 주세요.",
+      );
     } finally {
       setConverting(false);
     }

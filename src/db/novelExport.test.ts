@@ -130,6 +130,30 @@ describe("buildExport", () => {
     expect(data.wikiDocs[0]).not.toHaveProperty("mentions");
     expect(data.wikiDocs[0]).not.toHaveProperty("plainText");
   });
+
+  it("레코드를 넘기면 DB 대신 사용 (저장 안 된 변경 포함), 이미지는 DB", async () => {
+    const id = await createNovel({ title: "원본" });
+    const fromDb = await buildExport(id);
+    await db.images.put({
+      id: "img",
+      novelId: id,
+      updatedAt: OLD,
+      blob: new Blob(["x"], { type: "image/webp" }),
+      mime: "image/webp",
+      width: 1,
+      height: 1,
+      bytes: 1,
+    });
+    const data = await buildExport(id, {
+      ...fromDb,
+      novel: { ...fromDb.novel, title: "저장 안 됨" },
+      wikiDocs: [{ ...doc("new", id), mentions: ["x"] }],
+    });
+    expect(data.novel.title).toBe("저장 안 됨");
+    expect(data.wikiDocs.map((d) => d.id)).toEqual(["new"]);
+    expect(data.wikiDocs[0]).not.toHaveProperty("mentions");
+    expect(data.images.map((i) => i.id)).toEqual(["img"]);
+  });
 });
 
 describe("importExport", () => {

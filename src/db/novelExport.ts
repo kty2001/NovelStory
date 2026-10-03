@@ -20,9 +20,31 @@ async function blobToDataUrl(blob: Blob) {
   return `data:${blob.type || "application/octet-stream"};base64,${btoa(binary)}`;
 }
 
+// 내보낼 레코드 (이미지 제외). 작업공간은 저장 실패 중에도 화면 그대로 내보내도록 스토어에서 넘김 (UC-42)
+export type ExportRecords = Omit<
+  NovelExport,
+  "format" | "schemaVersion" | "exportedAt" | "images" | "wikiDocs"
+> & { wikiDocs: WikiDoc[] };
+
 // data_model 7장: 삭제 기록·파생 필드 제외, 이미지는 data URL
-export async function buildExport(novelId: string): Promise<NovelExport> {
-  const data = await db.transaction(
+export async function buildExport(novelId: string, records?: ExportRecords): Promise<NovelExport> {
+  const data = records
+    ? { ...records, images: await db.images.where({ novelId }).toArray() }
+    : await readRecords(novelId);
+  return {
+    format: EXPORT_FORMAT,
+    schemaVersion: SCHEMA_VERSION,
+    exportedAt: new Date().toISOString(),
+    ...data,
+    wikiDocs: data.wikiDocs.map(({ mentions, plainText, ...doc }) => doc),
+    images: await Promise.all(
+      data.images.map(async ({ blob, ...img }) => ({ ...img, dataUrl: await blobToDataUrl(blob) })),
+    ),
+  };
+}
+
+function readRecords(novelId: string) {
+  return db.transaction(
     "r",
     [
       db.novels,
@@ -57,16 +79,6 @@ export async function buildExport(novelId: string): Promise<NovelExport> {
       };
     },
   );
-  return {
-    format: EXPORT_FORMAT,
-    schemaVersion: SCHEMA_VERSION,
-    exportedAt: new Date().toISOString(),
-    ...data,
-    wikiDocs: data.wikiDocs.map(({ mentions, plainText, ...doc }) => doc),
-    images: await Promise.all(
-      data.images.map(async ({ blob, ...img }) => ({ ...img, dataUrl: await blobToDataUrl(blob) })),
-    ),
-  };
 }
 
 const pad = (n: number) => String(n).padStart(2, "0");
@@ -78,8 +90,8 @@ export function exportFileName(title: string, now = new Date()) {
 }
 
 // UC-04: 파일 다운로드 + 마지막 백업 시각 기록 (updatedAt은 그대로 → 백업 알림 초기화)
-export async function exportNovel(novelId: string) {
-  const data = await buildExport(novelId);
+export async function exportNovel(novelId: string, records?: ExportRecords) {
+  const data = await buildExport(novelId, records);
   const url = URL.createObjectURL(new Blob([JSON.stringify(data)], { type: "application/json" }));
   const a = document.createElement("a");
   a.href = url;
@@ -87,7 +99,13 @@ export async function exportNovel(novelId: string) {
   a.click();
   setTimeout(() => URL.revokeObjectURL(url), 0);
   const lastExportedAt = new Date().toISOString();
-  await db.novels.update(novelId, { lastExportedAt });
+  try {
+    await db.novels.update(novelId, { lastExportedAt });
+  } catch (err) {
+    // 공간 부족 등으로 기록 실패해도 파일은 이미 받음
+    console.error("백업 시각 기록 실패", err);
+    return data.novel;
+  }
   return { ...data.novel, lastExportedAt };
 }
 

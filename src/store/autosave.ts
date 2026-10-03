@@ -1,5 +1,6 @@
 import type { Table } from "dexie";
 import { db } from "../db/db";
+import { isQuotaError } from "../db/storage";
 import type { BaseRecord, Novel } from "../db/types";
 import type { NovelData, NovelState, NovelStore } from "./novelStore";
 
@@ -62,7 +63,7 @@ export function createAutosave(store: NovelStore) {
         if (mySession !== session) return;
         // 실패분이 다음 저장에 다시 포함되도록 기준을 되돌림 (저장은 멱등)
         base = prev;
-        store.setState({ save: "error" });
+        store.setState({ save: isQuotaError(err) ? "full" : "error" });
       }
     });
     return queue;

@@ -3,6 +3,7 @@ import { shallow } from "zustand/shallow";
 import { temporal } from "zundo";
 import type { EntityTable } from "dexie";
 import { db } from "../db/db";
+import type { ExportRecords } from "../db/novelExport";
 import type {
   BaseRecord,
   Board,
@@ -43,7 +44,7 @@ export type NovelState = Omit<NovelData, "novel" | "board"> & {
   board: Board | null;
   novelId: string | null;
   status: "idle" | "loading" | "ready" | "missing";
-  save: "saved" | "saving" | "error";
+  save: "saved" | "saving" | "error" | "full"; // full = 공간 부족 (UC-42)
   batching: boolean;
 };
 
@@ -88,6 +89,32 @@ const autosave = createAutosave(useNovelStore);
 export const flushSave = autosave.flush;
 // 내보내기(lastExportedAt)·소설 정보 수정처럼 DB에 직접 쓴 소설 레코드를 반영
 export const adoptNovel = autosave.adoptNovel;
+
+// 작업공간 내보내기 결과 반영. 저장 실패 중이면 스토어 소설이 DB보다 앞서 있으므로 덮지 않고
+// 백업 시각만 더해 다음 저장에 포함
+export function adoptExport(exported: Novel) {
+  const s = useNovelStore.getState();
+  if (s.save === "saved") adoptNovel(exported);
+  else if (s.novel && exported.lastExportedAt)
+    useNovelStore.setState({ novel: { ...s.novel, lastExportedAt: exported.lastExportedAt } });
+}
+
+// 작업공간 내보내기용 현재 레코드 (저장 실패 중에도 화면 그대로, UC-42)
+export function currentRecords(): ExportRecords {
+  const s = useNovelStore.getState();
+  return {
+    novel: s.novel!,
+    board: s.board!,
+    boardItems: Object.values(s.items),
+    boardEdges: Object.values(s.edges),
+    wikiCategories: Object.values(s.categories),
+    wikiDocs: Object.values(s.docs),
+    storyLines: Object.values(s.lines),
+    episodes: Object.values(s.episodes),
+    narrativeSlots: Object.values(s.slots),
+    memos: Object.values(s.memos),
+  };
+}
 
 const toCollection = <T extends BaseRecord>(rows: T[]): Collection<T> =>
   Object.fromEntries(rows.map((r) => [r.id, r]));

@@ -1,7 +1,7 @@
 # 진행 상태 (Status)
 
 ## 현재 단계
-MVP 이후 — 1단계(MVP: F0 서재 · F1 보드 · F4 사전 · F6 로컬 저장, 데스크톱 전용) 배포 완료. MVP 이후 기능: 사전 시점 선택 보기 · F7 개요 · 보드 문서 목록 사이드바 · 설정 점검 · F2 서술 순서(1차 회차 · 배치, 2차 보드 비교 오버레이) · F5 메모 · 보드 도형 · 정렬 보조선 · 스토리 라인 색 · 사전 초성 검색 · 속성 값 문서 링크 · 보드 필터 확장 완료, 다음: 남은 MVP 이후 항목. 태블릿·모바일은 기기 확보 후
+MVP 이후 — 1단계(MVP: F0 서재 · F1 보드 · F4 사전 · F6 로컬 저장, 데스크톱 전용) 배포 완료. MVP 이후 기능: 사전 시점 선택 보기 · F7 개요 · 보드 문서 목록 사이드바 · 설정 점검 · F2 서술 순서(1차 회차 · 배치, 2차 보드 비교 오버레이) · F5 메모 · 보드 도형 · 정렬 보조선 · 스토리 라인 색 · 사전 초성 검색 · 속성 값 문서 링크 · 보드 필터 확장 · 저장 실패 대응 완료, 다음: 남은 MVP 이후 항목. 태블릿·모바일은 기기 확보 후
 
 ## 이력
 | 날짜 | 내용 |
@@ -54,6 +54,7 @@ MVP 이후 — 1단계(MVP: F0 서재 · F1 보드 · F4 사전 · F6 로컬 저
 | 2026-09-30 | F5 메모: 결정(별도 "메모" 탭 `Alt+5` · 변환 = 이동 + 되돌리기 알림 · 메모 → 포스트잇은 보드 화면 가운데) 문서 반영, `Memo`(Dexie v3 · 내보내기 v3 + v2 변환), `memoActions`(추가 · 내용 · 고정 · 삭제/복원, `memoToSticky` · `stickiesToMemos` · `memoToDoc`), `memo.ts`(`sortedMemos` · `memoTitleBody`), `MemoPage`, 블록 메뉴 "메모로" + 보드 알림, `addSticky` 글 인자, Vitest 11건 · Playwright 3건(`e2e/memo.spec.ts`) |
 | 2026-10-03 | 사전 초성 검색 · 속성 값 문서 링크: `es-hangul` 추가, `matchAt`(초성뿐인 검색어 = 글자별 초성 일치, 위치 유지) → `searchDocs` · `searchWiki` · `mentionCandidates`, `WikiProp.docId?` · `deriveDoc(body, props)` · `propText`, `DocLinkChip`(`MentionChip`에서 분리), `PropsTable` 값 `@` 후보 · 링크 칩 · 링크 해제, 역링크 속성 문맥, 표 링크 칩, 가져오기 `docId` 재발급, Vitest 7건 · Playwright 1건 + 검색 1건 보강 |
 | 2026-10-03 | 보드 필터 확장(캐릭터 · 태그 · 분류, B-5): `board/filters.ts`(`hiddenItemIds` · `filterRows` · `NO_FILTERS`), `FilterMenu` 그룹 섹션 · 배지 수 · 전체 초기화, `Board.tsx` 숨김 계산 교체, Vitest 10건 · Playwright 1건(`e2e/sample.spec.ts`) |
+| 2026-10-03 | 저장 실패 · 공간 부족 대응(UC-42): `db/storage.ts`(`isQuotaError` · `storageUsage` · `imageUsageByNovel` · `formatBytes`), 자동 저장 `save: "full"`, `SaveStatus`(실패 팝오버) · `StorageFullDialog`(L-5, 서재 가져오기 공용), `buildExport`/`exportNovel` `records` 인자 + `currentRecords` · `adoptExport`(작업공간 내보내기 = 스토어 기준), Vitest 6건 · Playwright 2건(`e2e/storage.spec.ts`, IndexedDB 쓰기 차단) |
 
 ## 결정됨
 | 항목 | 결정 |

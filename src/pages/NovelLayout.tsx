@@ -6,15 +6,22 @@ import Toast from "../components/Toast";
 import { exportNovel } from "../db/novelExport";
 import { updateNovelInfo } from "../db/novels";
 import { patchUiState } from "../db/uiState";
-import { adoptNovel, flushSave, loadNovel, unloadNovel, useNovelStore } from "../store/novelStore";
+import {
+  adoptExport,
+  adoptNovel,
+  currentRecords,
+  flushSave,
+  loadNovel,
+  unloadNovel,
+  useNovelStore,
+} from "../store/novelStore";
 import BackupBanner from "./BackupBanner";
 import NovelFormDialog, { type NovelFormSubmit } from "./library/NovelFormDialog";
 import { isEditable } from "./board/tools";
 import QuickMove from "./QuickMove";
+import SaveStatus from "./SaveStatus";
 import ShortcutHelp from "./ShortcutHelp";
 import { ShortcutHelpContext } from "./shortcutHelpContext";
-
-const SAVE_LABEL = { saving: "저장 중", saved: "저장됨", error: "저장 실패" } as const;
 
 const TAB_KEYS = {
   Digit1: "board",
@@ -33,7 +40,6 @@ export default function NovelLayout() {
   const { pathname } = useLocation();
   const status = useNovelStore((s) => s.status);
   const novel = useNovelStore((s) => s.novel);
-  const save = useNovelStore((s) => s.save);
   const [infoOpen, setInfoOpen] = useState(false);
   const [quickOpen, setQuickOpen] = useState(false);
   const [helpOpen, setHelpOpen] = useState(false);
@@ -89,11 +95,12 @@ export default function NovelLayout() {
     if (novelId && status === "ready") void patchUiState(novelId, { lastTab: tab });
   }, [novelId, status, tab]);
 
-  // DB에 직접 쓰는 동작: 미저장분을 먼저 저장하고, 결과 소설 레코드를 스토어에 반영
+  // DB에 직접 쓰는 동작: 미저장분을 먼저 저장하고, 결과 소설 레코드를 스토어에 반영.
+  // 내보내기는 저장 실패 중에도 화면 그대로 (스토어 레코드, UC-42)
   const exportCurrent = async () => {
     if (!novelId) return;
     await flushSave();
-    adoptNovel(await exportNovel(novelId));
+    adoptExport(await exportNovel(novelId, currentRecords()));
   };
   const submitInfo: NovelFormSubmit = async (info, cover) => {
     if (!novelId) return;
@@ -138,11 +145,7 @@ export default function NovelLayout() {
         </nav>
         {status === "ready" && (
           <>
-            <span
-              className={`ml-auto text-caption ${save === "error" ? "text-error" : "text-muted"}`}
-            >
-              {SAVE_LABEL[save]}
-            </span>
+            <SaveStatus onExport={exportCurrent} />
             <button
               type="button"
               aria-label="빠른 이동"
