@@ -40,7 +40,8 @@ export type WikiCategory = NovelScoped & {
   system?: "character" | "event";
 };
 
-export type WikiProp = { key: string; value: string };
+// docId = 값 전체가 문서 링크 (value = 링크할 때의 제목, 대상 삭제 시 표시용)
+export type WikiProp = { key: string; value: string; docId?: string };
 
 export type StoryLine = NovelScoped & {
   name: string;

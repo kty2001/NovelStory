@@ -372,6 +372,39 @@ test.describe("@ 링크 · 역링크", () => {
     await page.keyboard.press("Tab");
     await expect(link(page)).toHaveText("카엘");
   });
+
+  test("속성 값 링크: @ 후보(초성) → 칩 · 역링크 '소속:' · 표 칩 · 링크 해제", async ({ page }) => {
+    await createDoc(page, "장소", "붉은 성채");
+    await createDoc(page, "캐릭터", "카엘");
+
+    const value = page.getByRole("textbox", { name: "소속 값" });
+    await value.fill("@ㅂㅇ");
+    const option = candidates(page).getByRole("option");
+    await expect(option).toHaveCount(1);
+    await expect(option).toContainText("붉은 성채");
+    await expect(option).toContainText("장소");
+    await page.keyboard.press("Enter");
+    const chip = page.getByLabel("소속 값").getByTestId("wiki-link");
+    await expect(chip).toHaveText("붉은 성채");
+
+    await nameButton(page, "캐릭터").click();
+    await page.getByRole("tab", { name: "표" }).click();
+    await expect(page.getByRole("table").getByTestId("wiki-link")).toHaveText("붉은 성채");
+    await page.getByRole("table").getByRole("button", { name: "카엘" }).click();
+
+    await chip.click();
+    await expect(page.getByRole("textbox", { name: "제목" })).toHaveValue("붉은 성채");
+    const backlink = page.getByTestId("backlink");
+    await expect(backlink).toContainText("카엘");
+    await expect(backlink).toContainText("소속:");
+    await expect(backlink.locator("mark")).toHaveText("붉은 성채");
+
+    await backlink.click();
+    await page.getByTestId("prop-row").filter({ has: chip }).hover();
+    await page.getByRole("button", { name: "소속 링크 해제" }).click();
+    await expect(page.getByRole("textbox", { name: "소속 값" })).toHaveValue("붉은 성채");
+    await expect(chip).toHaveCount(0);
+  });
 });
 
 test.describe("표 보기 · 검색 · 빠른 이동", () => {
@@ -448,6 +481,10 @@ test.describe("표 보기 · 검색 · 빠른 이동", () => {
     await page.getByRole("button", { name: "검색 지우기" }).click();
     await expect(hits).toHaveCount(0);
     await expect(page.getByRole("textbox", { name: "제목" })).toHaveValue("성");
+
+    await search.fill("ㅂㄹ"); // 초성: 제목 · 별칭만 (본문 제외)
+    await expect(hits).toHaveCount(2);
+    await expect(hits.nth(0).locator("mark")).toHaveText("반란");
 
     await search.fill("카엘");
     await hits.first().click();

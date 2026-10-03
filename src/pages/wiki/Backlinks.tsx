@@ -20,13 +20,16 @@ export default function Backlinks({ docId, title }: { docId: string; title: stri
       </h3>
       {list.length === 0 && (
         <EmptyState title="이 문서를 언급한 문서가 없어요">
-          다른 문서 본문에서 @로 이 문서를 링크하면 여기에 모여요
+          다른 문서 본문이나 속성 값에서 @로 이 문서를 링크하면 여기에 모여요
         </EmptyState>
       )}
       <ul className="mt-2">
         {list.map((d) => {
           const category = categories[d.categoryId];
-          const ctx = mentionContext(d.body, docId);
+          // 본문 문맥이 없으면 속성 값 링크 ("소속: 제목")
+          const prop = d.props.find((p) => p.docId === docId);
+          const ctx =
+            mentionContext(d.body, docId) ?? (prop ? { before: `${prop.key}: `, after: "" } : null);
           return (
             <li key={d.id}>
               <button

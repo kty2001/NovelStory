@@ -197,6 +197,18 @@ it("표 셀 수정: 있는 키는 값 변경, 없는 키는 끝에 추가", () =
   ]);
 });
 
+it("속성 값 링크: mentions에 반영, 본문 변경 후에도 유지, 표 셀 수정 = 링크 해제", () => {
+  const a = addDoc("char")!;
+  const b = addDoc("char")!;
+  updateDoc(a, { props: [{ key: "소속", value: "b", docId: b }] });
+  expect(store.getState().docs[a].mentions).toEqual([b]);
+  setDocBody(a, { type: "doc", content: [{ type: "paragraph" }] });
+  expect(store.getState().docs[a].mentions).toEqual([b]);
+  setPropValue(a, "소속", "없음");
+  expect(store.getState().docs[a].props).toEqual([{ key: "소속", value: "없음" }]);
+  expect(store.getState().docs[a].mentions).toEqual([]);
+});
+
 it("문서 → 보드: 사건 블록은 문서당 1개", () => {
   const first = placeEvent({ mode: "timed", t: 1, y: 0 }, "d1");
   expect(store.getState().items[first!]).toMatchObject({ kind: "event", docId: "d1" });

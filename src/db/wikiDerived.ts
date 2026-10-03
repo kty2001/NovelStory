@@ -1,4 +1,4 @@
-import type { TiptapJSON } from "./types";
+import type { TiptapJSON, WikiDoc, WikiProp } from "./types";
 
 type Node = TiptapJSON & {
   text?: string;
@@ -8,8 +8,11 @@ type Node = TiptapJSON & {
 
 const BLOCK = new Set(["paragraph", "heading", "blockquote", "listItem", "codeBlock"]);
 
-// data_model 4.5: 저장 시 body에서 역링크 색인(mentions)·검색용 순수 텍스트(plainText) 계산
-export function deriveDoc(body: TiptapJSON | null): { mentions: string[]; plainText: string } {
+// data_model 4.5: 저장 시 역링크 색인(mentions = 본문 멘션 + 속성 값 링크)·검색용 본문 순수 텍스트(plainText) 계산
+export function deriveDoc(
+  body: TiptapJSON | null,
+  props: WikiProp[] = [],
+): { mentions: string[]; plainText: string } {
   const mentions = new Set<string>();
   const parts: string[] = [];
   const walk = (node: Node) => {
@@ -22,6 +25,7 @@ export function deriveDoc(body: TiptapJSON | null): { mentions: string[]; plainT
     if (node.type && BLOCK.has(node.type)) parts.push("\n");
   };
   if (body) walk(body as Node);
+  for (const p of props) if (p.docId) mentions.add(p.docId);
   return {
     mentions: [...mentions],
     plainText: parts
@@ -30,6 +34,10 @@ export function deriveDoc(body: TiptapJSON | null): { mentions: string[]; plainT
       .trim(),
   };
 }
+
+// 속성 값 표시 문자열: 문서 링크면 대상의 현재 제목, 대상이 삭제됐으면 저장된 값
+export const propText = (p: WikiProp, docs: Record<string, WikiDoc>) =>
+  p.docId ? (docs[p.docId]?.title ?? p.value) : p.value;
 
 // 본문의 mention id 치환 (가져오기 ID 재발급)
 export function remapMentions(body: TiptapJSON | null, map: (id: string) => string) {

@@ -1,7 +1,8 @@
 import type { WikiDoc } from "../../db/types";
 import type { Collection } from "../../store/novelStore";
+import { matchAt } from "../board/stateCalc";
 
-// 사전 전체 검색 (UC-34, W-4): 제목 · 별칭 · 본문 부분 일치 (대소문자 무시, 초성 검색은 MVP 이후)
+// 사전 전체 검색 (UC-34, W-4): 제목 · 별칭 · 본문 부분 일치 (대소문자 무시), 제목 · 별칭은 초성 일치도
 
 export type Hit = {
   doc: WikiDoc;
@@ -31,15 +32,14 @@ export function searchWiki(docs: Collection<WikiDoc>, query: string): Hit[] {
   if (!q) return [];
   const hits: Hit[] = [];
   for (const doc of Object.values(docs)) {
-    const t = doc.title.toLowerCase().indexOf(q);
+    const t = matchAt(doc.title, q);
     if (t >= 0) {
       hits.push({ doc, where: "title", ...split(doc.title, t, q.length) });
       continue;
     }
-    const alias = doc.aliases.find((a) => a.toLowerCase().includes(q));
+    const alias = doc.aliases.find((a) => matchAt(a, q) >= 0);
     if (alias) {
-      const at = alias.toLowerCase().indexOf(q);
-      hits.push({ doc, where: "alias", alias, ...split(alias, at, q.length) });
+      hits.push({ doc, where: "alias", alias, ...split(alias, matchAt(alias, q), q.length) });
       continue;
     }
     const b = doc.plainText.toLowerCase().indexOf(q);

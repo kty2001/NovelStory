@@ -188,13 +188,15 @@ export async function importExport(raw: unknown, opts: { titleSuffix?: string } 
   const memos = data.memos.map(base);
   const wikiDocs: WikiDoc[] = data.wikiDocs.map((d) => {
     const body = remapMentions(d.body, map);
+    const props = d.props.map((p) => (p.docId ? { ...p, docId: map(p.docId) } : p));
     return {
       ...base(d),
       categoryId: map(d.categoryId),
       lineId: opt(d.lineId),
       imageId: opt(d.imageId),
       body,
-      ...deriveDoc(body),
+      props,
+      ...deriveDoc(body, props),
     };
   });
 

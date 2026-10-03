@@ -229,7 +229,11 @@ export default function DocView({ doc, onDeleted }: { doc: WikiDoc; onDeleted?: 
           {t !== null ? (
             <StateAtTable doc={doc} t={t} />
           ) : (
-            <PropsTable props={doc.props} onChange={(props) => updateDoc(doc.id, { props })} />
+            <PropsTable
+              props={doc.props}
+              excludeId={doc.id}
+              onChange={(props) => updateDoc(doc.id, { props })}
+            />
           )}
         </div>
         <DocImage doc={doc} />

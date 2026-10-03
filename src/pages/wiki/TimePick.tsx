@@ -1,4 +1,5 @@
 import type { WikiDoc } from "../../db/types";
+import { propText } from "../../db/wikiDerived";
 import { useNovelStore } from "../../store/novelStore";
 import { stateAt } from "../board/stateCalc";
 import { tickText } from "./boardLinks";
@@ -45,7 +46,7 @@ export function StateAtTable({ doc, t }: { doc: WikiDoc; t: number }) {
   const items = useNovelStore((s) => s.items);
   const docs = useNovelStore((s) => s.docs);
   const values = stateAt(doc.id, t, items, docs);
-  const base = Object.fromEntries(doc.props.map((p) => [p.key, p.value]));
+  const base = Object.fromEntries(doc.props.map((p) => [p.key, propText(p, docs)]));
   const keys = [...new Set([...doc.props.map((p) => p.key), ...Object.keys(values)])];
   return (
     <ul aria-label="시점 속성" className="border-t border-hairline">

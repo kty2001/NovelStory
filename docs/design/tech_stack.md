@@ -15,7 +15,7 @@
 | 라우팅 | React Router | `/`, `/novel/:id/board`, `/novel/:id/narrative`, `/novel/:id/wiki`, `/novel/:id/memo` |
 | 아이콘 | Lucide | 오픈 라이선스, React 패키지 |
 | 품질 도구 | ESLint + Prettier + Vitest + Playwright | Vitest = 로직(시간 변환, 상태 누적), Playwright = 드래그·IME E2E. TypeScript는 6.0 고정 (typescript-eslint가 7 미지원) |
-| 검색 | 부분 일치 (1단계) | 초성 검색(es-hangul)은 MVP 이후 |
+| 검색 | 부분 일치 + 초성 일치(es-hangul `getChoseong`) | 초성 검색은 MVP 이후 추가, 제목 · 별칭만 (본문 제외) |
 | 저장 1단계 | IndexedDB (브라우저 로컬) + JSON 내보내기/가져오기 | 서버 비용·한도 부담 없음. 보드 요소·사전·이미지(Blob) 저장 |
 | 저장 2단계 | Cloudflare Workers API + D1 | 로그인·기기 간 동기화, 인증 방식 미정 |
 | 배포 | GitHub + Cloudflare Workers Builds → Workers Static Assets | main 푸시 시 자동 빌드·배포, 무료 티어. `@cloudflare/vite-plugin` + wrangler |

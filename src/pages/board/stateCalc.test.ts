@@ -1,7 +1,7 @@
 import { describe, expect, it } from "vitest";
 import type { StateItem, WikiCategory } from "../../db/types";
 import { doc, OLD } from "../../test/fixtures";
-import { afterExit, categoryFamily, searchDocs, stateAt, stateTicks } from "./stateCalc";
+import { afterExit, categoryFamily, matchAt, searchDocs, stateAt, stateTicks } from "./stateCalc";
 
 const state = (
   id: string,
@@ -101,5 +101,17 @@ describe("분류 계열 · 검색", () => {
     expect(searchDocs(list, "기사").map((d) => d.id)).toEqual(["a"]);
     expect(searchDocs(list, "레").map((d) => d.id)).toEqual(["b"]);
     expect(searchDocs(list, " ").length).toBe(2);
+    expect(searchDocs(list, "ㅋㅇ").map((d) => d.id)).toEqual(["a"]);
+    expect(searchDocs(list, "ㅎㄱ").map((d) => d.id)).toEqual(["a"]);
+  });
+
+  it("matchAt: 부분 일치, 초성뿐인 검색어는 초성 일치 (위치 = 원문 위치)", () => {
+    expect(matchAt("붉은 기사단", "기사")).toBe(3);
+    expect(matchAt("붉은 기사단", "ㄱㅅ")).toBe(3);
+    expect(matchAt("붉은 기사단", "ㅂㅇ ㄱ")).toBe(0);
+    expect(matchAt("Dr. 카엘", "ㅋㅇ")).toBe(4);
+    expect(matchAt("카엘", "카ㅇ")).toBe(-1); // 혼합은 초성 검색 아님
+    expect(matchAt("카엘", "ㄱ")).toBe(-1);
+    expect(matchAt("ABC", "b")).toBe(1);
   });
 });

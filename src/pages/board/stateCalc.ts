@@ -1,4 +1,6 @@
+import { getChoseong } from "es-hangul";
 import type { BoardItem, StateItem, WikiCategory, WikiDoc } from "../../db/types";
+import { propText } from "../../db/wikiDerived";
 import type { Collection } from "../../store/novelStore";
 
 // 캐릭터 상태 계산 (data_model 4.4)
@@ -26,7 +28,7 @@ export function stateAt(
   excludeId?: string,
 ): Record<string, string> {
   const out: Record<string, string> = {};
-  for (const p of docs[docId]?.props ?? []) if (p.value) out[p.key] = p.value;
+  for (const p of docs[docId]?.props ?? []) if (p.value) out[p.key] = propText(p, docs);
   const blocks = timedStates(items, docId)
     .filter((s) => s.id !== excludeId && Math.round(s.place.t) <= Math.round(t))
     .sort(byTime);
@@ -73,11 +75,21 @@ export function categoryFamily(
   return family;
 }
 
-// 캐릭터 문서 검색: 제목 · 별칭 부분 일치 (대소문자 무시)
-export function searchDocs(docs: WikiDoc[], query: string): WikiDoc[] {
+const CHOSEONG_ONLY = /^[ㄱ-ㅎ\s]+$/;
+
+// 일치 위치 (없으면 -1): 부분 일치(대소문자 무시), 검색어가 초성뿐이면 글자별 초성 일치.
+// 음절 → 초성 1:1 치환이라 위치 · 길이는 원문 그대로 (일치 부분 강조용)
+export function matchAt(text: string, query: string): number {
   const q = query.trim().toLowerCase();
-  if (!q) return docs;
+  const i = text.toLowerCase().indexOf(q);
+  if (i >= 0 || !CHOSEONG_ONLY.test(q)) return i;
+  return text.replace(/[가-힣]/g, (c) => getChoseong(c)).indexOf(q);
+}
+
+// 문서 검색: 제목 · 별칭 부분 일치 또는 초성 일치
+export function searchDocs(docs: WikiDoc[], query: string): WikiDoc[] {
+  if (!query.trim()) return docs;
   return docs.filter(
-    (d) => d.title.toLowerCase().includes(q) || d.aliases.some((a) => a.toLowerCase().includes(q)),
+    (d) => matchAt(d.title, query) >= 0 || d.aliases.some((a) => matchAt(a, query) >= 0),
   );
 }

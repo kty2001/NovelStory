@@ -48,7 +48,7 @@
 | React Flow — 상태 관리 | https://reactflow.dev/learn/advanced-use/state-management | Zustand 연동 방식 |
 | zundo | https://github.com/charkour/zundo | Zustand용 실행 취소/다시 실행 미들웨어 |
 | Dexie | https://dexie.org/ | IndexedDB 래퍼, 스키마 버전·마이그레이션 |
-| es-hangul | https://es-hangul.slash.page/ | 한글 초성 검색 등 (사전 검색 검토) |
+| es-hangul | https://es-hangul.slash.page/ | 한글 초성 검색 (사전 · 문서 검색에 사용) |
 | Lucide | https://lucide.dev/ | 아이콘 세트 |
 | React Flow (xyflow) | https://reactflow.dev/ | **화이트보드 캔버스 채택**. MIT, 커스텀 노드·엣지, 줌·팬, 미니맵 |
 | React Flow — 화이트보드 예제 | https://reactflow.dev/examples/whiteboard/rectangle | 사각형 그리기, 라소 선택, 지우개 (MIT) |

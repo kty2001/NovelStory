@@ -27,6 +27,12 @@ describe("mentionCandidates", () => {
     expect(r[0].alias).toBeUndefined();
   });
 
+  it("초성 검색: 제목 앞부분 우선, 별칭 일치 표시", () => {
+    const r = mentionCandidates(docs, "ㄱㅅ", "self");
+    expect(r.map((c) => c.doc.id)).toEqual(["c", "b"]);
+    expect(r[1].alias).toBe("붉은 기사");
+  });
+
   it("최대 8개", () => {
     expect(mentionCandidates(docs, "이름", "self")).toHaveLength(8);
   });

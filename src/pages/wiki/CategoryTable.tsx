@@ -1,12 +1,14 @@
 import { useState, type ReactNode } from "react";
 import { ArrowDown, ArrowUp } from "lucide-react";
 import type { WikiDoc } from "../../db/types";
+import { propText } from "../../db/wikiDerived";
 import { setDocsLine, sortedLines } from "../../store/boardActions";
-import { useNovelStore } from "../../store/novelStore";
+import { useNovelStore, type Collection } from "../../store/novelStore";
 import { setPropValue } from "../../store/wikiActions";
 import { stateAt, stateTicks } from "../board/stateCalc";
 import { eventBlock, placeText, relatedCharacters } from "./boardLinks";
 import { familyOf, subtreeDocs } from "./categories";
+import { DocLinkChip } from "./MentionChip";
 import TimePick from "./TimePick";
 import { useWikiNav } from "./useWikiNav";
 
@@ -17,7 +19,11 @@ type Column = {
   cell: (d: WikiDoc, row: number) => ReactNode;
 };
 
-const valueOf = (d: WikiDoc, key: string) => d.props.find((p) => p.key === key)?.value ?? "";
+const propOf = (d: WikiDoc, key: string) => d.props.find((p) => p.key === key);
+const valueOf = (d: WikiDoc, key: string, docs: Collection<WikiDoc>) => {
+  const p = propOf(d, key);
+  return p ? propText(p, docs) : "";
+};
 
 // 빈 값은 방향과 관계없이 뒤로
 function compare(a: string | number, b: string | number, dir: 1 | -1) {
@@ -79,9 +85,10 @@ export default function CategoryTable({ categoryId }: { categoryId: string }) {
   const propColumn = (key: string): Column => ({
     id: `prop:${key}`,
     label: key,
-    sortKey: (d) => (states ? (states[d.id][key] ?? "") : valueOf(d, key)),
+    sortKey: (d) => (states ? (states[d.id][key] ?? "") : valueOf(d, key, docs)),
     cell: (d, row) => {
-      const value = valueOf(d, key);
+      const value = valueOf(d, key, docs);
+      const linked = propOf(d, key)?.docId;
       if (states) {
         const at = states[d.id][key] ?? "";
         return (
@@ -94,6 +101,8 @@ export default function CategoryTable({ categoryId }: { categoryId: string }) {
           </span>
         );
       }
+      // 문서 링크 값은 칩 (수정은 문서 속성 표에서)
+      if (linked) return <DocLinkChip id={linked} label={value} />;
       return (
         <input
           key={value}

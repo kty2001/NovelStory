@@ -87,7 +87,7 @@ erDiagram
         string color "캐릭터 대표 색 토큰"
         datetime createdAt
         boolean autoCreated "보드에서 자동 생성"
-        json mentions "파생: 멘션 docId 목록"
+        json mentions "파생: 멘션 · 속성 링크 docId 목록"
         string plainText "파생: 검색용 텍스트"
     }
     BOARD_ITEM {
@@ -125,7 +125,7 @@ erDiagram
 |---|---|
 | `WIKI_DOC` → `BOARD_ITEM` | 사건 문서 1개 ↔ 사건 블록 최대 1개 (1:1). 캐릭터 문서 1개 ↔ 상태 블록 여러 개 (1:N). 블록 제목은 문서 제목을 그대로 표시 |
 | `BOARD_ITEM` 자기 참조 | `parentFrameId`: 프레임 소속 (좌표는 절대 좌표라 소속만 표시). `linkedEventItemId`: 상태 블록 → 관련 사건 블록 |
-| `WIKI_DOC` 자기 참조 | 본문 `@` 멘션. 원본은 `body`의 mention 노드, `mentions`는 역링크 조회용 파생 색인 |
+| `WIKI_DOC` 자기 참조 | 본문 `@` 멘션 · 속성 값 링크. 원본은 `body`의 mention 노드 · `props`의 `docId`, `mentions`는 역링크 조회용 파생 색인 |
 | `STORY_LINE` → `WIKI_DOC` | 사건 문서 1개 ↔ 라인 0..1개. 라인 1개에 사건 여러 개. 라인 삭제 시 문서는 미지정 |
 | `BOARD` ⇢ `WIKI_DOC` (점선) | 캐릭터별 정렬의 레인 순서. 외래 키가 아닌 ID 목록 |
 

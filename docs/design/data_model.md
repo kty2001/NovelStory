@@ -97,7 +97,7 @@ type WikiCategory = NovelScoped & {
   system?: 'character' | 'event'; // 보드 연동 분류. 삭제·이동 불가, 이름 변경만 가능
 };
 
-type WikiProp = { key: string; value: string };
+type WikiProp = { key: string; value: string; docId?: string }; // docId = 값 전체가 문서 링크 (value = 링크 당시 제목, 대상 삭제 시 표시용)
 
 // 사건의 이야기 갈래 (UC-23). 새 소설마다 메인·서브·사이드 3개 생성
 type StoryLine = NovelScoped & {
@@ -120,7 +120,7 @@ type WikiDoc = NovelScoped & {
   autoCreated?: boolean;          // 보드 블록 생성으로 자동 생성됨 (빈 문서 정리 판단용)
 
   // 파생 필드: 저장 시 body에서 계산, 내보내기 제외 (가져오기 때 다시 계산)
-  mentions: string[];             // body가 가리키는 docId 목록 (중복 제거) → 역링크 색인
+  mentions: string[];             // body 멘션 + props 링크가 가리키는 docId 목록 (중복 제거) → 역링크 색인
   plainText: string;              // body 순수 텍스트 → 부분 일치 검색
 };
 
@@ -269,9 +269,9 @@ type Memo = NovelScoped & { body: string; pinned: boolean; createdAt: ISODate };
 - `from`은 입력 당시 표시용 기록. 누적 계산에는 `to`만 사용
 
 ### 4.5 사전 파생 필드
-- 저장 시 `body`를 순회해 `mentions`(mention 노드 `attrs.id`, 중복 제거)·`plainText` 계산
+- 저장 시 `body`를 순회해 `mentions`(mention 노드 `attrs.id` + `props`의 `docId`, 중복 제거)·`plainText`(본문만) 계산
 - 역링크 = `wikiDocs.where('mentions').equals(docId)`
-- 링크 표시 이름은 대상 문서의 **현재 제목** (mention `label`은 대상 삭제 시 깨진 링크 표시용)
+- 링크 표시 이름은 대상 문서의 **현재 제목** (mention `label` · 속성 `value`는 대상 삭제 시 깨진 링크 표시용). 상태 누적(4.4) · 표 정렬도 속성 링크는 현재 제목 사용
 
 ## 5. 무결성 규칙
 

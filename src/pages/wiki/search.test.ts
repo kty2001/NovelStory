@@ -37,6 +37,17 @@ it("본문 문맥은 앞뒤 30자, 잘리면 …", () => {
   expect(body.after).toBe(` 가담한다${"나".repeat(25)}…`);
 });
 
+it("초성 검색: 제목 · 별칭만 (본문 제외), 일치 부분 강조", () => {
+  const hits = searchWiki(docs, "ㅂㄹ");
+  expect(hits.map((h) => [h.doc.id, h.where])).toEqual([
+    ["e", "title"],
+    ["c", "title"],
+    ["b", "alias"],
+  ]);
+  expect(hits[1]).toMatchObject({ before: "", match: "반란", after: "군" });
+  expect(hits[2]).toMatchObject({ before: "", match: "반란", after: "의 깃발" });
+});
+
 it("빈 검색어는 결과 없음, 대소문자 무시", () => {
   expect(searchWiki(docs, "  ")).toEqual([]);
   expect(searchWiki({ x: d("x", "Alpha") }, "alp")).toHaveLength(1);

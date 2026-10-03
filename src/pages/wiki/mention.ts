@@ -1,7 +1,7 @@
 import type { SuggestionKeyDownProps, SuggestionProps } from "@tiptap/suggestion";
 import type { WikiDoc } from "../../db/types";
 import { useNovelStore, type Collection } from "../../store/novelStore";
-import { searchDocs } from "../board/stateCalc";
+import { matchAt, searchDocs } from "../board/stateCalc";
 
 // 본문 `@` 링크 후보 (UC-33, shortcuts 3.2)
 
@@ -10,14 +10,13 @@ type MentionAttrs = { id: string; label: string };
 
 const LIMIT = 8;
 
-// 제목 · 별칭 부분 일치, 현재 문서 제외. 제목 앞부분 일치 우선 → 가나다. alias = 별칭으로만 찾은 경우
+// 제목 · 별칭 부분 · 초성 일치, 현재 문서 제외. 제목 앞부분 일치 우선 → 가나다. alias = 별칭으로만 찾은 경우
 export function mentionCandidates(
   docs: Collection<WikiDoc>,
   query: string,
   excludeId?: string,
 ): Candidate[] {
-  const q = query.trim().toLowerCase();
-  const rank = (d: WikiDoc) => (d.title.toLowerCase().startsWith(q) ? 0 : 1);
+  const rank = (d: WikiDoc) => (matchAt(d.title, query) === 0 ? 0 : 1);
   return searchDocs(
     Object.values(docs).filter((d) => d.id !== excludeId),
     query,
@@ -27,8 +26,8 @@ export function mentionCandidates(
     .map((doc) => ({
       doc,
       alias:
-        q && !doc.title.toLowerCase().includes(q)
-          ? doc.aliases.find((a) => a.toLowerCase().includes(q))
+        query.trim() && matchAt(doc.title, query) < 0
+          ? doc.aliases.find((a) => matchAt(a, query) >= 0)
           : undefined,
     }));
 }

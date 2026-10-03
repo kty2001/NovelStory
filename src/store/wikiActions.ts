@@ -97,17 +97,18 @@ export function addDoc(categoryId: string, title = "새 문서"): string | null 
 
 type DocPatch = Partial<Pick<WikiDoc, "aliases" | "tags" | "props" | "imageId">>;
 
-// 문서 필드 변경. imageId: undefined = 대표 이미지 제거
+// 문서 필드 변경. imageId: undefined = 대표 이미지 제거, props 변경 시 속성 링크 mentions 다시 계산
 export function updateDoc(id: string, patch: DocPatch) {
   store.setState(({ docs }) => {
     if (!docs[id]) return {};
     const next = { ...docs[id], ...patch };
     if ("imageId" in patch && !patch.imageId) delete next.imageId;
+    if (patch.props) Object.assign(next, deriveDoc(next.body, next.props));
     return { docs: { ...docs, [id]: next } };
   });
 }
 
-// 속성 값 하나 변경 (표 셀 수정, UC-34). 없는 키면 끝에 추가
+// 속성 값 하나 변경 (표 셀 수정, UC-34). 없는 키면 끝에 추가, 문서 링크는 해제
 export function setPropValue(id: string, key: string, value: string) {
   const doc = store.getState().docs[id];
   if (!doc) return;
@@ -122,7 +123,9 @@ export function setPropValue(id: string, key: string, value: string) {
 // 본문 변경: 파생 필드(mentions · plainText) 함께 계산 (data_model 4.5)
 export function setDocBody(id: string, body: TiptapJSON | null) {
   store.setState(({ docs }) =>
-    docs[id] ? { docs: { ...docs, [id]: { ...docs[id], body, ...deriveDoc(body) } } } : {},
+    docs[id]
+      ? { docs: { ...docs, [id]: { ...docs[id], body, ...deriveDoc(body, docs[id].props) } } }
+      : {},
   );
 }
 

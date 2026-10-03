@@ -8,7 +8,7 @@ import type { BoardItem } from "./types";
 
 beforeEach(resetDb);
 
-// 모든 참조 필드를 쓰는 소설: 하위 분류, 라인, 멘션, 프레임 소속, 상태 → 사건 연결, 연결선, 레인 순서,
+// 모든 참조 필드를 쓰는 소설: 하위 분류, 라인, 멘션, 속성 값 링크, 프레임 소속, 상태 → 사건 연결, 연결선, 레인 순서,
 // 서술 순서(회차 · 슬롯)
 async function richNovel() {
   const id = await createNovel({ title: "원본" });
@@ -16,7 +16,12 @@ async function richNovel() {
   const [line] = await db.storyLines.where({ novelId: id }).sortBy("order");
   const sub = { ...cats[2], id: "sub", name: "도시", parentId: cats[2].id, order: 0 };
   await db.wikiCategories.add(sub);
-  const hero = { ...doc("hero", id), categoryId: cats[0].id };
+  const hero = {
+    ...doc("hero", id),
+    categoryId: cats[0].id,
+    props: [{ key: "소속", value: "ev", docId: "ev" }],
+    mentions: ["ev"],
+  };
   const ev = {
     ...doc("ev", id),
     categoryId: cats[1].id,
@@ -183,6 +188,9 @@ describe("importExport", () => {
     expect(ev.mentions).toEqual([hero.id]);
     expect(JSON.stringify(ev.body)).toContain(hero.id);
     expect(ev.plainText).toBe("주인공 주인공");
+    // 속성 값 링크 치환 + mentions 반영
+    expect(hero.props).toEqual([{ key: "소속", value: "ev", docId: ev.id }]);
+    expect(hero.mentions).toEqual([ev.id]);
     // 개요 시놉시스 멘션도 치환
     const novel = await db.novels.get(id);
     expect(JSON.stringify(novel?.synopsisBody)).toContain(hero.id);
